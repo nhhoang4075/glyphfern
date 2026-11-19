@@ -87,7 +87,7 @@ Rows, each a segmented control of icon buttons: size slider (A small / A large),
 
 ### 3.5 Drawer
 Left drawer with three tabs (contents, bookmarks, search). On mobile it is full height and covers the dock.
-- Contents: one row per chapter with fern mark, title, and a progress bar showing how much of that chapter is behind the current page.
+- Contents: one row per chapter with fern mark, title, and a progress bar showing how much of that chapter is behind the current page. Each row also shows the estimated page number of the chapter's start, right-aligned.
 - Bookmarks: sentence snippets, each with a remove button; tapping jumps to the sentence page.
 - Search: input with magnifier icon. Matches by lemma and by surface prefix; each hit is the full sentence with matches marked. Empty result shows an icon only.
 

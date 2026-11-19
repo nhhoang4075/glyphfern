@@ -164,3 +164,4 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Original choice: the whole book was in the DOM and pages were numbered over the whole book; progress was `page / (pages - 1)`.
 - Now: the flow holds the current chapter and its neighbours; pages are numbered inside the window; progress is computed from token counts (`spec/web-reader-logic.md` §2). The sentence stays the position of record, so saved positions, bookmarks and cards are unaffected.
 - Reason: on a 50 thousand word book a page turn froze for about 8 seconds and every layout change reflowed the whole book; the cost grows with the square of the DOM size.
+- Amendment 2026-11-20 (owner): the contents drawer shows an estimated start page per chapter, computed from word counts and the measured words per page of the window (as in Apple Books); the number is an estimate and is recomputed on relayout.
