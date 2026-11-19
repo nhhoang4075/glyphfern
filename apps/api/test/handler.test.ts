@@ -1,8 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { handle } from "../src/handler";
+import type { LemmaStore } from "../src/lexicon/lemmas";
 import type { LexiconStore } from "../src/lexicon/lookup";
 
-const store: LexiconStore = {
+const store: LexiconStore & LemmaStore = {
+  async findForms(_lang, words) {
+    return words.includes("miraba") ? [{ word: "miraba", lemma: "mirar" }] : [];
+  },
   async findByWord(_lang, word) {
     return word === "lobo"
       ? [{ word: "lobo", pos: "noun", ipa: "/ˈlo.βo/", glosses: ["wolf"], lemma: null }]
@@ -35,5 +39,24 @@ describe("api handler", () => {
     expect((await get("/lookup?lang=es&word=")).status).toBe(400);
     expect((await get("/lookup?lang=es&word=lobo", "POST")).status).toBe(405);
     expect((await get("/nope")).status).toBe(404);
+  });
+
+  test("lemmas are resolved in bulk with a POST", async () => {
+    const response = await handle(
+      new Request("http://api.test/lemmas", {
+        method: "POST",
+        body: JSON.stringify({ lang: "es", words: ["Miraba", "lobo"] }),
+      }),
+      deps,
+    );
+    expect(await response.json()).toEqual({ lemmas: { miraba: "mirar" } });
+  });
+
+  test("bad lemma requests are rejected", async () => {
+    const bad = (body: string) =>
+      handle(new Request("http://api.test/lemmas", { method: "POST", body }), deps);
+    expect((await bad("nope")).status).toBe(400);
+    expect((await bad(JSON.stringify({ lang: "xx", words: [] }))).status).toBe(400);
+    expect((await bad(JSON.stringify({ lang: "es", words: [1] }))).status).toBe(400);
   });
 });

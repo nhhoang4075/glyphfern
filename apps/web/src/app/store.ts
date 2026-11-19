@@ -4,6 +4,8 @@ import {
   type LanguagePack,
   type Rating,
   type WordState,
+  applyLemmas,
+  bookWords,
   buildEpubBook,
   onCardAdded,
   onCardRemoved,
@@ -54,7 +56,10 @@ export interface StoreOptions {
   packs?: Record<Lang, LanguagePack>;
   prefersReducedMotion?: boolean;
   initialRoute?: Route;
+  lemmatizer?: Lemmatizer;
 }
+
+export type Lemmatizer = (lang: Lang, words: string[]) => Promise<Record<string, string>>;
 
 type Listener = () => void;
 
@@ -69,6 +74,7 @@ export class AppStore {
     private readonly repository: Repository,
     private readonly packs: Record<Lang, LanguagePack>,
     private current: AppState,
+    private readonly lemmatizer?: Lemmatizer,
   ) {
     this.api = this.buildApi();
   }
@@ -101,7 +107,7 @@ export class AppStore {
       focusRequest: null,
       persistence: repository.kind,
     };
-    const store = new AppStore(repository, packs, state);
+    const store = new AppStore(repository, packs, state, options.lemmatizer);
     store.loaded.set(lang, snapshot);
     return store;
   }
@@ -192,7 +198,14 @@ export class AppStore {
         firstSentenceId: seq * SENTENCE_ID_SPAN,
         fallbackTitle: (chapterNumber) => `Capítulo ${chapterNumber}`,
       });
-      const stored: StoredBook = { id, lang: IMPORT_LANG, seq, addedAt: Date.now(), book };
+      const lemmas = this.lemmatizer ? await this.lemmatizer(IMPORT_LANG, bookWords(book)) : {};
+      const stored: StoredBook = {
+        id,
+        lang: IMPORT_LANG,
+        seq,
+        addedAt: Date.now(),
+        book: applyLemmas(book, lemmas),
+      };
       await this.repository.saveBook(stored);
       const userBooks = [...this.current.userBooks, stored];
       const view = booksView(

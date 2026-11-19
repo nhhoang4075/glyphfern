@@ -59,4 +59,20 @@ describe("lexicon client", () => {
     expect(await client.lookup("es", "zzz")).toBeNull();
     expect(calls).toBe(2);
   });
+
+  test("lemmas are requested in chunks and a failed chunk is skipped", async () => {
+    const bodies: string[][] = [];
+    const client = createLexiconClient("http://api", async (_url, init) => {
+      const words = (JSON.parse(String(init?.body)) as { words: string[] }).words;
+      bodies.push(words);
+      if (bodies.length === 2) {
+        throw new Error("offline");
+      }
+      return { ok: true, status: 200, json: async () => ({ lemmas: { [words[0] ?? ""]: "x" } }) };
+    });
+    const words = Array.from({ length: 4500 }, (_, i) => `w${i}`);
+    const lemmas = await client.lemmatize("es", words);
+    expect(bodies.map((b) => b.length)).toEqual([2000, 2000, 500]);
+    expect(Object.keys(lemmas)).toEqual(["w0", "w4000"]);
+  });
 });

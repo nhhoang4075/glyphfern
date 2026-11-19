@@ -7,3 +7,4 @@ export * from "./chapter-progress";
 export * from "./token-parse";
 export * from "./review-queue";
 export * from "./import/build-epub-book";
+export * from "./import/apply-lemmas";

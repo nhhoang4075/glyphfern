@@ -86,3 +86,15 @@ describe("books in IndexedDB", () => {
     expect(reopened.getApi().state.userBooks[0]?.book.chapters).toHaveLength(1);
   });
 });
+
+describe("lemmas on import", () => {
+  test("the lemmatizer result is written into the stored book", async () => {
+    const store = await AppStore.open(new MemoryRepository(), {
+      ...options,
+      lemmatizer: async () => ({ había: "haber" }),
+    });
+    const stored = await store.actions.importEpub(epubFiles("El lobo"));
+    const lemmas = stored.book.chapters[0]?.paragraphs[0]?.[0]?.tokens.map((t) => t.lemma);
+    expect(lemmas?.[0]).toBe("haber");
+  });
+});

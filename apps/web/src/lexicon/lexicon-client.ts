@@ -14,7 +14,12 @@ export interface LookupResult {
   entries: LookupEntry[];
 }
 
-export type FetchLike = (url: string) => Promise<Pick<Response, "ok" | "status" | "json">>;
+export type FetchLike = (
+  url: string,
+  init?: RequestInit,
+) => Promise<Pick<Response, "ok" | "status" | "json">>;
+
+const LEMMA_CHUNK = 2000;
 
 const MAX_GLOSSES_SHOWN = 4;
 
@@ -33,7 +38,7 @@ export function toDictEntry(result: LookupResult): DictEntry | undefined {
 
 export function createLexiconClient(
   baseUrl: string | undefined,
-  fetcher: FetchLike = (url) => fetch(url),
+  fetcher: FetchLike = (url, init) => fetch(url, init),
 ) {
   const cache = new Map<string, Promise<LookupResult | null>>();
 
@@ -56,7 +61,41 @@ export function createLexiconClient(
     }
   }
 
+  async function lemmaChunk(
+    lang: string,
+    words: readonly string[],
+  ): Promise<Record<string, string>> {
+    try {
+      const response = await fetcher(`${baseUrl}/lemmas`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lang, words }),
+      });
+      if (!response.ok) {
+        return {};
+      }
+      return ((await response.json()) as { lemmas: Record<string, string> }).lemmas;
+    } catch {
+      return {};
+    }
+  }
+
+  async function lemmatize(
+    lang: string,
+    words: readonly string[],
+  ): Promise<Record<string, string>> {
+    if (!baseUrl) {
+      return {};
+    }
+    const result: Record<string, string> = {};
+    for (let start = 0; start < words.length; start += LEMMA_CHUNK) {
+      Object.assign(result, await lemmaChunk(lang, words.slice(start, start + LEMMA_CHUNK)));
+    }
+    return result;
+  }
+
   return {
+    lemmatize,
     lookup(lang: string, word: string): Promise<LookupResult | null> {
       const key = `${lang}:${word.toLowerCase()}`;
       const cached = cache.get(key);
