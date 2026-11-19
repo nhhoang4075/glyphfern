@@ -34,6 +34,7 @@ import type {
   StateChange,
   TapTarget,
 } from "./api";
+import { allocateSlot } from "./book-slot";
 import { defaultPreferences, readPrefersReducedMotion } from "./defaults";
 import { lemmaChanges, migrateProgress } from "./lemma-migration";
 import { hashFromRoute, routeFromHash } from "./route";
@@ -62,11 +63,25 @@ export interface StoreOptions {
   initialRoute?: Route;
   lemmatizer?: Lemmatizer;
   now?: () => number;
+  random?: () => number;
 }
 
 export type Lemmatizer = (lang: Lang, words: string[]) => Promise<Record<string, string> | null>;
 
 type Listener = () => void;
+
+type LoadedData = Pick<
+  AppState,
+  | "lang"
+  | "pack"
+  | "books"
+  | "userBooks"
+  | "wordStates"
+  | "cards"
+  | "bookmarks"
+  | "pins"
+  | "preferences"
+>;
 
 export class AppStore {
   private readonly listeners = new Set<Listener>();
@@ -80,6 +95,8 @@ export class AppStore {
     private current: AppState,
     private readonly lemmatizer: Lemmatizer | undefined,
     private readonly now: () => number,
+    private readonly random: () => number,
+    private readonly defaults: Preferences,
   ) {
     this.api = this.buildApi();
   }
@@ -87,10 +104,37 @@ export class AppStore {
   static async open(repository: Repository, options: StoreOptions = {}): Promise<AppStore> {
     const packs = options.packs ?? defaultPacks;
     const defaults = defaultPreferences(options.prefersReducedMotion ?? readPrefersReducedMotion());
+    const loaded = await AppStore.load(repository, packs, defaults, undefined);
+    const state: AppState = {
+      route: options.initialRoute ?? routeFromHash(readLocationHash()),
+      focusRequest: null,
+      persistence: repository.kind,
+      ...loaded,
+    };
+    const store = new AppStore(
+      repository,
+      packs,
+      state,
+      options.lemmatizer,
+      options.now ?? Date.now,
+      options.random ?? Math.random,
+      defaults,
+    );
+    store.persist(store.relemmatizePending());
+    return store;
+  }
+
+  private static async load(
+    repository: Repository,
+    packs: Record<Lang, LanguagePack>,
+    defaults: Preferences,
+    currentLang: Lang | undefined,
+  ): Promise<LoadedData> {
     const stored = await repository.loadPreferences();
     const merged: Preferences = { ...defaults, ...stored };
     const preferences: Preferences = { ...merged, positions: { ...merged.positions } };
-    const lang: Lang = packs[preferences.lang] ? preferences.lang : defaults.lang;
+    const wanted = currentLang ?? preferences.lang;
+    const lang: Lang = packs[wanted] ? wanted : defaults.lang;
     const base = packs[lang];
     const snapshot = await repository.loadLanguage(base.lang);
     const pins = await repository.loadPins();
@@ -99,8 +143,7 @@ export class AppStore {
       ? preferences.bookId
       : null;
     const view = booksView(base, userBooks, bookId);
-    const state: AppState = {
-      route: options.initialRoute ?? routeFromHash(readLocationHash()),
+    return {
       lang,
       pack: view.pack,
       books: view.books,
@@ -110,18 +153,7 @@ export class AppStore {
       bookmarks: snapshot.bookmarks,
       pins,
       preferences: { ...preferences, lang, bookId },
-      focusRequest: null,
-      persistence: repository.kind,
     };
-    const store = new AppStore(
-      repository,
-      packs,
-      state,
-      options.lemmatizer,
-      options.now ?? Date.now,
-    );
-    store.persist(store.relemmatizePending());
-    return store;
   }
 
   subscribe = (listener: Listener): (() => void) => {
@@ -199,7 +231,10 @@ export class AppStore {
     },
 
     importEpub: async (files) => {
-      const seq = this.current.userBooks.reduce((max, stored) => Math.max(max, stored.seq), 0) + 1;
+      const seq = allocateSlot(
+        this.current.userBooks.map((stored) => stored.seq),
+        this.random,
+      );
       const id = `user-${seq}-${Date.now().toString(36)}`;
       const { book } = buildEpubBook(files, {
         id,
@@ -292,6 +327,15 @@ export class AppStore {
         return this.actions.startReview();
       }
       return buildDueQueue(this.current.cards, now, newCardsToday);
+    },
+
+    reload: async () => {
+      let loaded: LoadedData;
+      do {
+        await this.settled();
+        loaded = await AppStore.load(this.repository, this.packs, this.defaults, this.current.lang);
+      } while (this.pending.size > 0);
+      this.patch(loaded);
     },
 
     requestFocus: (request) => {

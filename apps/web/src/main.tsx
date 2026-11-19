@@ -5,22 +5,34 @@ import { AppProvider } from "./app/use-app";
 import { lexicon } from "./lexicon/lexicon-client";
 import { AppShell } from "./shell/app-shell";
 import { createRepository } from "./storage/create-repository";
+import { AccountController, browserTriggers } from "./sync/account";
+import { SyncProvider } from "./sync/sync-provider";
 
 async function start() {
   const container = document.getElementById("root");
   if (!container) {
     return;
   }
-  const store = await AppStore.open(await createRepository(), {
+  const repository = await createRepository();
+  const store = await AppStore.open(repository, {
     lemmatizer: (lang, words) => lexicon.lemmatize(lang, words),
+  });
+  const account = new AccountController({
+    baseUrl: import.meta.env.VITE_API_URL,
+    repository,
+    reload: () => store.actions.reload(),
+    triggers: browserTriggers(),
   });
   createRoot(container).render(
     <StrictMode>
       <AppProvider store={store}>
-        <AppShell />
+        <SyncProvider controller={account}>
+          <AppShell />
+        </SyncProvider>
       </AppProvider>
     </StrictMode>,
   );
+  void account.start();
 }
 
 start();

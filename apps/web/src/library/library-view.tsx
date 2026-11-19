@@ -2,6 +2,7 @@ import { EpubImportError } from "@glyphfern/core";
 import { type ChangeEvent, useRef, useState } from "react";
 import { useApp } from "../app/use-app";
 import { EpubFileError, readEpubFile } from "../import/read-epub";
+import { AccountRow } from "../sync/account-row";
 import { Badge, Button, ConfirmDialog, IconButton } from "../ui";
 import { type LibraryBook, orderBooks, userLibraryBook } from "./books";
 import { CoverArt } from "./cover-art";
@@ -103,26 +104,29 @@ export function LibraryView() {
   };
 
   return (
-    <div className="shelf">
-      <input
-        ref={input}
-        type="file"
-        accept=".epub,application/epub+zip"
-        hidden
-        onChange={importFile}
-      />
-      <IconButton
-        variant="add"
-        icon="plus"
-        label="Thêm sách"
-        disabled={busy}
-        onClick={() => input.current?.click()}
-      />
-      {message ? <output className="shelf-note">{message}</output> : null}
-      {books.length === 0 ? <p className="shelf-note">Chưa có sách nào</p> : null}
-      {books.map((book) => (
-        <BookCard key={book.id} book={book} pinned={state.pins.includes(book.id)} />
-      ))}
-    </div>
+    <>
+      <AccountRow />
+      <div className="shelf">
+        <input
+          ref={input}
+          type="file"
+          accept=".epub,application/epub+zip"
+          hidden
+          onChange={importFile}
+        />
+        <IconButton
+          variant="add"
+          icon="plus"
+          label="Thêm sách"
+          disabled={busy}
+          onClick={() => input.current?.click()}
+        />
+        {message ? <output className="shelf-note">{message}</output> : null}
+        {books.length === 0 ? <p className="shelf-note">Chưa có sách nào</p> : null}
+        {books.map((book) => (
+          <BookCard key={book.id} book={book} pinned={state.pins.includes(book.id)} />
+        ))}
+      </div>
+    </>
   );
 }

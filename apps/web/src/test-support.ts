@@ -8,8 +8,11 @@ export function uniqueDatabaseName(): string {
   return `glyphfern-test-${counter}-${Math.random().toString(36).slice(2)}`;
 }
 
-export async function openTestRepository(name: string = uniqueDatabaseName()) {
+export async function openTestRepository(
+  name: string = uniqueDatabaseName(),
+  now: () => number = Date.now,
+) {
   const database = new GlyphfernDatabase(name, { indexedDB, IDBKeyRange });
   await database.open();
-  return { name, database, repository: new DexieRepository(database) };
+  return { name, database, repository: new DexieRepository(database, now) };
 }

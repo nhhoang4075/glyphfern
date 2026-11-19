@@ -1,5 +1,7 @@
 import type { Book, Lang, ReviewLogEntry, WordState } from "@glyphfern/core";
 import type { Card, PersistenceKind, Preferences } from "../app/api";
+import type { LocalData } from "../sync/snapshot";
+import type { OutboxEntry, PulledRecord, SyncState } from "../sync/types";
 
 export interface LanguageSnapshot {
   states: Record<string, WordState>;
@@ -33,4 +35,18 @@ export interface Repository {
   loadBooks(): Promise<StoredBook[]>;
   saveBook(book: StoredBook): Promise<void>;
   deleteBook(id: string): Promise<void>;
+  subscribeOutbox(listener: () => void): () => void;
+  readOutbox(): Promise<OutboxEntry[]>;
+  appendOutbox(entries: readonly OutboxEntry[]): Promise<void>;
+  removeOutbox(ids: readonly number[]): Promise<void>;
+  loadSyncState(): Promise<SyncState>;
+  saveSyncState(state: SyncState): Promise<void>;
+  exportLocal(): Promise<LocalData>;
+  applyRemote(records: readonly PulledRecord[]): Promise<boolean>;
+  applyRemoteBook(book: StoredBook): Promise<void>;
+  removeRemoteBook(id: string): Promise<void>;
+}
+
+export function sortBooks(books: readonly StoredBook[]): StoredBook[] {
+  return [...books].sort((a, b) => a.addedAt - b.addedAt || a.seq - b.seq);
 }

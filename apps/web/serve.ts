@@ -1,4 +1,10 @@
 import { join } from "node:path";
+import {
+  BOOK_UPLOAD_LIMIT_BYTES,
+  BodyTooLargeError,
+  bodyLimitFor,
+  readBodyWithin,
+} from "./body-limit";
 
 const DIST = join(import.meta.dir, "dist");
 const INDEX = join(DIST, "index.html");
@@ -8,7 +14,6 @@ const IMMUTABLE = "public, max-age=31536000, immutable";
 const REVALIDATE = "no-cache";
 const port = Number(process.env.PORT ?? 8080);
 const IDLE_TIMEOUT_SECONDS = 60;
-const MAX_BODY_BYTES = 512 * 1024;
 const apiOrigin = (process.env.API_ORIGIN ?? "").replace(/\/+$/, "");
 const DROPPED_REQUEST_HEADERS = ["host", "connection", "content-length", "accept-encoding"];
 const DROPPED_RESPONSE_HEADERS = [
@@ -31,13 +36,24 @@ async function forwardToApi(request: Request, url: URL): Promise<Response> {
     headers.delete(name);
   }
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
+  let body: ArrayBuffer | undefined;
+  if (hasBody) {
+    try {
+      body = await readBodyWithin(request, bodyLimitFor(request.method, url.pathname));
+    } catch (error) {
+      if (error instanceof BodyTooLargeError) {
+        return new Response("request body too large", { status: 413 });
+      }
+      return new Response("bad request", { status: 400 });
+    }
+  }
   try {
     const upstream = await fetch(
       `${apiOrigin}${url.pathname.slice(API_PREFIX.length - 1)}${url.search}`,
       {
         method: request.method,
         headers,
-        ...(hasBody ? { body: await request.arrayBuffer() } : {}),
+        ...(body ? { body } : {}),
       },
     );
     const responseHeaders = new Headers(upstream.headers);
@@ -53,7 +69,7 @@ async function forwardToApi(request: Request, url: URL): Promise<Response> {
 Bun.serve({
   port,
   idleTimeout: IDLE_TIMEOUT_SECONDS,
-  maxRequestBodySize: MAX_BODY_BYTES,
+  maxRequestBodySize: BOOK_UPLOAD_LIMIT_BYTES,
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname.startsWith(API_PREFIX)) {

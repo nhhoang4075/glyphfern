@@ -81,6 +81,7 @@ export interface AppActions {
   rememberPosition(bookId: string, sentenceId: number): void;
   startReview(): Promise<string[]>;
   rateCard(queue: readonly string[], rating: Rating): string[];
+  reload(): Promise<void>;
   requestFocus(request: FocusRequest): void;
   consumeFocus(): FocusRequest | null;
 }

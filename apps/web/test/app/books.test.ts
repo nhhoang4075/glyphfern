@@ -78,22 +78,26 @@ describe("the app ships no book", () => {
 describe("importing and opening books", () => {
   test("an imported book is stored, listed and gets ids in its own range", async () => {
     const repository = new MemoryRepository();
-    const store = await AppStore.open(repository, options);
+    const store = await AppStore.open(repository, { ...options, random: () => 0 });
     const stored = await store.actions.importEpub(epubFiles("El lobo"));
     expect(stored.book.title).toBe("El lobo");
-    expect(stored.seq).toBe(1);
-    expect(stored.book.chapters[0]?.title.id).toBe(1_000_000);
+    expect(stored.seq).toBe(1000);
+    expect(stored.book.chapters[0]?.title.id).toBe(1_000_000_000);
     expect(store.getApi().state.userBooks).toHaveLength(1);
     expect(store.getApi().state.books).toEqual([stored.book]);
     expect((await repository.loadBooks()).map((book) => book.id)).toEqual([stored.id]);
   });
 
-  test("a second import gets the next id range", async () => {
-    const store = await AppStore.open(new MemoryRepository(), options);
+  test("a second import draws another slot when the first draw is taken", async () => {
+    const draws = [0, 0, 0.5];
+    const store = await AppStore.open(new MemoryRepository(), {
+      ...options,
+      random: () => draws.shift() ?? 0.25,
+    });
     await store.actions.importEpub(epubFiles("A"));
     const second = await store.actions.importEpub(epubFiles("B"));
-    expect(second.seq).toBe(2);
-    expect(second.book.chapters[0]?.title.id).toBe(2_000_000);
+    expect(second.seq).toBe(1000 + Math.floor(0.5 * (2 ** 30 - 1000)));
+    expect(second.book.chapters[0]?.title.id).toBe(second.seq * 1_000_000);
   });
 
   test("opening an imported book makes it the active book and it survives a reopen", async () => {

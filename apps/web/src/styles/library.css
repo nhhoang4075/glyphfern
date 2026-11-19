@@ -176,3 +176,55 @@ html[data-night] .pin.on {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+.account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  max-width: 880px;
+  margin: 0 auto;
+  min-height: 36px;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.account-google:not([data-ready="true"]) {
+  display: none;
+}
+
+.account-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--paper-2);
+}
+
+.account-email {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.account-status {
+  color: var(--ink-2);
+}
+
+.account-status[data-status="failed"] {
+  color: var(--bad);
+}
+
+.account-out {
+  margin-left: auto;
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-tile);
+  font: inherit;
+}
+
+.account-out:hover {
+  color: var(--wing);
+}

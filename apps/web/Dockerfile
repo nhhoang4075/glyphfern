@@ -19,7 +19,7 @@ RUN cd apps/web && bunx vite build --logLevel=error
 FROM oven/bun:1.4.3-slim
 WORKDIR /app
 COPY --from=build /app/apps/web/dist ./dist
-COPY apps/web/serve.ts ./serve.ts
+COPY apps/web/serve.ts apps/web/body-limit.ts ./
 ENV NODE_ENV=production
 USER bun
 CMD ["bun", "serve.ts"]
