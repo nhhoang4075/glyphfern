@@ -44,3 +44,8 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Date: 2026-11-19. Decided by: owner (asked to build the demo).
 - Korean tokens are eojeol (space-separated units). The panel shows a morpheme breakdown (stem, particle, ending) with a gloss per morpheme.
 - Open: the real morphological analyzer (for example Kiwi or MeCab-ko) is not chosen. See `web-reader-logic.md` section 9.
+
+## D-011 Page-curl shadow has two branches, as in the prototype shader
+- Date: 2026-11-19. Decided by: owner ("do it like the demo, the demo is good").
+- Shadow on the turned page: `0.12 * exp(-(t-a)/26)` when `a > pi*R`, `0.09 * exp(-(t-a)/24)` when `a <= pi*R`.
+- Reason: the first spec text listed only the first branch; the implemented shader the owner approved has both.

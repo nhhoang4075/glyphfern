@@ -73,7 +73,7 @@ Applies when `turn = curl`.
 **Rendering** (WebGL, fragment shader). Two textures hold the current page (front) and the next page (under), drawn from the DOM into 2D canvases by walking text nodes and per-word highlight boxes. Uniforms: page size, corner, fold direction, arc length `a`, radius `R`, paper colour.
 - Fold geometry: a cylinder fold with constant radius `R = 0.6` px (effectively a crease, never a rolled tube). `a` is solved from the drag length `L` by 34 bisection steps: for `a >= pi*R` the length is `2a - pi*R`, otherwise `a - R*sin(a/R)`.
 - Flap (reverse side): paper colour `x 0.985`, shade `(1 - 0.11*exp(-(t-a)/90)) * mix(0.94, 1, smoothstep(0, 25, ts))`; no transparency, no grey streaks.
-- Shadow cast on the page being turned: `0.12 * exp(-(t-a)/26)`. Shadow on the page under: `0.14 * exp(-max(edge-t,0)/30)` fading to 0 across `edge-6 .. a+2`.
+- Shadow cast on the page being turned: `0.12 * exp(-(t-a)/26)` when `a > pi*R`, and `0.09 * exp(-(t-a)/24)` when `a <= pi*R`. Shadow on the page under: `0.14 * exp(-max(edge-t,0)/30)` fading to 0 across `edge-6 .. a+2`.
 - Where the source falls outside the page within `3R + 10` px of the cylinder band, the gap is filled from the nearest source so no band or ribbon shows through.
 - The vertical drag component is halved (`dy * 0.5`).
 - DOM bookmarks and the ribbon are drawn into the texture, not layered over it.
