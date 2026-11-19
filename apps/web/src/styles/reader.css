@@ -198,17 +198,17 @@ html[data-lang="ko"] .flow {
 }
 
 .w.l1 {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='3.5' fill='%23c2d94c' fill-opacity='.38'/%3E%3C/svg%3E")
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='3.5' fill='rgba(194,217,76,.38)'/%3E%3C/svg%3E")
     left bottom 0.07em / 100% 0.42em no-repeat;
 }
 
 .w.l2 {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='3.5' fill='%23c2d94c' fill-opacity='.6'/%3E%3C/svg%3E")
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='3.5' fill='rgba(194,217,76,.6)'/%3E%3C/svg%3E")
     left bottom 0.07em / 100% 0.42em no-repeat;
 }
 
 .w.l3 {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='3.5' fill='%23c2d94c' fill-opacity='.85'/%3E%3C/svg%3E")
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='3.5' fill='rgba(194,217,76,.85)'/%3E%3C/svg%3E")
     left bottom 0.07em / 100% 0.42em no-repeat;
 }
 
@@ -805,7 +805,7 @@ html[data-night] .drawer {
 }
 
 .tab {
-  flex: 1;
+  flex: 1 1 0;
   height: 44px;
   border-radius: 13px;
   display: grid;
