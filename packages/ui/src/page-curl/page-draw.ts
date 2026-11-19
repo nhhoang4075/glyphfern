@@ -230,7 +230,7 @@ export function drawPage(
       ctx.letterSpacing = text.letterSpacing === "normal" ? "0px" : text.letterSpacing;
     }
     const ascent = ctx.measureText(text.text).fontBoundingBoxAscent || 0;
-    ctx.fillText(text.text, text.x, text.y + ascent);
+    ctx.fillText(text.text, text.x, Math.round(text.y) + ascent);
   }
   ctx.restore();
   if (options.bookmarked) {

@@ -175,6 +175,8 @@ export function ReaderView() {
         pendingAnchor.current = null;
         current.layout(target);
         sync();
+        const flow = flowRef.current;
+        if (flow) collectSegments(flow);
       });
     },
     [sync],
