@@ -1,7 +1,11 @@
+import { createSqlAuthStore } from "./auth/auth-store";
+import { createCachedKeyFetcher, createGoogleVerifier } from "./auth/google-verifier";
 import { readConfig } from "./config";
 import { connect } from "./db";
-import { MAX_BODY_BYTES, handle } from "./handler";
+import { handle } from "./handler";
 import { createSqlStore } from "./lexicon/sql-store";
+import { MAX_BOOK_UPLOAD_BYTES } from "./sync/book-routes";
+import { createSqlSyncStore } from "./sync/sync-store";
 import { createClientLimiter } from "./translate/client-limiter";
 import { createCloudflareTranslator } from "./translate/cloudflare-translator";
 import { createSqlCache } from "./translate/sql-cache";
@@ -34,6 +38,15 @@ const tts = config.ttsUrl
     )
   : undefined;
 
+const auth = config.googleClientId
+  ? {
+      clientId: config.googleClientId,
+      allowedEmails: config.allowedEmails,
+      store: createSqlAuthStore(sql),
+      verifier: createGoogleVerifier(createCachedKeyFetcher()),
+    }
+  : undefined;
+
 const limiter = createClientLimiter({
   requestsPerMinute: config.clientRequestsPerMinute,
   charactersPerDay: config.clientDailyCharLimit,
@@ -51,7 +64,7 @@ function clientOf(request: Request, address: string | undefined): string {
 
 const server = Bun.serve({
   port: config.port,
-  maxRequestBodySize: MAX_BODY_BYTES,
+  maxRequestBodySize: MAX_BOOK_UPLOAD_BYTES,
   fetch: (request, bunServer) =>
     handle(
       request,
@@ -61,6 +74,7 @@ const server = Bun.serve({
         limiter,
         ...(translate ? { translate } : {}),
         ...(tts ? { tts } : {}),
+        ...(auth ? { auth, sync: createSqlSyncStore(sql) } : {}),
       },
       clientOf(request, bunServer.requestIP(request)?.address),
     ),

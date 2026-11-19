@@ -8,5 +8,8 @@
     "start": "bun src/server.ts",
     "migrate": "bun src/migrate.ts",
     "load-lexicon": "bun src/lexicon/load-kaikki.ts"
+  },
+  "dependencies": {
+    "jose": "^6.2.18"
   }
 }

@@ -1,5 +1,10 @@
+import { type AuthDeps, authRoute } from "./auth/auth-routes";
+import { json } from "./http";
 import { type LemmaStore, resolveLemmas } from "./lexicon/lemmas";
 import { type LexiconStore, lookupWord } from "./lexicon/lookup";
+import { bookRoute } from "./sync/book-routes";
+import { syncRoute } from "./sync/sync-routes";
+import type { SyncStore } from "./sync/sync-store";
 import type { ClientLimiter } from "./translate/client-limiter";
 import { BudgetExceededError, type TranslateService } from "./translate/translate-service";
 import { TranslatorError } from "./translate/translator";
@@ -12,12 +17,13 @@ export interface HandlerDeps {
   translate?: TranslateService;
   tts?: TtsService;
   limiter?: ClientLimiter;
+  auth?: AuthDeps;
+  sync?: SyncStore;
 }
 
 const SUPPORTED_LANGS = new Set(["es"]);
 const MAX_WORD_LENGTH = 64;
 const WORD_PATTERN = /^[\p{L}\p{N}'’-]+$/u;
-const CACHE_SECONDS = 86400;
 const MAX_LEMMA_WORDS = 5000;
 const MAX_TRANSLATE_TEXTS = 20;
 const MAX_TRANSLATE_CHARS = 500;
@@ -28,17 +34,6 @@ const MAX_TTS_SPEED = 1.5;
 const DEFAULT_TTS_SPEED = 1;
 const TTS_CACHE_SECONDS = 604800;
 export const MAX_BODY_BYTES = 512 * 1024;
-
-function json(body: unknown, status: number, deps: HandlerDeps, cache = false): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "access-control-allow-origin": deps.allowedOrigin,
-      ...(cache ? { "cache-control": `public, max-age=${CACHE_SECONDS}` } : {}),
-    },
-  });
-}
 
 function audio(body: Uint8Array, deps: HandlerDeps): Response {
   return new Response(new Uint8Array(body), {
@@ -62,8 +57,8 @@ export async function handle(
       status: 204,
       headers: {
         "access-control-allow-origin": deps.allowedOrigin,
-        "access-control-allow-methods": "GET, POST",
-        "access-control-allow-headers": "content-type",
+        "access-control-allow-methods": "GET, POST, PUT, DELETE",
+        "access-control-allow-headers": "content-type, authorization",
       },
     });
   }
@@ -97,6 +92,15 @@ export async function handle(
       200,
       deps,
     );
+  }
+  if (url.pathname.startsWith("/auth/")) {
+    return authRoute(request, url, deps);
+  }
+  if (url.pathname.startsWith("/sync/")) {
+    return syncRoute(request, url, deps);
+  }
+  if (url.pathname.startsWith("/books/")) {
+    return bookRoute(request, url, deps);
   }
   if (request.method !== "GET") {
     return json({ error: "method_not_allowed" }, 405, deps);

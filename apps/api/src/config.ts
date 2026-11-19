@@ -11,6 +11,8 @@ export interface Config {
   ttsUrl: string | undefined;
   ttsVoiceEs: string;
   ttsDailyCharLimit: number;
+  googleClientId: string | undefined;
+  allowedEmails: string[];
 }
 
 const DEFAULT_PORT = 8787;
@@ -37,5 +39,10 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     ttsUrl: env.TTS_URL || undefined,
     ttsVoiceEs: env.TTS_VOICE_ES || DEFAULT_TTS_VOICE_ES,
     ttsDailyCharLimit: Number(env.TTS_DAILY_CHAR_LIMIT ?? DEFAULT_TTS_DAILY_CHARS),
+    googleClientId: env.GOOGLE_CLIENT_ID || undefined,
+    allowedEmails: (env.ALLOWED_EMAILS ?? "")
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter((email) => email.length > 0),
   };
 }
