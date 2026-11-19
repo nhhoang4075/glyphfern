@@ -171,6 +171,23 @@ describe("progress follows the new lemma", () => {
     expect(saved.some((card) => card.lemma === "miraba")).toBe(false);
   });
 
+  test("a moved card keeps its review schedule", async () => {
+    const { control, repository, store, stored } = await openWithImport();
+    store.actions.addCard("miraba", firstSentenceId(stored.book));
+    store.actions.rateCard(["miraba"], "good");
+    const scheduled = store.getApi().state.cards.find((card) => card.lemma === "miraba")?.schedule;
+    expect(scheduled).toBeDefined();
+    control.answer = MIRAR;
+    await store.relemmatizePending();
+    await store.settled();
+    const moved = store.getApi().state.cards.find((card) => card.lemma === "mirar");
+    expect(moved?.schedule).toEqual(scheduled);
+    const saved = (await repository.loadLanguage("es")).cards.find(
+      (card) => card.lemma === "mirar",
+    );
+    expect(saved?.schedule).toEqual(scheduled);
+  });
+
   test("two cards collapsing to one lemma leave a single card", async () => {
     const { control, store, stored } = await openWithImport();
     const sentenceId = firstSentenceId(stored.book);

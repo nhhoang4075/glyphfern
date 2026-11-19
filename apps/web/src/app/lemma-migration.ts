@@ -53,7 +53,7 @@ export function migrateProgress(
     deletedCards.push(card.lemma);
     if (!occupied.has(target)) {
       occupied.add(target);
-      const moved: Card = { lemma: target, sentenceId: card.sentenceId };
+      const moved: Card = { ...card, lemma: target };
       cards.push(moved);
       savedCards.push(moved);
     }
