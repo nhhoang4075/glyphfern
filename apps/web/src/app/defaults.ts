@@ -26,5 +26,6 @@ export function defaultPreferences(prefersReducedMotion: boolean): Preferences {
     hl: 1,
     lang: "es",
     bookId: null,
+    positions: {},
   };
 }

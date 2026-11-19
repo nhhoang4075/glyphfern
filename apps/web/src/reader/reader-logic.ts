@@ -173,3 +173,16 @@ export function noteSegments(markup: string): NoteSegment[] {
 export function hasLearningWord(states: Readonly<Record<string, WordState>>): boolean {
   return Object.values(states).some((state) => state.kind === "learning");
 }
+
+export function openingSentenceId(
+  positions: Readonly<Record<string, number>>,
+  bookId: string,
+  knownSentences: ReadonlyMap<number, unknown>,
+  firstTitleId: number | undefined,
+): number | undefined {
+  const remembered = positions[bookId];
+  if (remembered !== undefined && knownSentences.has(remembered)) {
+    return remembered;
+  }
+  return firstTitleId;
+}

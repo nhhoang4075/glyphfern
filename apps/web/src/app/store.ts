@@ -83,7 +83,8 @@ export class AppStore {
     const packs = options.packs ?? defaultPacks;
     const defaults = defaultPreferences(options.prefersReducedMotion ?? readPrefersReducedMotion());
     const stored = await repository.loadPreferences();
-    const preferences: Preferences = { ...defaults, ...stored };
+    const merged: Preferences = { ...defaults, ...stored };
+    const preferences: Preferences = { ...merged, positions: { ...merged.positions } };
     const lang: Lang = packs[preferences.lang] ? preferences.lang : defaults.lang;
     const base = packs[lang];
     const snapshot = await ensureLanguage(repository, base);
@@ -183,7 +184,7 @@ export class AppStore {
     setPreference: <K extends PreferenceKey>(key: K, value: Preferences[K]) => {
       const preferences: Preferences = { ...this.current.preferences, [key]: value };
       this.patch({ preferences });
-      this.persist(this.repository.savePreferences(preferences));
+      this.persistPreferences(preferences);
     },
 
     switchLanguage: (lang) => this.activate(lang, null),
@@ -253,11 +254,21 @@ export class AppStore {
       const preferences: Preferences = wasActive
         ? { ...this.current.preferences, bookId: null }
         : this.current.preferences;
+      delete preferences.positions[bookId];
       this.patch({ userBooks, books: view.books, pack: view.pack, bookmarks, pins, preferences });
       this.persist(this.repository.deleteBook(bookId));
       this.persist(this.repository.saveBookmarks(this.current.lang, bookmarks));
       this.persist(this.repository.savePins(pins));
-      this.persist(this.repository.savePreferences(preferences));
+      this.persistPreferences(preferences);
+    },
+
+    rememberPosition: (bookId, sentenceId) => {
+      const { positions } = this.current.preferences;
+      if (positions[bookId] === sentenceId) {
+        return;
+      }
+      positions[bookId] = sentenceId;
+      this.persistPreferences(this.current.preferences);
     },
 
     ratingApplied: (lemma, rating: Rating) => {
@@ -320,7 +331,13 @@ export class AppStore {
     } else {
       this.patch({ pack: view.pack, books: view.books, preferences });
     }
-    this.persist(this.repository.savePreferences(preferences));
+    this.persistPreferences(preferences);
+  }
+
+  private persistPreferences(preferences: Preferences) {
+    this.persist(
+      this.repository.savePreferences({ ...preferences, positions: { ...preferences.positions } }),
+    );
   }
 
   private stateOf(lemma: string): WordState {

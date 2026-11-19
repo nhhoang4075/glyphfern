@@ -12,6 +12,7 @@ import {
   highlightClass,
   isRevealOpen,
   noteSegments,
+  openingSentenceId,
   popoverPlacement,
   searchHits,
   sentenceText,
@@ -191,5 +192,28 @@ describe("noteSegments", () => {
 
   test("plain text is a single segment", () => {
     expect(noteSegments("hola")).toEqual([{ text: "hola", bold: false, italic: false }]);
+  });
+});
+
+describe("opening sentence", () => {
+  const known = new Map([
+    [10, true],
+    [11, true],
+  ]);
+
+  test("a remembered sentence that exists in the book wins", () => {
+    expect(openingSentenceId({ b: 11 }, "b", known, 10)).toBe(11);
+  });
+
+  test("a remembered sentence missing from the book falls back to the first title", () => {
+    expect(openingSentenceId({ b: 99 }, "b", known, 10)).toBe(10);
+  });
+
+  test("a book without a remembered sentence opens on the first title", () => {
+    expect(openingSentenceId({ other: 11 }, "b", known, 10)).toBe(10);
+  });
+
+  test("an empty book has no opening sentence", () => {
+    expect(openingSentenceId({}, "b", new Map(), undefined)).toBeUndefined();
   });
 });
