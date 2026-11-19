@@ -40,6 +40,7 @@ async function insertBatch(sql: SQL, lang: string, rows: LexiconRow[]): Promise<
     ipa: row.ipa,
     glosses: JSON.stringify(row.glosses),
     lemma: row.lemma,
+    facts: row.facts === null ? null : JSON.stringify(row.facts),
   }));
   await sql`INSERT INTO lex_entry ${sql(records)}`;
 }

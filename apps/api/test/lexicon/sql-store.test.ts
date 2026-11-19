@@ -43,10 +43,17 @@ describe("lexicon in Postgres", () => {
       return;
     }
     const count = await loadKaikki(sql, "es", streamOf(KAIKKI_LINES));
-    expect(count).toBe(5);
+    expect(count).toBe(9);
     const result = await lookupWord(createSqlStore(sql), "es", "miraba");
     expect(result?.lemma).toBe("mirar");
     expect(result?.entries[0]?.glosses).toEqual(["to look at", "to watch"]);
+    const noun = await lookupWord(createSqlStore(sql), "es", "zorro");
+    expect(noun?.entries[0]?.facts?.plural).toEqual(["zorros"]);
+    expect(noun?.entries[0]?.facts?.senseLabels[1]).toEqual([
+      "figuratively",
+      "colloquial",
+      "Mexico",
+    ]);
   });
 
   test("loading again replaces the previous entries of that language", async () => {
@@ -55,6 +62,6 @@ describe("lexicon in Postgres", () => {
     }
     await loadKaikki(sql, "es", streamOf(KAIKKI_LINES));
     const rows = await sql`SELECT count(*)::int AS n FROM lex_entry WHERE lang = 'es'`;
-    expect(rows[0]?.n).toBe(5);
+    expect(rows[0]?.n).toBe(9);
   });
 });

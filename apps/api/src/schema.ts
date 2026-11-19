@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS lex_entry (
   glosses TEXT NOT NULL,
   lemma TEXT
 );
+ALTER TABLE lex_entry ADD COLUMN IF NOT EXISTS facts TEXT;
 CREATE INDEX IF NOT EXISTS lex_entry_lookup ON lex_entry (lang, lower(word));
 CREATE TABLE IF NOT EXISTS translation (
   source_lang TEXT NOT NULL,

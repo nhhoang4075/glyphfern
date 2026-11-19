@@ -1,4 +1,5 @@
 import type { DictEntry } from "@glyphfern/core";
+import { type EntryFacts, buildNote } from "./entry-note";
 import { posLabel } from "./pos-label";
 
 export interface LookupEntry {
@@ -6,6 +7,7 @@ export interface LookupEntry {
   pos: string;
   ipa: string | null;
   glosses: string[];
+  facts?: EntryFacts | null;
 }
 
 export interface LookupResult {
@@ -29,10 +31,13 @@ export function toDictEntry(result: LookupResult): DictEntry | undefined {
   if (!entry) {
     return undefined;
   }
+  const shown = entry.glosses.slice(0, MAX_GLOSSES_SHOWN);
+  const note = buildNote(entry.facts, shown);
   return {
     pos: posLabel(entry.pos),
     pronunciation: entry.ipa ?? "",
-    meaning: entry.glosses.slice(0, MAX_GLOSSES_SHOWN).join("; "),
+    meaning: shown.join("; "),
+    ...(note ? { note } : {}),
   };
 }
 

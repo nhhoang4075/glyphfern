@@ -78,3 +78,10 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Date: 2026-11-19. Decided by: owner ("add books in the standard format").
 - EPUB (DRM-free) is imported on the device: chapters from the spine, sentences and words from `Intl.Segmenter`. Imported books live in IndexedDB; word states are shared per language, bookmarks and cards stay unique through sentence id ranges (`seq * 1_000_000`).
 - Known limits of the first version: the lemma is the lowercase surface (no lemmatizer), imported words have no meaning, pronunciation or translation until the AI lookup exists, Spanish only.
+
+## D-017 Word notes for looked-up words come from Wiktionary facts
+- Date: 2026-11-19. Decided by: owner (picked three kinds of fact out of what Wiktionary offers).
+- The note under the bulb for a word without a static dictionary entry is built from Wiktionary: gender, plural and feminine form; usage and region labels per sense; for verbs, irregularity, stem or spelling change and the key forms that break the regular pattern.
+- Not used: etymology, examples, synonyms, derived terms. Static dictionary entries keep their hand-written notes.
+- Reason: these facts are accurate, cheap and need no machine translation; labels are worded in Vietnamese by a fixed table.
+

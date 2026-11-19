@@ -1,9 +1,12 @@
+import type { EntryFacts } from "./parse-kaikki";
+
 export interface StoredEntry {
   word: string;
   pos: string;
   ipa: string | null;
   glosses: string[];
   lemma: string | null;
+  facts: EntryFacts | null;
 }
 
 export interface LexiconStore {
@@ -15,6 +18,7 @@ export interface LookupEntry {
   pos: string;
   ipa: string | null;
   glosses: string[];
+  facts: EntryFacts | null;
 }
 
 export interface LookupResult {
@@ -27,7 +31,13 @@ const MAX_LEMMAS = 3;
 const MAX_ENTRIES = 6;
 
 function toEntry(row: StoredEntry): LookupEntry {
-  return { lemma: row.word.toLowerCase(), pos: row.pos, ipa: row.ipa, glosses: row.glosses };
+  return {
+    lemma: row.word.toLowerCase(),
+    pos: row.pos,
+    ipa: row.ipa,
+    glosses: row.glosses,
+    facts: row.facts,
+  };
 }
 
 export async function lookupWord(

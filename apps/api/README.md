@@ -5,7 +5,7 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 ## Endpoints
 
 - `GET /health`.
-- `GET /lookup?lang=es&word=...`: entries (lemma, part of speech, IPA, English glosses). Proper nouns are listed last.
+- `GET /lookup?lang=es&word=...`: entries (lemma, part of speech, IPA, English glosses, `facts`). Proper nouns are listed last.
 - `POST /lemmas` `{ lang, words }`: map of inflected form to lemma. Words that have their own dictionary entry are not remapped. Body at most 512 KB, 5000 words.
 - `POST /translate` `{ from, to, texts }`: pairs `es:vi`, `es:en`, `en:vi`; at most 20 texts of 500 characters. Answers 503 when no translator is configured, 429 when the daily character budget is used up, 502 when the provider fails.
 
@@ -31,9 +31,17 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 
 Secrets live in `apps/api/.env` or the host's variables, never in the repository.
 
+## Entry facts
+
+Each lemma entry carries `facts` (null when nothing applies), taken from the Wiktionary entry and kept in Wiktionary's own tag names; the web app words them in Vietnamese.
+
+- `gender`, `number`, `plural`, `feminine`: for nouns, adjectives, determiners, pronouns and numerals. `number` tags (`plural-only`, `uncountable`, `invariable`) count only when every chosen sense has them.
+- `senseLabels`: for each gloss, its usage and region tags (`colloquial`, `slang`, `Mexico`, ...). Index `i` belongs to `glosses[i]`.
+- `alternations`, `irregular`, `unusualForms`: for verbs. `unusualForms` are the forms among yo present, yo preterite, third-person preterite, past participle and gerund that differ from the regular pattern of the infinitive; verbs whose infinitive does not end in `-ar`, `-er` or `-ir` get none.
+
 ## Loading the dictionary
 
-`bun run migrate` creates the tables. `bun run load-lexicon <kaikki.jsonl> es` replaces all entries of that language from a kaikki.org Wiktionary extract (about 1.1 GB for Spanish, loads in seconds).
+`bun run migrate` creates the tables and adds missing columns. `bun run load-lexicon <kaikki.jsonl> es` replaces all entries of that language from a kaikki.org Wiktionary extract (about 1.1 GB for Spanish, loads in seconds).
 
 ## Testing
 

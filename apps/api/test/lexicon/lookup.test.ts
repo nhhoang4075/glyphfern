@@ -20,7 +20,13 @@ describe("looking up a word", () => {
     const result = await lookupWord(memoryStore(), "es", "miraba");
     expect(result?.lemma).toBe("mirar");
     expect(result?.entries).toEqual([
-      { lemma: "mirar", pos: "verb", ipa: "/miˈɾaɾ/", glosses: ["to look at", "to watch"] },
+      {
+        lemma: "mirar",
+        pos: "verb",
+        ipa: "/miˈɾaɾ/",
+        glosses: ["to look at", "to watch"],
+        facts: null,
+      },
     ]);
   });
 
@@ -47,7 +53,14 @@ describe("looking up a word", () => {
     const store: LexiconStore = {
       async findByWord() {
         return [
-          { word: "como", pos: "name", ipa: null, glosses: ["Como (a city)"], lemma: null },
+          {
+            word: "como",
+            pos: "name",
+            ipa: null,
+            glosses: ["Como (a city)"],
+            lemma: null,
+            facts: null,
+          },
           { word: "como", pos: "adv", ipa: null, glosses: ["as"], lemma: null },
         ];
       },
