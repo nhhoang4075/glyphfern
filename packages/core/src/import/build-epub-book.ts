@@ -1,4 +1,6 @@
 import type { Book, Chapter, Lang, Sentence } from "../types";
+import { type HeadingChapter, splitByNumeralHeadings } from "./chapter-headings";
+import { cutGutenbergBoilerplate, dropContentsRuns } from "./clean-gutenberg";
 import { findRootfilePath, parseOpf, resolveHref } from "./epub-package";
 import { type TextBlock, extractBlocks } from "./html-blocks";
 import { splitSentences, tokenizeSentence } from "./split-text";
@@ -37,6 +39,17 @@ function characterCount(blocks: readonly TextBlock[]): number {
   return blocks.reduce((sum, block) => sum + block.text.length, 0);
 }
 
+function documentChapters(parsed: readonly TextBlock[][]): HeadingChapter[] {
+  const substantial = parsed.filter((blocks) => characterCount(blocks) >= MIN_CHAPTER_CHARACTERS);
+  const documents = substantial.length > 0 ? substantial : parsed.filter((blocks) => blocks.length);
+  return documents.map((blocks) => {
+    const first = blocks[0];
+    return first?.kind === "heading"
+      ? { titleText: first.text, body: blocks.slice(1) }
+      : { titleText: undefined, body: blocks };
+  });
+}
+
 export function buildEpubBook(
   files: Readonly<Record<string, string>>,
   options: EpubImportOptions,
@@ -55,9 +68,8 @@ export function buildEpubBook(
     const item = opf.items.get(idref);
     return item && CONTENT_TYPES.has(item.mediaType) ? [resolveHref(opfPath, item.href)] : [];
   });
-  const parsed = chapterBlocks(files, paths);
-  const substantial = parsed.filter((blocks) => characterCount(blocks) >= MIN_CHAPTER_CHARACTERS);
-  const documents = substantial.length > 0 ? substantial : parsed.filter((blocks) => blocks.length);
+  const parsed = cutGutenbergBoilerplate(chapterBlocks(files, paths)).map(dropContentsRuns);
+  const groups = splitByNumeralHeadings(parsed.flat()) ?? documentChapters(parsed);
 
   let nextId = options.firstSentenceId;
   const makeSentence = (text: string, chapter: number, kind: Sentence["kind"]): Sentence => {
@@ -72,13 +84,10 @@ export function buildEpubBook(
   };
 
   const chapters: Chapter[] = [];
-  for (const blocks of documents) {
+  for (const group of groups) {
     const chapterIndex = chapters.length;
-    const first = blocks[0];
-    const hasHeading = first?.kind === "heading";
-    const titleText = hasHeading && first ? first.text : options.fallbackTitle(chapterIndex + 1);
-    const bodyBlocks = hasHeading ? blocks.slice(1) : blocks;
-    const paragraphTexts = bodyBlocks
+    const titleText = group.titleText ?? options.fallbackTitle(chapterIndex + 1);
+    const paragraphTexts = group.body
       .map((block) => splitSentences(block.text, options.locale))
       .filter((texts) => texts.length > 0);
     if (paragraphTexts.length === 0) {

@@ -79,10 +79,13 @@ export function extractBlocks(html: string): TextBlock[] {
   };
   for (const match of cleaned.matchAll(BLOCK_PATTERN)) {
     const index = match.index ?? 0;
-    flush(index);
-    cursor = index + match[0].length;
     const closing = match[1] === "/";
     const tag = match[2] ?? "";
+    if (tag.toLowerCase() === "br" && kind === "heading") {
+      continue;
+    }
+    flush(index);
+    cursor = index + match[0].length;
     kind = !closing && HEADING_PATTERN.test(tag) ? "heading" : "paragraph";
   }
   flush(cleaned.length);

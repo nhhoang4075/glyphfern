@@ -8,9 +8,10 @@ Purpose: turn the files of an unpacked EPUB into a `Book`. Pure functions over s
 2. `parseOpf` reads title, language, manifest items and spine order.
 3. Spine documents with an HTML media type are resolved against the package folder (`resolveHref`).
 4. `extractBlocks` turns each document into heading and paragraph blocks (inline tags dropped, entities decoded).
-5. Documents with fewer than 300 characters (cover, title page) are skipped. When every document is that short, none are skipped.
-6. The first block of a document becomes the chapter title when it is a heading; otherwise `fallbackTitle(n)` is used.
-7. `splitSentences` (`Intl.Segmenter`) and `tokenizeSentence` produce sentences and tokens.
+5. `cutGutenbergBoilerplate` drops every block up to and including a `*** START OF THE PROJECT GUTENBERG` marker and from a `*** END OF THE PROJECT GUTENBERG` marker onward. A missing marker leaves that side untouched. `dropContentsRuns` removes runs of three or more Roman-numeral-only blocks (`-I-,`, `-II-,`), which is a table of contents.
+6. `splitByNumeralHeadings` joins the cleaned blocks of all documents and starts a chapter at each Roman-numeral heading: a heading block such as `-I-` or `II. Title` (subtitle may come from the same heading across a `<br>`), or a paragraph that is only a dash-wrapped numeral. The chapter title is `I` or `I · Subtitle`. It applies only when at least two such headings exist. Text before the first heading is dropped unless it holds 300 or more characters, in which case it becomes a chapter with the fallback title.
+7. Otherwise each spine document is a chapter: documents with fewer than 300 characters (cover, title page) are skipped, unless all are that short. The first block becomes the chapter title when it is a heading; otherwise `fallbackTitle(n)` is used.
+8. `splitSentences` (`Intl.Segmenter`) and `tokenizeSentence` produce sentences and tokens.
 
 ## Contracts
 
@@ -24,4 +25,4 @@ Purpose: turn the files of an unpacked EPUB into a `Book`. Pure functions over s
 
 ## Testing
 
-`packages/core/test/import/build-epub-book.test.ts` builds a small EPUB from strings.
+`packages/core/test/import/build-epub-book.test.ts` builds a small EPUB from strings. `gutenberg-cleanup.test.ts` covers boilerplate, contents and heading splitting with synthetic fixtures, plus a check on the real Marianela EPUB when `MARIANELA_DIR` points at its unzipped folder (skipped otherwise).

@@ -129,3 +129,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - `Lang` is `"es"` only. The Korean pack, its styles and the language switch are removed; Korean returns together with its analyzer and an import path.
 - With no book the reading screen shows an empty state that points to the library; the Words screen shows empty coverage.
 - Reason: sample content is demo data, and a second language has no content once its sample book is gone.
+
+## D-024 Gutenberg cleanup and numeral chapters on EPUB import
+- Date: 2026-11-19. Decided by: owner (reported English licence text, a contents page and wrong chapter titles in an imported Gutenberg book).
+- Original choice: every spine document became a chapter and every block of text became reading content.
+- Now: text before the `*** START OF THE PROJECT GUTENBERG` marker and from the `*** END OF` marker onward is dropped; runs of three or more Roman-numeral-only blocks (a contents list) are dropped; when a book has at least two Roman-numeral headings, chapters start at those headings (titled `I` or `I · Subtitle`) regardless of spine files. Without markers or numeral headings the previous behaviour applies. The book title and author come from the EPUB metadata.
+- Reason: the licence and contents are not the story, and its words must not be looked up as Spanish.
