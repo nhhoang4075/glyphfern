@@ -11,7 +11,8 @@ The Reading screen (`ReaderView`). It is mounted for the whole session and hidde
 3. Page state (`page`, `pages`, chapter start pages) is mirrored into React from the paginator by `sync`. The track, buttons and bookmark state read that mirror.
 4. Turning: `slide` and `still` call `go`; `curl` delegates to `createPageCurl`. The curl engine gets its textures from `collectSegments` and `drawPage`, and the DOM fold fallback copies the flow into the hidden under layer.
 5. A tap on a word sets the panel state. The panel reads the sentence and token from the pack, and every state change goes through `useApp().actions`.
-6. A focus request from the Words screen is consumed once: the paginator is anchored to the sentence and the word is opened.
+6. Reading position: the reader remembers the sentence returned by `sentenceOnCurrentPage` (the first sentence whose `endPage` is at or after the page) through `rememberPosition`, only after a user driven page change (turn, seek, chapter or bookmark jump, keyboard focus on a word, curl turn). Layout, re-anchoring after a resize and font loading never save. When the book changes (app start, `openBook`, language switch) the layout effect anchors on the remembered sentence if the book contains it (`openingSentenceId`), otherwise on the first chapter title. This path never opens the word panel and highlights nothing.
+7. A focus request from the Words screen is consumed once: the paginator is anchored to the sentence and the word is opened.
 
 ## Contracts
 

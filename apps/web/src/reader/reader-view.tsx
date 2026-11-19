@@ -34,6 +34,7 @@ import {
   escapeAction,
   groupMembers,
   highlightClass,
+  openingSentenceId,
   popoverPlacement,
   sentenceText,
   toggleReveal,
@@ -87,6 +88,7 @@ export function ReaderView() {
   const { state, actions } = useApp();
   const { pack, preferences, route } = state;
   const visible = route === "read";
+  const activeBookId = preferences.bookId ?? pack.book.id;
   const index = useMemo(() => indexBook(pack.book), [pack.book]);
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -132,6 +134,8 @@ export function ReaderView() {
 
   const live = useRef({
     pack,
+    bookId: activeBookId,
+    positions: preferences.positions,
     bookmarks: state.bookmarks,
     spans,
     panelOpen: panel.open,
@@ -143,6 +147,8 @@ export function ReaderView() {
   });
   live.current = {
     pack,
+    bookId: activeBookId,
+    positions: preferences.positions,
     bookmarks: state.bookmarks,
     spans,
     panelOpen: panel.open,
@@ -186,14 +192,20 @@ export function ReaderView() {
     setPanel((previous) => (previous.open ? { ...previous, open: false } : previous));
   }, []);
 
+  const rememberCurrentPage = useCallback(() => {
+    const id = parseSentenceKey(paginatorRef.current?.sentenceOnCurrentPage() ?? undefined);
+    if (id !== null) actions.rememberPosition(live.current.bookId, id);
+  }, [actions]);
+
   const goTo = useCallback(
     (page: number) => {
       const current = paginatorRef.current;
       if (!current) return;
       current.go(page);
       sync();
+      rememberCurrentPage();
     },
-    [sync],
+    [sync, rememberCurrentPage],
   );
 
   const goToSentence = useCallback(
@@ -262,11 +274,17 @@ export function ReaderView() {
     return () => document.fonts?.removeEventListener("loadingdone", refresh);
   }, [relayout]);
 
+  const { book } = pack;
   useLayoutEffect(() => {
-    const first = pack.book.chapters[0]?.title.id;
+    const opening = openingSentenceId(
+      live.current.positions,
+      live.current.bookId,
+      indexBook(book).byId,
+      book.chapters[0]?.title.id,
+    );
     setPanel({ open: false, word: null });
-    relayout(first === undefined ? undefined : sentenceKey(first));
-  }, [pack, relayout]);
+    relayout(opening === undefined ? undefined : sentenceKey(opening));
+  }, [book, relayout]);
 
   const layoutKey = `${preferences.size}|${preferences.lh}|${preferences.font}`;
   const appliedLayoutKey = useRef(layoutKey);
@@ -398,6 +416,7 @@ export function ReaderView() {
           setPanel((previous) => (previous.open ? { ...previous, open: false } : previous));
           sync();
         });
+        rememberCurrentPage();
       },
       canTurn: (direction) => {
         const current = paginatorRef.current;
@@ -433,7 +452,7 @@ export function ReaderView() {
       curl.destroy();
       curlRef.current = null;
     };
-  }, [sync]);
+  }, [sync, rememberCurrentPage]);
 
   useEffect(() => {
     const curl = curlRef.current;

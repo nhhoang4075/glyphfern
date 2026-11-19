@@ -21,9 +21,10 @@ export interface Preferences {
   hl: 0 | 1;
   lang: Lang;
   bookId: string | null;
+  positions: Record<string, number>;
 }
 
-export type PreferenceKey = Exclude<keyof Preferences, "lang" | "bookId">;
+export type PreferenceKey = Exclude<keyof Preferences, "lang" | "bookId" | "positions">;
 
 export interface Card {
   lemma: string;
@@ -75,6 +76,7 @@ export interface AppActions {
   importEpub(files: Readonly<Record<string, string>>): Promise<StoredBook>;
   openBook(bookId: string): Promise<void>;
   deleteBook(bookId: string): void;
+  rememberPosition(bookId: string, sentenceId: number): void;
   ratingApplied(lemma: string, rating: Rating): WordState;
   rateCard(queue: readonly string[], rating: Rating): string[];
   requestFocus(request: FocusRequest): void;

@@ -18,7 +18,7 @@ State (`AppState`), always describing the active language:
 - `bookmarks`: sentence ids of the active language.
 - `books`: every book of the active language (the sample book first, then imported ones); `userBooks`: all imported books as stored.
 - `pins`: book ids in pin order (all languages and placeholder books).
-- `preferences`: `size, lh, font, paper, turn, hl, lang, bookId`.
+- `preferences`: `size, lh, font, paper, turn, hl, lang, bookId, positions`. `positions` maps a book id (`pack.book.id` for the sample book, `StoredBook.id` for an imported one) to the sentence id the reader was on.
 - `focusRequest`: pending `{ lemma, sentenceId }` set by the Words screen.
 - `persistence`: `indexeddb` or `memory` (session-only fallback).
 
@@ -28,11 +28,12 @@ Actions (`AppActions`, stable identities):
 - `addCard(lemma, sentenceId)`: ignored when the lemma already has a card. Applies `onCardAdded`. Returns `{ state, pulse, added }`.
 - `removeCard(lemma)`: applies `onCardRemoved` (state unchanged).
 - `toggleBookmark(sentenceId)`, `togglePin(bookId)`.
-- `setPreference(key, value)` for every preference except `lang`.
+- `setPreference(key, value)` for every preference except `lang`, `bookId` and `positions`.
 - `switchLanguage(lang)`: async, see below; it also returns to the sample book of that language.
 - `importEpub(files)`: builds a `Book` from an unpacked EPUB (`@glyphfern/core` import), asks the lemmatizer for the lemma of every word, stores the book and returns it. Sentence ids start at `seq * 1_000_000` so bookmarks and cards stay unique across books. The stored book has `lemmatized: true` only when the lemmatizer answered with a map; when it returns `null` (API unreachable, any chunk failed) or none is configured, the book is imported with lowercase surface forms as lemmas and `lemmatized: false`.
 - `openBook(bookId)`: makes a sample or imported book the active one (`state.pack.book`) and remembers it in `preferences.bookId`.
-- `deleteBook(bookId)`: removes an imported book with its cards, bookmarks and pin; word states stay.
+- `deleteBook(bookId)`: removes an imported book with its cards, bookmarks, pin and reading position; word states stay.
+- `rememberPosition(bookId, sentenceId)`: stores the reading position of a book. It never publishes a new state, so a page turn does not re-render the app; see Reading positions.
 - `ratingApplied(lemma, rating)`: applies `onRated` to one lemma and returns the new state.
 - `rateCard(queue, rating)`: applies `rateReviewCard` to the head of the queue, commits the state change and returns the new queue.
 - `requestFocus(request)` and `consumeFocus()`: the Words screen requests, the Reading screen consumes once. `consumeFocus` returns the request and clears it.
@@ -50,6 +51,10 @@ Flow, one book at a time for every user book whose `lemmatized` is not `true` (a
    - a card whose `sentenceId` lies in this book and whose lemma changed moves to the new lemma with the same `sentenceId`; if a card for the new lemma already exists (including one moved earlier in the same run) the old card is deleted instead; cards of other books are never touched;
    - a word state of the old lemma is copied to the new lemma when the new lemma has none; the old entry stays because other books may still use it.
 4. The changes are written through the repository. When the book's language is the active one they also patch `wordStates` and `cards` in the state; otherwise the snapshot in `loaded` (or the repository, through `ensureLanguage`) is updated so a later language switch shows the migrated progress.
+
+## Reading positions
+
+A position is a sentence id, never a page. `preferences.positions` is one object shared by every `Preferences` value the store creates. `rememberPosition` writes into that object in place and saves the preferences, so `setPreference`, `openBook`, `switchLanguage` and `deleteBook` always save the latest positions. Saves go through one private helper that hands the repository a copy of the map. Remembering the position that is already stored writes nothing. Preferences stored before `positions` existed load with an empty map through the defaults merge in `AppStore.open`.
 
 ## Document effects
 
