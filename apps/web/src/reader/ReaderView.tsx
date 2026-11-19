@@ -22,7 +22,7 @@ import {
 } from "react";
 import { indexBook } from "../app/bookIndex";
 import { useApp } from "../app/useApp";
-import { Icon } from "../icons/Icon";
+import { Button, IconButton } from "../ui";
 import { Drawer, type DrawerTab } from "./Drawer";
 import { Flow } from "./Flow";
 import { TopBar } from "./TopBar";
@@ -637,8 +637,7 @@ export function ReaderView() {
           if (fullscreen) showBar();
         }}
       />
-      <button
-        type="button"
+      <Button
         className="topzone"
         aria-label="Thanh công cụ"
         tabIndex={-1}
@@ -697,24 +696,22 @@ export function ReaderView() {
           </div>
           <div className="corner r" ref={cornerRightRef} />
           <div className="corner l" ref={cornerLeftRef} />
-          <button
-            type="button"
-            className="hit l"
-            aria-label="Trang trước"
+          <IconButton
+            variant="hit"
+            className="l"
+            icon="left"
+            label="Trang trước"
             disabled={view.page === 0}
             onClick={() => turn(-1)}
-          >
-            <Icon name="left" />
-          </button>
-          <button
-            type="button"
-            className="hit r"
-            aria-label="Trang sau"
+          />
+          <IconButton
+            variant="hit"
+            className="r"
+            icon="right"
+            label="Trang sau"
             disabled={view.page >= view.pages - 1}
             onClick={() => turn(1)}
-          >
-            <Icon name="right" />
-          </button>
+          />
         </div>
       </div>
       <TypePopover open={popOpen} placement={placement} />

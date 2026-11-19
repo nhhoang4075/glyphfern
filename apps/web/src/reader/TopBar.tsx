@@ -1,6 +1,7 @@
 import { progressRatio } from "@glyphfern/ui";
 import { type Ref, useLayoutEffect, useRef, useState } from "react";
-import { Fern, Icon } from "../icons/Icon";
+import { Fern } from "../icons/Icon";
+import { IconButton } from "../ui";
 import { type TrackTick, seekPage, trackTicks } from "./track";
 
 interface TopBarProps {
@@ -44,9 +45,7 @@ export function TopBar(props: TopBarProps) {
 
   return (
     <div className={props.shown ? "bar show" : "bar"} onPointerMove={props.onPointerMove}>
-      <button type="button" className="ib" aria-label="Mục lục" onClick={props.onContents}>
-        <Icon name="toc" />
-      </button>
+      <IconButton icon="toc" label="Mục lục" onClick={props.onContents} />
       <div
         className="track"
         ref={track}
@@ -74,33 +73,26 @@ export function TopBar(props: TopBarProps) {
           <Fern />
         </span>
       </div>
-      <button
-        type="button"
-        className={props.bookmarked ? "ib on" : "ib"}
-        aria-label="Đánh dấu trang"
+      <IconButton
+        icon="bookmark"
+        label="Đánh dấu trang"
+        active={props.bookmarked}
+        iconClassName={props.bookmarked ? "fill" : undefined}
         aria-pressed={props.bookmarked}
         onClick={props.onBookmark}
-      >
-        {props.bookmarked ? <Icon name="bookmark" className="fill" /> : <Icon name="bookmark" />}
-      </button>
-      <button
-        type="button"
-        className="ib"
-        aria-label="Chữ và giấy"
+      />
+      <IconButton
+        icon="aa"
+        label="Chữ và giấy"
         data-aa=""
         ref={props.aaRef}
         onClick={props.onType}
-      >
-        <Icon name="aa" />
-      </button>
-      <button
-        type="button"
-        className="ib"
-        aria-label={props.fullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
+      />
+      <IconButton
+        icon={props.fullscreen ? "shrink" : "expand"}
+        label={props.fullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
         onClick={props.onFullscreen}
-      >
-        <Icon name={props.fullscreen ? "shrink" : "expand"} />
-      </button>
+      />
     </div>
   );
 }

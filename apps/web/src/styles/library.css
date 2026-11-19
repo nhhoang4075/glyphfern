@@ -153,16 +153,6 @@ html[data-night] .pin.on {
   font-size: 13px;
 }
 
-.fl2 .flag {
-  padding: 2px 7px;
-  border-radius: 7px;
-  background: var(--wing-soft);
-  color: var(--wing);
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-}
-
 @media (max-width: 540px) {
   #v-library {
     padding-left: 18px;

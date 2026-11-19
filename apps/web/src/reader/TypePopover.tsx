@@ -4,6 +4,7 @@ import { MAX_SIZE, MIN_SIZE } from "../app/defaults";
 import { useApp } from "../app/useApp";
 import { Icon } from "../icons/Icon";
 import type { IconName } from "../icons/iconData";
+import { Popover, Segmented, Slider } from "../ui";
 
 interface TypePopoverProps {
   open: boolean;
@@ -44,85 +45,68 @@ export function TypePopover({ open, placement }: TypePopoverProps) {
   const style: CSSProperties = { right: placement.right, top: placement.top, left: "auto" };
 
   return (
-    <div className="pop" hidden={!open} aria-hidden={!open} style={style}>
+    <Popover open={open} style={style}>
       <div className="row">
         <span className="a1">A</span>
-        <input
-          type="range"
+        <Slider
           min={MIN_SIZE}
           max={MAX_SIZE}
-          step={1}
           value={preferences.size}
-          aria-label="Cỡ chữ"
-          onChange={(event) => actions.setPreference("size", Number(event.target.value))}
+          label="Cỡ chữ"
+          onChange={(size) => actions.setPreference("size", size)}
         />
         <span className="a2">A</span>
       </div>
-      <div className="row seg">
-        {LINE_HEIGHTS.map((item) => (
-          <button
-            type="button"
-            key={item.value}
-            aria-label={item.label}
-            aria-pressed={preferences.lh === item.value}
-            onClick={() => actions.setPreference("lh", item.value)}
-          >
-            <Icon name={item.icon} />
-          </button>
-        ))}
-      </div>
-      <div className="row seg">
-        {HIGHLIGHTS.map((item) => (
-          <button
-            type="button"
-            key={item.value}
-            aria-label={item.label}
-            aria-pressed={preferences.hl === item.value}
-            onClick={() => actions.setPreference("hl", item.value)}
-          >
-            <Icon name={item.icon} />
-          </button>
-        ))}
-      </div>
-      <div className="row seg">
-        {TURN_STYLES.map((item) => (
-          <button
-            type="button"
-            key={item.value}
-            aria-label={item.label}
-            aria-pressed={preferences.turn === item.value}
-            onClick={() => actions.setPreference("turn", item.value)}
-          >
-            <Icon name={item.icon} />
-          </button>
-        ))}
-      </div>
-      <div className="row seg">
-        {FONTS.map((item) => (
-          <button
-            type="button"
-            key={item.value}
-            aria-label={item.label}
-            aria-pressed={preferences.font === item.value}
-            onClick={() => actions.setPreference("font", item.value)}
-          >
-            <span className={item.value === "serif" ? "f1" : "f2"}>Ag</span>
-          </button>
-        ))}
-      </div>
-      <div className="row seg">
-        {PAPERS.map((item) => (
-          <button
-            type="button"
-            key={item.value}
-            aria-label={item.label}
-            aria-pressed={preferences.paper === item.value}
-            onClick={() => actions.setPreference("paper", item.value)}
-          >
-            <i className="sw" style={{ background: item.value }} />
-          </button>
-        ))}
-      </div>
-    </div>
+      <Segmented
+        className="row seg"
+        value={preferences.lh}
+        onChange={(value) => actions.setPreference("lh", value)}
+        options={LINE_HEIGHTS.map((item) => ({
+          value: item.value,
+          label: item.label,
+          content: <Icon name={item.icon} />,
+        }))}
+      />
+      <Segmented
+        className="row seg"
+        value={preferences.hl}
+        onChange={(value) => actions.setPreference("hl", value)}
+        options={HIGHLIGHTS.map((item) => ({
+          value: item.value,
+          label: item.label,
+          content: <Icon name={item.icon} />,
+        }))}
+      />
+      <Segmented
+        className="row seg"
+        value={preferences.turn}
+        onChange={(value) => actions.setPreference("turn", value)}
+        options={TURN_STYLES.map((item) => ({
+          value: item.value,
+          label: item.label,
+          content: <Icon name={item.icon} />,
+        }))}
+      />
+      <Segmented
+        className="row seg"
+        value={preferences.font}
+        onChange={(value) => actions.setPreference("font", value)}
+        options={FONTS.map((item) => ({
+          value: item.value,
+          label: item.label,
+          content: <span className={item.value === "serif" ? "f1" : "f2"}>Ag</span>,
+        }))}
+      />
+      <Segmented
+        className="row seg"
+        value={preferences.paper}
+        onChange={(value) => actions.setPreference("paper", value)}
+        options={PAPERS.map((item) => ({
+          value: item.value,
+          label: item.label,
+          content: <i className="sw" style={{ background: item.value }} />,
+        }))}
+      />
+    </Popover>
   );
 }

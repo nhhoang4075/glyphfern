@@ -17,30 +17,6 @@
   z-index: 6;
 }
 
-.ib {
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
-  display: grid;
-  place-items: center;
-  color: var(--ink-2);
-  flex: none;
-  transition: background 0.2s, color 0.2s, transform 0.2s;
-}
-
-.ib:hover {
-  background: var(--hover);
-  color: var(--ink);
-}
-
-.ib:active {
-  transform: scale(0.94);
-}
-
-.ib.on {
-  color: var(--lamp-deep);
-}
-
 .ic.fill {
   fill: currentColor;
 }
@@ -746,26 +722,6 @@ html[data-night] .ctx .sm:not(.on) {
   margin-bottom: 6px;
 }
 
-.scrim {
-  position: absolute;
-  inset: 0;
-  background: rgba(29, 42, 36, 0.28);
-  z-index: 9;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-  cursor: default;
-}
-
-.scrim.on {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-html[data-night] .scrim {
-  background: rgba(0, 0, 0, 0.5);
-}
-
 .drawer {
   position: absolute;
   left: 0;
@@ -953,29 +909,6 @@ html[data-night] .drawer {
   padding: 0 1px;
 }
 
-.pop {
-  position: absolute;
-  z-index: 12;
-  width: 290px;
-  background: var(--surface);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-float);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  transform-origin: top right;
-  transition: transform 0.25s var(--ease), opacity 0.2s;
-}
-
-.pop[hidden] {
-  display: flex;
-  visibility: hidden;
-  opacity: 0;
-  transform: scale(0.94);
-  pointer-events: none;
-}
-
 .row {
   display: flex;
   align-items: center;
@@ -992,37 +925,6 @@ html[data-night] .drawer {
   font-family: var(--serif);
   font-size: 26px;
   color: var(--ink);
-}
-
-.row input[type="range"] {
-  flex: 1;
-  accent-color: var(--wing);
-  height: 28px;
-}
-
-.seg {
-  display: flex;
-  gap: 6px;
-}
-
-.seg button {
-  flex: 1;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--paper-2);
-  color: var(--ink-2);
-  display: grid;
-  place-items: center;
-}
-
-html[data-night] .seg button:hover {
-  color: var(--ink);
-}
-
-.seg button[aria-pressed="true"] {
-  background: var(--wing-soft);
-  color: var(--wing);
-  box-shadow: inset 0 0 0 1.5px var(--wing);
 }
 
 .seg .f1 {
@@ -1104,15 +1006,6 @@ html[data-night] .seg button:hover {
 
   .sheet {
     inset: 34px 26px 52px 34px;
-  }
-
-  .pop {
-    width: min(290px, calc(100% - 16px));
-  }
-
-  .scrim {
-    position: fixed;
-    z-index: 44;
   }
 
   .drawer {

@@ -32,6 +32,7 @@
   --glass: rgba(255, 255, 255, 0.78);
   --glass-line: rgba(255, 255, 255, 0.95);
   --hover: rgba(255, 255, 255, 0.6);
+  --scrim: rgba(29, 42, 36, 0.28);
   --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
@@ -56,6 +57,7 @@ html[data-night] {
   --glass: rgba(255, 255, 255, 0.05);
   --glass-line: rgba(255, 255, 255, 0.08);
   --hover: rgba(255, 255, 255, 0.08);
+  --scrim: rgba(0, 0, 0, 0.5);
 }
 
 html[data-lang="ko"] {

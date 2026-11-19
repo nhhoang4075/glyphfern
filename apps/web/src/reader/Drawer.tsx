@@ -2,6 +2,7 @@ import type { Sentence } from "@glyphfern/core";
 import { useEffect, useRef, useState } from "react";
 import { Fern, Icon } from "../icons/Icon";
 import type { IconName } from "../icons/iconData";
+import { Button, IconButton, ListRow, Scrim, Segmented, Sheet } from "../ui";
 import { type ChapterRow, searchHits, sentenceText } from "./readerLogic";
 
 export type DrawerTab = "toc" | "bookmarks" | "search";
@@ -61,19 +62,14 @@ function Search({
         </div>
       ) : null}
       {hits.map((hit) => (
-        <button
-          type="button"
-          className="hitm"
-          key={hit.sentenceId}
-          onClick={() => onSentence(hit.sentenceId)}
-        >
+        <ListRow className="hitm" key={hit.sentenceId} onClick={() => onSentence(hit.sentenceId)}>
           {hit.parts.map((part, index) => (
             <span key={`${index}-${part.text}`}>
               {index > 0 ? " " : ""}
               {part.marked ? <mark>{part.text}</mark> : part.text}
             </span>
           ))}
-        </button>
+        </ListRow>
       ))}
     </>
   );
@@ -83,34 +79,24 @@ export function Drawer(props: DrawerProps) {
   const { open, tab, onTab, chapters, bookmarks, onChapter, onSentence, onRemoveBookmark } = props;
   return (
     <>
-      <button
-        type="button"
-        className={open ? "scrim on" : "scrim"}
-        aria-label="Đóng"
-        tabIndex={-1}
-        onClick={props.onClose}
-      />
-      <aside className={open ? "drawer on" : "drawer"} aria-hidden={!open}>
-        <div className="tabs" role="tablist">
-          {TABS.map((item) => (
-            <button
-              type="button"
-              role="tab"
-              key={item.tab}
-              className="tab"
-              aria-label={item.label}
-              aria-selected={tab === item.tab}
-              onClick={() => onTab(item.tab)}
-            >
-              <Icon name={item.icon} />
-            </button>
-          ))}
-        </div>
+      <Scrim open={open} label="Đóng" onClose={props.onClose} />
+      <Sheet variant="side" open={open}>
+        <Segmented
+          className="tabs"
+          semantics="tab"
+          optionClassName="tab"
+          value={tab}
+          onChange={onTab}
+          options={TABS.map((item) => ({
+            value: item.tab,
+            label: item.label,
+            content: <Icon name={item.icon} />,
+          }))}
+        />
         <div className="dbody">
           {tab === "toc"
             ? chapters.map(({ title, row }) => (
-                <button
-                  type="button"
+                <ListRow
                   key={row.index}
                   className={row.current ? "ch cur" : "ch"}
                   onClick={() => onChapter(row.startPage)}
@@ -122,7 +108,7 @@ export function Drawer(props: DrawerProps) {
                       <i style={{ width: `${row.fraction * 100}%` }} />
                     </span>
                   </span>
-                </button>
+                </ListRow>
               ))
             : null}
           {tab === "bookmarks" ? (
@@ -132,19 +118,16 @@ export function Drawer(props: DrawerProps) {
               </div>
             ) : (
               bookmarks.map((sentence) => (
-                <div className="bm" key={sentence.id}>
-                  <button type="button" className="go" onClick={() => onSentence(sentence.id)}>
+                <ListRow as="div" className="bm" key={sentence.id}>
+                  <Button className="go" onClick={() => onSentence(sentence.id)}>
                     {sentenceText(sentence)}
-                  </button>
-                  <button
-                    type="button"
-                    className="ib"
-                    aria-label="Bỏ đánh dấu"
+                  </Button>
+                  <IconButton
+                    icon="x"
+                    label="Bỏ đánh dấu"
                     onClick={() => onRemoveBookmark(sentence.id)}
-                  >
-                    <Icon name="x" />
-                  </button>
-                </div>
+                  />
+                </ListRow>
               ))
             )
           ) : null}
@@ -152,7 +135,7 @@ export function Drawer(props: DrawerProps) {
             <Search sentences={props.sentences} onSentence={onSentence} active={open} />
           ) : null}
         </div>
-      </aside>
+      </Sheet>
     </>
   );
 }
