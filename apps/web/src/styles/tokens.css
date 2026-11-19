@@ -25,7 +25,8 @@
   --r-lg: 24px;
   --r-page: 26px;
   --r-cover: 5px 12px 12px 5px;
-  --shadow-page: 0 0 0 1px var(--line), 0 26px 50px -30px rgba(24, 50, 38, 0.158);
+  --shadow-page: 0 0 0 1px rgba(255, 255, 255, 0.95), 0 30px 56px -30px rgba(24, 50, 38, 0.18), 0
+    8px 18px -12px rgba(24, 50, 38, 0.09);
   --shadow-float: 0 22px 44px -22px rgba(24, 50, 38, 0.203), 0 2px 6px rgba(24, 50, 38, 0.036);
   --shadow-tile: 0 14px 30px -22px rgba(24, 50, 38, 0.18);
   --shadow-active: 0 6px 16px -8px rgba(24, 50, 38, 0.18);

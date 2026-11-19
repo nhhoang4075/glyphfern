@@ -12,11 +12,7 @@ export function applyPreferencesToDocument(root: HTMLElement, preferences: Prefe
   }
   root.classList.toggle("calm", preferences.turn === "still");
   root.setAttribute("data-font", preferences.font);
-  if (preferences.size === DEFAULT_SIZE) {
-    root.style.removeProperty("--fs");
-  } else {
-    root.style.setProperty("--fs", `${preferences.size}px`);
-  }
+  root.style.setProperty("--fs", `${preferences.size}px`);
   root.style.setProperty("--lh", String(preferences.lh));
 }
 
