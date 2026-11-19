@@ -6,5 +6,6 @@ export * from "./search";
 export * from "./chapter-progress";
 export * from "./token-parse";
 export * from "./review-queue";
+export * from "./review-schedule";
 export * from "./import/build-epub-book";
 export * from "./import/apply-lemmas";
