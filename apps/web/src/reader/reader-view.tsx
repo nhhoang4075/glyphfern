@@ -678,14 +678,9 @@ function BookReader() {
         shown={barShown}
         page={view.page}
         pages={view.pages}
-        chapterStarts={view.starts}
         bookmarked={bookmarked}
         fullscreen={fullscreen}
         onContents={openDrawer}
-        onSeek={(page) => {
-          closePanel();
-          goTo(page);
-        }}
         onBookmark={toggleBookmark}
         onType={toggleType}
         onFullscreen={toggleFullscreen}

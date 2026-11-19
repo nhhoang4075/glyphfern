@@ -27,7 +27,7 @@
   max-width: 500px;
   height: 42px;
   margin: 0 auto;
-  cursor: pointer;
+  pointer-events: none;
   border-left: 24px solid transparent;
   border-right: 24px solid transparent;
 }
@@ -70,22 +70,6 @@
   border-radius: 3px;
   background: var(--wing);
   transition: width 0.45s var(--ease);
-}
-
-.track .tk {
-  position: absolute;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  margin: -4.5px 0 0 -4.5px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 2px solid rgba(46, 106, 78, 0.35);
-}
-
-.track .tk.done {
-  border-color: var(--wing);
-  background: var(--wing);
 }
 
 .track .mo {
