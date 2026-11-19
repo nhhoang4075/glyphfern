@@ -73,3 +73,8 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Date: 2026-11-19. Decided by: owner.
 - Original order: part of speech, pronunciation, lemma chip. Now: part of speech, lemma chip, pronunciation, morpheme chips.
 - Reason: the pronunciation belongs to the lemma, so it reads naturally right after it.
+
+## D-016 Users add their own books as EPUB files
+- Date: 2026-11-19. Decided by: owner ("add books in the standard format").
+- EPUB (DRM-free) is imported on the device: chapters from the spine, sentences and words from `Intl.Segmenter`. Imported books live in IndexedDB; word states are shared per language, bookmarks and cards stay unique through sentence id ranges (`seq * 1_000_000`).
+- Known limits of the first version: the lemma is the lowercase surface (no lemmatizer), imported words have no meaning, pronunciation or translation until the AI lookup exists, Spanish only.

@@ -16,8 +16,9 @@ State (`AppState`), always describing the active language:
 - `wordStates`: `lemma -> WordState`. A missing lemma is `new`; use `stateOf(lemma)`.
 - `cards`: `{ lemma, sentenceId }[]` in the order they were added.
 - `bookmarks`: sentence ids of the active language.
+- `books`: every book of the active language (the sample book first, then imported ones); `userBooks`: all imported books as stored.
 - `pins`: book ids in pin order (all languages and placeholder books).
-- `preferences`: `size, lh, font, paper, turn, hl, lang`.
+- `preferences`: `size, lh, font, paper, turn, hl, lang, bookId`.
 - `focusRequest`: pending `{ lemma, sentenceId }` set by the Words screen.
 - `persistence`: `indexeddb` or `memory` (session-only fallback).
 
@@ -28,7 +29,10 @@ Actions (`AppActions`, stable identities):
 - `removeCard(lemma)`: applies `onCardRemoved` (state unchanged).
 - `toggleBookmark(sentenceId)`, `togglePin(bookId)`.
 - `setPreference(key, value)` for every preference except `lang`.
-- `switchLanguage(lang)`: async, see below.
+- `switchLanguage(lang)`: async, see below; it also returns to the sample book of that language.
+- `importEpub(files)`: builds a `Book` from an unpacked EPUB (`@glyphfern/core` import), stores it and returns it. Sentence ids start at `seq * 1_000_000` so bookmarks and cards stay unique across books.
+- `openBook(bookId)`: makes a sample or imported book the active one (`state.pack.book`) and remembers it in `preferences.bookId`.
+- `deleteBook(bookId)`: removes an imported book with its cards, bookmarks and pin; word states stay.
 - `ratingApplied(lemma, rating)`: applies `onRated` to one lemma and returns the new state.
 - `rateCard(queue, rating)`: applies `rateReviewCard` to the head of the queue, commits the state change and returns the new queue.
 - `requestFocus(request)` and `consumeFocus()`: the Words screen requests, the Reading screen consumes once. `consumeFocus` returns the request and clears it.
