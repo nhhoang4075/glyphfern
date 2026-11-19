@@ -237,7 +237,7 @@ export function drawPage(
     ctx.fillStyle = box.color;
     ctx.fillRect(box.x, box.y, box.w, box.h);
   }
-  ctx.fillStyle = "rgba(109, 123, 115, 0.55)";
+  ctx.fillStyle = "rgba(109, 123, 115, 0.7)";
   for (const dot of segments.dots) {
     if (!visible(dot.x, dot.w)) continue;
     const centerY = dot.y + dot.h - dot.fontSize * 0.06 - 1;

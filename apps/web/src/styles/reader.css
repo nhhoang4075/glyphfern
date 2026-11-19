@@ -198,7 +198,7 @@ html[data-lang="ko"] .flow {
 }
 
 .w.nw {
-  background: radial-gradient(circle at 1px 50%, rgba(109, 123, 115, 0.55) 0.6px, transparent 0.8px)
+  background: radial-gradient(circle at 1px 50%, rgba(109, 123, 115, 0.7) 0.6px, transparent 0.8px)
     left bottom 0.06em / 4px 2px repeat-x;
 }
 
