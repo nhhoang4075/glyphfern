@@ -49,3 +49,8 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Date: 2026-11-19. Decided by: owner ("do it like the demo, the demo is good").
 - Shadow on the turned page: `0.12 * exp(-(t-a)/26)` when `a > pi*R`, `0.09 * exp(-(t-a)/24)` when `a <= pi*R`.
 - Reason: the first spec text listed only the first branch; the implemented shader the owner approved has both.
+
+## D-012 Cover radius, cover title font and coverage scope follow the prototype
+- Date: 2026-11-19. Decided by: owner ("do it like the demo").
+- Cover radius 20px; cover title in Lexend 600 at 1.05rem; coverage counts body sentences only.
+- Reason: the first spec text copied older prototype values.

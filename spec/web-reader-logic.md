@@ -48,7 +48,7 @@ Per lemma: `new` (no entry), `learning(level)` with level 1, 2 or 3 (3 is the ne
 
 ## 4. Coverage
 
-`coverage = known tokens / all tokens` over the open book, as a rounded percent. The same pass counts: distinct new lemmas, distinct learning lemmas, number of cards. It is recomputed from tokens on every visit to the Words screen (no server needed).
+`coverage = known tokens / all tokens` over the body sentences of the open book (chapter titles are excluded), as a rounded percent. The same pass counts: distinct new lemmas, distinct learning lemmas, number of cards. It is recomputed from tokens on every visit to the Words screen (no server needed).
 
 ## 5. Word panel flow
 

@@ -29,7 +29,7 @@ Reading sheet insets (inside the book): desktop 44/46/56/52px (top/right/bottom/
 ### 3.1 Library
 - Grid `repeat(auto-fill, minmax(150px, 1fr))`, gap 34px 26px, max width 880px. Two columns at width <= 540px.
 - First item: **add-book bar**, full grid width (`grid-column: 1 / -1`), 52px high, radius 14px, plus icon 22px. It MUST NOT be a book-sized tile.
-- Book card: cover 2:3, radius `5px 12px 12px 5px`, gradient from the book colour pair, a generated art motif, title in serif 1.28rem, progress bar 5px at the bottom edge (colour `--lamp`), a language flag chip under the cover.
+- Book card: cover 2:3, radius 20px, gradient from the book colour pair, a generated art motif, title in sans (Lexend) weight 600 at 1.05rem, progress bar 5px at the bottom edge (colour `--lamp`), a language flag chip under the cover.
 - **Pin**: a 32px round button at the top right of the cover. Shown on hover (desktop) and always (hover: none). Pinned: white fill, `--wing` icon, filled. Pinned books sort first, in pin order; the rest keep their order (D-009).
 - Tapping a book opens it in Reading and switches the active language to the book language (see logic spec section 9).
 
@@ -136,7 +136,7 @@ Turning a page closes any open word panel.
 | Mobile dock | `#FDFEFC` | night surface |
 
 - Fonts: Literata (serif, book and words), Lexend (sans, interface). Korean books override to Noto Serif KR and Noto Sans KR.
-- Radii: 10 / 16 / 24px; page 20px; cover `5px 12px 12px 5px`.
+- Radii: 10 / 16 / 24px; page 20px; cover 20px.
 - Shadows: all app shadows are 45% of the original opacity. Dock has no shadow, only a top border.
 - Hover on night surfaces MUST keep legible text (no grey hover with white text).
 
