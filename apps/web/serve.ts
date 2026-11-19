@@ -7,6 +7,7 @@ const API_PREFIX = "/api/";
 const IMMUTABLE = "public, max-age=31536000, immutable";
 const REVALIDATE = "no-cache";
 const port = Number(process.env.PORT ?? 8080);
+const MAX_BODY_BYTES = 512 * 1024;
 const apiOrigin = (process.env.API_ORIGIN ?? "").replace(/\/+$/, "");
 const DROPPED_REQUEST_HEADERS = ["host", "connection", "content-length", "accept-encoding"];
 const DROPPED_RESPONSE_HEADERS = [
@@ -50,6 +51,7 @@ async function forwardToApi(request: Request, url: URL): Promise<Response> {
 
 Bun.serve({
   port,
+  maxRequestBodySize: MAX_BODY_BYTES,
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname.startsWith(API_PREFIX)) {
