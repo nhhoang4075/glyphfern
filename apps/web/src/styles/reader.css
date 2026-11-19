@@ -32,6 +32,28 @@
   border-right: 24px solid transparent;
 }
 
+@media (min-width: 761px) {
+  .track {
+    position: absolute;
+    top: 11px;
+    left: 50%;
+    flex: none;
+    max-width: none;
+    width: min(36rem, calc(100% - 340px));
+    margin: 0;
+    box-sizing: border-box;
+    transform: translateX(-50%);
+  }
+
+  .track + .ib {
+    margin-left: auto;
+  }
+
+  .rd:has(.stage.pan) .track {
+    left: calc(50% - 182px);
+  }
+}
+
 .track .ln {
   position: absolute;
   left: 0;

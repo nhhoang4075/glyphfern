@@ -15,6 +15,7 @@ export type BoxSegment = {
   h: number;
   color: string;
   marker: boolean;
+  fontSize: number;
 };
 
 export type IconSegment = {
@@ -139,6 +140,7 @@ export function collectSegments(
         h: rect.height,
         color,
         marker,
+        fontSize: Number.parseFloat(style.fontSize) || 16,
       });
     }
   }
@@ -190,8 +192,13 @@ export function drawPage(
   for (const box of segments.boxes) {
     if (!visible(box.x, box.w)) continue;
     ctx.fillStyle = box.color;
-    if (box.marker) ctx.fillRect(box.x, box.y + box.h * 0.52, box.w, box.h * 0.48);
-    else ctx.fillRect(box.x, box.y, box.w, box.h);
+    if (box.marker) {
+      const stripHeight = box.fontSize * 0.42;
+      const stripTop = box.y + box.h - box.fontSize * 0.07 - stripHeight;
+      ctx.beginPath();
+      ctx.roundRect(box.x, stripTop, box.w, stripHeight, Math.min(3.5, stripHeight / 2));
+      ctx.fill();
+    } else ctx.fillRect(box.x, box.y, box.w, box.h);
   }
   for (const icon of segments.icons) {
     if (!visible(icon.x, icon.w)) continue;
