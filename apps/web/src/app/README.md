@@ -30,7 +30,7 @@ Actions (`AppActions`, stable identities):
 - `toggleBookmark(sentenceId)`, `togglePin(bookId)`.
 - `setPreference(key, value)` for every preference except `lang`.
 - `switchLanguage(lang)`: async, see below; it also returns to the sample book of that language.
-- `importEpub(files)`: builds a `Book` from an unpacked EPUB (`@glyphfern/core` import), stores it and returns it. Sentence ids start at `seq * 1_000_000` so bookmarks and cards stay unique across books.
+- `importEpub(files)`: builds a `Book` from an unpacked EPUB (`@glyphfern/core` import), asks the lemmatizer for the lemma of every word, stores the book and returns it. Sentence ids start at `seq * 1_000_000` so bookmarks and cards stay unique across books. The stored book has `lemmatized: true` only when the lemmatizer answered with a map; when it returns `null` (API unreachable, any chunk failed) or none is configured, the book is imported with lowercase surface forms as lemmas and `lemmatized: false`.
 - `openBook(bookId)`: makes a sample or imported book the active one (`state.pack.book`) and remembers it in `preferences.bookId`.
 - `deleteBook(bookId)`: removes an imported book with its cards, bookmarks and pin; word states stay.
 - `ratingApplied(lemma, rating)`: applies `onRated` to one lemma and returns the new state.
@@ -38,6 +38,18 @@ Actions (`AppActions`, stable identities):
 - `requestFocus(request)` and `consumeFocus()`: the Words screen requests, the Reading screen consumes once. `consumeFocus` returns the request and clears it.
 
 `ReaderView` (the Reading screen) is mounted all the time and hidden with `display: none` while another route is active, as the layout rule in the logic spec requires. It can read `state.route` to know whether it is visible.
+
+## Relemmatizing imported books
+
+`Lemmatizer` is `(lang, words) => Promise<Record<string, string> | null>`; `null` means unavailable or incomplete, never "no lemmas found". `AppStore.open` starts `relemmatizePending()` without awaiting it (tracked, so `settled()` waits for it). Concurrent calls share one run.
+
+Flow, one book at a time for every user book whose `lemmatized` is not `true` (a missing flag counts as not lemmatized):
+1. Send `bookWords(book)` to the lemmatizer. On `null` the book is left untouched and retried at the next app start.
+2. Apply the map with `applyLemmas`, save the book with `lemmatized: true`, update `userBooks`, `books` and `pack`.
+3. Build `lemmaChanges(before, after)`: old lemma to new lemma for every token whose lemma changed, then `migrateProgress` (`lemma-migration.ts`, pure) computes the new progress of the book's language:
+   - a card whose `sentenceId` lies in this book and whose lemma changed moves to the new lemma with the same `sentenceId`; if a card for the new lemma already exists (including one moved earlier in the same run) the old card is deleted instead; cards of other books are never touched;
+   - a word state of the old lemma is copied to the new lemma when the new lemma has none; the old entry stays because other books may still use it.
+4. The changes are written through the repository. When the book's language is the active one they also patch `wordStates` and `cards` in the state; otherwise the snapshot in `loaded` (or the repository, through `ensureLanguage`) is updated so a later language switch shows the migrated progress.
 
 ## Document effects
 
@@ -59,4 +71,4 @@ See `../storage`. IndexedDB (Dexie) tables: `wordStates` and `cards` keyed by `s
 
 ## Testing
 
-`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. Expected values come from the state table and review rules of the logic spec and from the prototype starter data.
+`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. `books.test.ts` covers import and `relemmatize.test.ts` covers the lemmatized flag, retries and progress migration. Expected values come from the state table and review rules of the logic spec and from the prototype starter data.

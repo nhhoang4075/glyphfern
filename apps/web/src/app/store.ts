@@ -32,6 +32,7 @@ import type {
   TapTarget,
 } from "./api";
 import { defaultPreferences, readPrefersReducedMotion } from "./defaults";
+import { lemmaChanges, migrateProgress } from "./lemma-migration";
 import { hashFromRoute, routeFromHash } from "./route";
 
 const NEW_STATE: WordState = { kind: "new" };
@@ -59,7 +60,7 @@ export interface StoreOptions {
   lemmatizer?: Lemmatizer;
 }
 
-export type Lemmatizer = (lang: Lang, words: string[]) => Promise<Record<string, string>>;
+export type Lemmatizer = (lang: Lang, words: string[]) => Promise<Record<string, string> | null>;
 
 type Listener = () => void;
 
@@ -69,6 +70,7 @@ export class AppStore {
   private api: AppApi;
   private readonly pending = new Set<Promise<void>>();
   private switchToken = 0;
+  private relemmatizing: Promise<void> | null = null;
 
   private constructor(
     private readonly repository: Repository,
@@ -109,6 +111,7 @@ export class AppStore {
     };
     const store = new AppStore(repository, packs, state, options.lemmatizer);
     store.loaded.set(lang, snapshot);
+    store.persist(store.relemmatizePending());
     return store;
   }
 
@@ -198,13 +201,14 @@ export class AppStore {
         firstSentenceId: seq * SENTENCE_ID_SPAN,
         fallbackTitle: (chapterNumber) => `Capítulo ${chapterNumber}`,
       });
-      const lemmas = this.lemmatizer ? await this.lemmatizer(IMPORT_LANG, bookWords(book)) : {};
+      const lemmas = this.lemmatizer ? await this.lemmatizer(IMPORT_LANG, bookWords(book)) : null;
       const stored: StoredBook = {
         id,
         lang: IMPORT_LANG,
         seq,
         addedAt: Date.now(),
-        book: applyLemmas(book, lemmas),
+        lemmatized: lemmas !== null,
+        book: applyLemmas(book, lemmas ?? {}),
       };
       await this.repository.saveBook(stored);
       const userBooks = [...this.current.userBooks, stored];
@@ -288,6 +292,91 @@ export class AppStore {
       return request;
     },
   };
+
+  relemmatizePending(): Promise<void> {
+    this.relemmatizing ??= this.relemmatizeEach().finally(() => {
+      this.relemmatizing = null;
+    });
+    return this.relemmatizing;
+  }
+
+  private async relemmatizeEach(): Promise<void> {
+    if (!this.lemmatizer) {
+      return;
+    }
+    const pendingIds = this.current.userBooks
+      .filter((stored) => stored.lemmatized !== true)
+      .map((stored) => stored.id);
+    for (const id of pendingIds) {
+      await this.relemmatize(id, this.lemmatizer);
+    }
+  }
+
+  private async relemmatize(bookId: string, lemmatizer: Lemmatizer): Promise<void> {
+    const before = this.current.userBooks.find((candidate) => candidate.id === bookId);
+    if (!before) {
+      return;
+    }
+    const lemmas = await lemmatizer(before.lang, bookWords(before.book));
+    if (lemmas === null) {
+      return;
+    }
+    const loadedSnapshot = await this.snapshotOf(before.lang);
+    const stored = this.current.userBooks.find((candidate) => candidate.id === bookId);
+    if (!stored) {
+      return;
+    }
+    const book = applyLemmas(stored.book, lemmas);
+    const updated: StoredBook = { ...stored, book, lemmatized: true };
+    const userBooks = this.current.userBooks.map((candidate) =>
+      candidate.id === bookId ? updated : candidate,
+    );
+    const view = booksView(
+      this.packs[this.current.lang],
+      userBooks,
+      this.current.preferences.bookId,
+    );
+    this.persist(this.repository.saveBook(updated));
+    this.patch({ userBooks, books: view.books, pack: view.pack });
+    const isActive = stored.lang === this.current.lang;
+    const inactiveBase = this.loaded.get(stored.lang) ?? loadedSnapshot;
+    const progress = isActive
+      ? { states: this.current.wordStates, cards: this.current.cards }
+      : inactiveBase;
+    const migration = migrateProgress(
+      progress,
+      lemmaChanges(stored.book, book),
+      (sentenceId) => Math.floor(sentenceId / SENTENCE_ID_SPAN) === stored.seq,
+    );
+    for (const lemma of migration.deletedCards) {
+      this.persist(this.repository.deleteCard(stored.lang, lemma));
+    }
+    for (const card of migration.savedCards) {
+      this.persist(this.repository.saveCard(stored.lang, card));
+    }
+    for (const { lemma, state } of migration.copiedStates) {
+      this.persist(this.repository.saveWordState(stored.lang, lemma, state));
+    }
+    if (isActive) {
+      this.patch({ wordStates: migration.states, cards: migration.cards });
+    } else {
+      this.loaded.set(stored.lang, {
+        ...inactiveBase,
+        states: migration.states,
+        cards: migration.cards,
+      });
+    }
+  }
+
+  private async snapshotOf(lang: Lang): Promise<LanguageSnapshot> {
+    const known = this.loaded.get(lang);
+    if (known) {
+      return known;
+    }
+    const snapshot = await ensureLanguage(this.repository, this.packs[lang]);
+    this.loaded.set(lang, snapshot);
+    return snapshot;
+  }
 
   private async activate(lang: Lang, bookId: string | null): Promise<void> {
     if (lang === this.current.lang && bookId === this.current.preferences.bookId) {
