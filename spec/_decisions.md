@@ -97,3 +97,11 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Now every card is queued. Without a static entry the back shows the looked-up lemma, IPA, English glosses and Wiktionary note; when the lookup fails it shows the lemma and "Chưa tra được nghĩa".
 - Reason: words from imported books never reached review.
 
+## D-020 Review scheduling uses FSRS and word state follows the schedule
+- Date: 2026-11-19. Decided by: owner ("approve item 1"); the thresholds are the proposed defaults.
+- Original choice: review was a session queue; "again" and "hard" left the word state unchanged, "good" lowered the level, "easy" made the word known at once.
+- Now: `ts-fsrs` with request retention 0.9, `enable_fuzz` off (so the log reproduces the schedule), default weights and learning steps. An append-only review log records every rating. The queue holds due cards plus up to 10 new cards per local day.
+- Word state of a word with a card is derived from stability: under 3 days level 3, 3 to 14 level 2, 14 to 60 level 1, 60 and above known. Forgetting is therefore automatic: a lapse lowers stability and the word becomes learning again.
+- "Easy" no longer forces known by itself (owner did not choose the alternative; this is the default). A word marked known without a card is never forgotten.
+- Reason: the session queue had no memory across days and no forgetting.
+

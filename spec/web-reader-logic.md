@@ -38,9 +38,7 @@ Per lemma: `new` (no entry), `learning(level)` with level 1, 2 or 3 (3 is the ne
 | tap "known" button | known |
 | add a card on a word with no state | learning level 3 and pulse |
 | remove a card | state unchanged |
-| rate a card "again" or "hard" | state unchanged |
-| rate a card "good" | level 3 to 2, 2 to 1, 1 to known |
-| rate a card "easy" | known |
+| rate a card | the card's schedule is updated and the word state is derived from it (section 11); a word without a card never changes this way |
 
 - Highlight strength follows level: 1 → 38% alpha, 2 → 60%, 3 → 85% of `#C2D94C`. New and known words are not highlighted.
 - Every occurrence of a lemma shows its state. The state key is the **lemma**. **Target**: key is `(lang, lemma)` so lemmas of two languages can never collide. **Prototype**: key is the lemma alone and works only because the two demo languages use different scripts.
@@ -131,9 +129,12 @@ Korean morpheme analysis: a token carries `morphemes`, each a form and a Vietnam
 
 - Queue: all cards of the active language. A card whose lemma has no static dictionary entry shows the looked-up entry on its back, or "Chưa tra được nghĩa" when the lookup is unavailable.
 - Card front: sentence with the target token blanked. Tap flips: reveals the answer, reads the sentence, enables rating.
-- Ratings: 1 again (re-append to the end of the queue), 2 hard (reinsert at index min(2, length)), 3 good, 4 easy. Level changes follow section 3.
+- Ratings: 1 again (re-append to the end of the queue), 2 hard (reinsert at index min(2, length)), 3 good, 4 easy. The queue rules apply inside one session; the schedule below applies across sessions.
 - Progress dots: `total` dots; done = dots before `total - queue.length`.
-- **Prototype**: this queue logic stands in for scheduling. **Target**: scheduling is `ts-fsrs` with an append-only review log, as in the architecture document; the level change in section 3 is kept as the UI projection of the schedule.
+- Scheduling is `ts-fsrs` (decision D-020): request retention 0.9, no fuzz, default weights, default learning steps. Every card carries its FSRS data (due, stability, difficulty, state, reps, lapses, last review). A card without data is a new card due now.
+- Every rating appends one entry to the review log (card, time, rating, schedule before and after). The log is never edited or deleted.
+- The queue of a new review session holds the cards due now (`due <= now`) plus new cards (never reviewed) up to 10 new cards per local day.
+- Word state of a lemma that has a card is derived from its schedule after each rating: never reviewed, state Learning or Relearning, or stability below 3 days: learning level 3; stability 3 to below 14 days: level 2; 14 to below 60 days: level 1; 60 days or more in state Review: known. A rating "easy" does not force known by itself. A word without a card keeps the state the user gave it.
 
 ## 12. Persistence
 
