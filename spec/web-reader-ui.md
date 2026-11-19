@@ -70,7 +70,7 @@ The selection MUST NOT cover neighbouring glyphs or glyphs on the next line.
 ### 3.3 Word panel
 Top to bottom:
 1. Word (serif 2.15rem) and a speaker button (pronounce the word, rate 0.88).
-2. Chips: part of speech (spelled out: never "dt", "đg"), pronunciation (IPA, or romanization for Korean), lemma chip with a sprout icon only when the lemma differs from the tapped surface, and for languages with morphology one chip per morpheme: bold form and gloss.
+2. Chips, in this order: part of speech (spelled out: never "dt", "đg"), lemma chip with a sprout icon only when the lemma differs from the tapped surface, pronunciation of the lemma (IPA, or romanization for Korean), and for languages with morphology one chip per morpheme: bold form and gloss.
 3. Meaning (Vietnamese).
 4. Word note (bulb icon) when the dictionary has one.
 5. State buttons: three icon buttons (new = circle, learning = flame, known = check) forming a segmented group, and a card button (cards-plus icon) at the right. The active state is a solid fill with a visible icon: new = `--ink-2` with white icon, learning = `--lamp`, known = `--ok`, card button = `--wing`. All inactive buttons use the tinted tile colour.

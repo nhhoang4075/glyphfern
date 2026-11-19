@@ -68,3 +68,8 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Original choice: bottom sheet max width 560px, narrower than the 576px page. Now 624px.
 - The progress track keeps its centred position when the word panel is a bottom sheet (below 1100px); it only shifts left while the side panel is open (1100px and above), with its width reduced so it never covers the Contents button.
 - Reason: the track overlapped the Contents button and the dock at 761px to 1099px whenever the panel was open.
+
+## D-015 Pronunciation chip follows the lemma chip
+- Date: 2026-11-19. Decided by: owner.
+- Original order: part of speech, pronunciation, lemma chip. Now: part of speech, lemma chip, pronunciation, morpheme chips.
+- Reason: the pronunciation belongs to the lemma, so it reads naturally right after it.

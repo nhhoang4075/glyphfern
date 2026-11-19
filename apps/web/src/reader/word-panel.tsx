@@ -95,13 +95,13 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
       </div>
       <Section className="chips">
         <Chip>{entry?.pos ?? ""}</Chip>
-        <Chip className="ipa">{entry?.pronunciation ?? ""}</Chip>
         {token && showsLemmaChip(lemma, surface) ? (
           <Chip className="lem">
             <Icon name="root" />
             {lemma}
           </Chip>
         ) : null}
+        <Chip className="ipa">{entry?.pronunciation ?? ""}</Chip>
         {token?.morphemes?.map((morpheme, index) => (
           <Chip className="mo" key={`${index}-${morpheme.form}`}>
             <b>{morpheme.form}</b>
