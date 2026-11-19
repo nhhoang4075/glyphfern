@@ -1,10 +1,18 @@
-import type { Lang, WordState } from "@glyphfern/core";
+import type { Book, Lang, WordState } from "@glyphfern/core";
 import type { Card, PersistenceKind, Preferences } from "../app/api";
 
 export interface LanguageSnapshot {
   states: Record<string, WordState>;
   cards: Card[];
   bookmarks: number[];
+}
+
+export interface StoredBook {
+  id: string;
+  lang: Lang;
+  seq: number;
+  addedAt: number;
+  book: Book;
 }
 
 export interface Repository {
@@ -20,4 +28,7 @@ export interface Repository {
   saveCard(lang: Lang, card: Card): Promise<void>;
   deleteCard(lang: Lang, lemma: string): Promise<void>;
   saveBookmarks(lang: Lang, sentenceIds: readonly number[]): Promise<void>;
+  loadBooks(): Promise<StoredBook[]>;
+  saveBook(book: StoredBook): Promise<void>;
+  deleteBook(id: string): Promise<void>;
 }

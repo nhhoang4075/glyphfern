@@ -1,6 +1,9 @@
+import { EpubImportError } from "@glyphfern/core";
+import { type ChangeEvent, useRef, useState } from "react";
 import { useApp } from "../app/use-app";
+import { EpubFileError, readEpubFile } from "../import/read-epub";
 import { Badge, Button, IconButton } from "../ui";
-import { LIBRARY_BOOKS, type LibraryBook, orderBooks } from "./books";
+import { LIBRARY_BOOKS, type LibraryBook, orderBooks, userLibraryBook } from "./books";
 import { CoverArt } from "./cover-art";
 
 function BookCard({ book, pinned }: { book: LibraryBook; pinned: boolean }) {
@@ -11,7 +14,7 @@ function BookCard({ book, pinned }: { book: LibraryBook; pinned: boolean }) {
     if (book.lang === null) {
       return;
     }
-    await actions.switchLanguage(book.lang);
+    await actions.openBook(book.id);
     actions.navigate("read");
   };
 
@@ -39,6 +42,19 @@ function BookCard({ book, pinned }: { book: LibraryBook; pinned: boolean }) {
           aria-pressed={pinned}
           onClick={() => actions.togglePin(book.id)}
         />
+        {book.removable ? (
+          <IconButton
+            variant="pin"
+            className="del"
+            icon="x"
+            label="Xoá sách"
+            onClick={() => {
+              if (window.confirm(`Xoá "${book.title}" khỏi thư viện?`)) {
+                actions.deleteBook(book.id);
+              }
+            }}
+          />
+        ) : null}
       </div>
       <div className="fl2">
         <Badge>{book.flag}</Badge>
@@ -47,12 +63,59 @@ function BookCard({ book, pinned }: { book: LibraryBook; pinned: boolean }) {
   );
 }
 
+const IMPORT_ERRORS = {
+  file: "Tệp này không phải EPUB hợp lệ.",
+  empty: "Không đọc được nội dung chữ trong sách này.",
+  other: "Không thêm được sách. Hãy thử tệp EPUB khác.",
+} as const;
+
 export function LibraryView() {
-  const { state } = useApp();
-  const books = orderBooks(LIBRARY_BOOKS, state.pins);
+  const { state, actions } = useApp();
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const books = orderBooks([...LIBRARY_BOOKS, ...state.userBooks.map(userLibraryBook)], state.pins);
+
+  const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    try {
+      await actions.importEpub(await readEpubFile(file));
+    } catch (error) {
+      if (error instanceof EpubFileError) {
+        setMessage(IMPORT_ERRORS.file);
+      } else if (error instanceof EpubImportError) {
+        setMessage(error.reason === "empty" ? IMPORT_ERRORS.empty : IMPORT_ERRORS.file);
+      } else {
+        setMessage(IMPORT_ERRORS.other);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="shelf">
-      <IconButton variant="add" icon="plus" label="Thêm sách" />
+      <input
+        ref={input}
+        type="file"
+        accept=".epub,application/epub+zip"
+        hidden
+        onChange={importFile}
+      />
+      <IconButton
+        variant="add"
+        icon="plus"
+        label="Thêm sách"
+        disabled={busy}
+        onClick={() => input.current?.click()}
+      />
+      {message ? <output className="shelf-note">{message}</output> : null}
       {books.map((book) => (
         <BookCard key={book.id} book={book} pinned={state.pins.includes(book.id)} />
       ))}

@@ -66,7 +66,9 @@ export function ReviewView() {
 
   const lemma = queue[0];
   const card = state.cards.find((candidate) => candidate.lemma === lemma);
-  const sentence = card ? indexBook(state.pack.book).byId.get(card.sentenceId) : undefined;
+  const sentence = card
+    ? state.books.map((book) => indexBook(book).byId.get(card.sentenceId)).find(Boolean)
+    : undefined;
   const entry = lemma === undefined ? undefined : state.pack.dict[lemma];
 
   if (lemma === undefined || !sentence || !entry) {

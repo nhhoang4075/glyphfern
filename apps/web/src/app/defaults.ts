@@ -25,5 +25,6 @@ export function defaultPreferences(prefersReducedMotion: boolean): Preferences {
     turn: defaultTurnStyle(prefersReducedMotion),
     hl: 1,
     lang: "es",
+    bookId: null,
   };
 }

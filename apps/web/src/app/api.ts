@@ -1,4 +1,5 @@
-import type { Lang, LanguagePack, Rating, WordState } from "@glyphfern/core";
+import type { Book, Lang, LanguagePack, Rating, WordState } from "@glyphfern/core";
+import type { StoredBook } from "../storage/repository";
 
 export type Route = "library" | "read" | "words" | "review";
 
@@ -19,9 +20,10 @@ export interface Preferences {
   turn: TurnStyle;
   hl: 0 | 1;
   lang: Lang;
+  bookId: string | null;
 }
 
-export type PreferenceKey = Exclude<keyof Preferences, "lang">;
+export type PreferenceKey = Exclude<keyof Preferences, "lang" | "bookId">;
 
 export interface Card {
   lemma: string;
@@ -50,6 +52,8 @@ export interface AppState {
   route: Route;
   lang: Lang;
   pack: LanguagePack;
+  books: readonly Book[];
+  userBooks: readonly StoredBook[];
   wordStates: Readonly<Record<string, WordState>>;
   cards: readonly Card[];
   bookmarks: readonly number[];
@@ -68,6 +72,9 @@ export interface AppActions {
   togglePin(bookId: string): void;
   setPreference<K extends PreferenceKey>(key: K, value: Preferences[K]): void;
   switchLanguage(lang: Lang): Promise<void>;
+  importEpub(files: Readonly<Record<string, string>>): Promise<StoredBook>;
+  openBook(bookId: string): Promise<void>;
+  deleteBook(bookId: string): void;
   ratingApplied(lemma: string, rating: Rating): WordState;
   rateCard(queue: readonly string[], rating: Rating): string[];
   requestFocus(request: FocusRequest): void;

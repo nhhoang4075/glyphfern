@@ -1,7 +1,7 @@
 import { type Lang, type WordState, stateKey } from "@glyphfern/core";
 import Dexie, { type DexieOptions, type Table } from "dexie";
 import type { Card, Preferences } from "../app/api";
-import type { LanguageSnapshot, Repository } from "./repository";
+import type { LanguageSnapshot, Repository, StoredBook } from "./repository";
 
 export const DATABASE_NAME = "glyphfern";
 const PREFERENCES_ID = "main";
@@ -47,6 +47,7 @@ export class GlyphfernDatabase extends Dexie {
   readonly pins: Table<PinRow, string>;
   readonly preferences: Table<PreferencesRow, string>;
   readonly meta: Table<MetaRow, string>;
+  readonly books: Table<StoredBook, string>;
 
   constructor(name: string = DATABASE_NAME, options?: DexieOptions) {
     super(name, options);
@@ -58,6 +59,8 @@ export class GlyphfernDatabase extends Dexie {
       preferences: "id",
       meta: "key",
     });
+    this.version(2).stores({ books: "id, lang" });
+    this.books = this.table("books");
     this.wordStates = this.table("wordStates");
     this.cards = this.table("cards");
     this.bookmarks = this.table("bookmarks");
@@ -165,6 +168,19 @@ export class DexieRepository implements Repository {
 
   async saveBookmarks(lang: Lang, sentenceIds: readonly number[]): Promise<void> {
     await this.db.bookmarks.put({ lang, sentenceIds: [...sentenceIds] });
+  }
+
+  async loadBooks(): Promise<StoredBook[]> {
+    const rows = await this.db.books.toArray();
+    return rows.sort((a, b) => a.seq - b.seq);
+  }
+
+  async saveBook(book: StoredBook): Promise<void> {
+    await this.db.books.put(book);
+  }
+
+  async deleteBook(id: string): Promise<void> {
+    await this.db.books.delete(id);
   }
 
   private cardRow(lang: Lang, card: Card): CardRow {

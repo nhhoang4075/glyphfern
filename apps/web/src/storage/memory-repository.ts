@@ -1,6 +1,6 @@
 import { type Lang, type WordState, stateKey } from "@glyphfern/core";
 import type { Card, Preferences } from "../app/api";
-import type { LanguageSnapshot, Repository } from "./repository";
+import type { LanguageSnapshot, Repository, StoredBook } from "./repository";
 
 interface StoredCard extends Card {
   lang: Lang;
@@ -14,6 +14,7 @@ export class MemoryRepository implements Repository {
   private readonly states = new Map<string, WordState>();
   private readonly cards = new Map<string, StoredCard>();
   private readonly bookmarks = new Map<Lang, number[]>();
+  private readonly books = new Map<string, StoredBook>();
 
   async loadPreferences(): Promise<Preferences | undefined> {
     return this.preferences ? { ...this.preferences } : undefined;
@@ -84,5 +85,17 @@ export class MemoryRepository implements Repository {
 
   async saveBookmarks(lang: Lang, sentenceIds: readonly number[]): Promise<void> {
     this.bookmarks.set(lang, [...sentenceIds]);
+  }
+
+  async loadBooks(): Promise<StoredBook[]> {
+    return [...this.books.values()].sort((a, b) => a.seq - b.seq);
+  }
+
+  async saveBook(book: StoredBook): Promise<void> {
+    this.books.set(book.id, book);
+  }
+
+  async deleteBook(id: string): Promise<void> {
+    this.books.delete(id);
   }
 }
