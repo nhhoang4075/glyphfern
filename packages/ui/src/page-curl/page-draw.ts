@@ -14,8 +14,6 @@ export type BoxSegment = {
   w: number;
   h: number;
   color: string;
-  marker: boolean;
-  fontSize: number;
 };
 
 export type IconSegment = {
@@ -70,6 +68,19 @@ function isTransparent(color: string): boolean {
   return color === "transparent" || /^rgba\(\s*[\d.]+,\s*[\d.]+,\s*[\d.]+,\s*0\s*\)$/.test(color);
 }
 
+export function chooseGlyphRect(rects: readonly { width: number }[], glyphWidth: number): number {
+  let best = -1;
+  let bestGap = Number.POSITIVE_INFINITY;
+  rects.forEach((rect, index) => {
+    const gap = Math.abs(rect.width - glyphWidth);
+    if (gap < bestGap) {
+      best = index;
+      bestGap = gap;
+    }
+  });
+  return best;
+}
+
 export function collectSegments(
   flow: HTMLElement,
   boxSelector: string = DEFAULT_BOX_SELECTOR,
@@ -78,6 +89,7 @@ export function collectSegments(
   const out: Segments = { texts: [], boxes: [], icons: [] };
   const walker = document.createTreeWalker(flow, NodeFilter.SHOW_TEXT);
   const range = document.createRange();
+  const measure = document.createElement("canvas").getContext("2d") as CanvasRenderingContext2D;
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const value = node.nodeValue ?? "";
     const parent = node.parentElement;
@@ -103,11 +115,14 @@ export function collectSegments(
         });
         continue;
       }
+      measure.font = font;
       for (let k = 0; k < match[0].length; k++) {
         range.setStart(node, match.index + k);
         range.setEnd(node, match.index + k + 1);
-        const glyph = range.getClientRects()[0];
         const char = match[0][k] ?? "";
+        const rects = [...range.getClientRects()];
+        const chosen = chooseGlyphRect(rects, measure.measureText(char).width);
+        const glyph = chosen === -1 ? undefined : rects[chosen];
         const text = glyph ? glyphText(char, glyph.width, upper) : null;
         if (glyph && text !== null) {
           out.texts.push({
@@ -120,18 +135,26 @@ export function collectSegments(
             letterSpacing: style.letterSpacing,
           });
         }
+        const hyphen = chosen === -1 ? undefined : rects[chosen + 1];
+        if (hyphen && hyphen.width > 0 && chosen + 1 < rects.length) {
+          out.texts.push({
+            text: "-",
+            x: hyphen.left - frame.left,
+            y: hyphen.top - frame.top,
+            w: hyphen.width,
+            font,
+            color: style.color,
+            letterSpacing: style.letterSpacing,
+          });
+        }
       }
     }
   }
   for (const element of flow.querySelectorAll<HTMLElement>(boxSelector)) {
     const style = getComputedStyle(element);
-    const marker = style.backgroundImage !== "none";
-    let color = style.backgroundColor;
-    if (marker) {
-      const found = style.backgroundImage.match(/rgba?\([^)]*\)/g);
-      color = found?.[found.length - 1] ?? color;
-    }
-    if (!marker && isTransparent(color)) continue;
+    if (style.backgroundImage !== "none") continue;
+    const color = style.backgroundColor;
+    if (isTransparent(color)) continue;
     for (const rect of element.getClientRects()) {
       out.boxes.push({
         x: rect.left - frame.left,
@@ -139,8 +162,6 @@ export function collectSegments(
         w: rect.width,
         h: rect.height,
         color,
-        marker,
-        fontSize: Number.parseFloat(style.fontSize) || 16,
       });
     }
   }
@@ -192,13 +213,7 @@ export function drawPage(
   for (const box of segments.boxes) {
     if (!visible(box.x, box.w)) continue;
     ctx.fillStyle = box.color;
-    if (box.marker) {
-      const stripHeight = box.fontSize * 0.42;
-      const stripTop = box.y + box.h - box.fontSize * 0.07 - stripHeight;
-      ctx.beginPath();
-      ctx.roundRect(box.x, stripTop, box.w, stripHeight, Math.min(3.5, stripHeight / 2));
-      ctx.fill();
-    } else ctx.fillRect(box.x, box.y, box.w, box.h);
+    ctx.fillRect(box.x, box.y, box.w, box.h);
   }
   for (const icon of segments.icons) {
     if (!visible(icon.x, icon.w)) continue;
