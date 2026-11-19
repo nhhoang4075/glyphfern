@@ -60,20 +60,57 @@ describe("lexicon client", () => {
     expect(calls).toBe(2);
   });
 
-  test("lemmas are requested in chunks and a failed chunk is skipped", async () => {
+  test("lemmas are requested in chunks and merged when every chunk succeeds", async () => {
     const bodies: string[][] = [];
     const client = createLexiconClient("http://api", async (_url, init) => {
       const words = (JSON.parse(String(init?.body)) as { words: string[] }).words;
       bodies.push(words);
-      if (bodies.length === 2) {
-        throw new Error("offline");
-      }
       return { ok: true, status: 200, json: async () => ({ lemmas: { [words[0] ?? ""]: "x" } }) };
     });
     const words = Array.from({ length: 4500 }, (_, i) => `w${i}`);
     const lemmas = await client.lemmatize("es", words);
     expect(bodies.map((b) => b.length)).toEqual([2000, 2000, 500]);
-    expect(Object.keys(lemmas)).toEqual(["w0", "w4000"]);
+    expect(Object.keys(lemmas ?? {})).toEqual(["w0", "w2000", "w4000"]);
+  });
+
+  test("lemmatize returns null without a base URL", async () => {
+    const client = createLexiconClient(undefined, async () => {
+      throw new Error("must not be called");
+    });
+    expect(await client.lemmatize("es", ["miraba"])).toBeNull();
+  });
+
+  test("lemmatize returns null when a chunk throws", async () => {
+    let calls = 0;
+    const client = createLexiconClient("http://api", async () => {
+      calls += 1;
+      if (calls === 2) {
+        throw new Error("offline");
+      }
+      return { ok: true, status: 200, json: async () => ({ lemmas: { a: "b" } }) };
+    });
+    const words = Array.from({ length: 4500 }, (_, i) => `w${i}`);
+    expect(await client.lemmatize("es", words)).toBeNull();
+  });
+
+  test("lemmatize returns null when a chunk answers with an error status", async () => {
+    const client = createLexiconClient("http://api", async () => ({
+      ok: false,
+      status: 503,
+      json: async () => ({}),
+    }));
+    expect(await client.lemmatize("es", ["miraba"])).toBeNull();
+  });
+
+  test("lemmatize returns null when the body is malformed", async () => {
+    for (const body of [{}, { lemmas: null }, { lemmas: ["x"] }, null]) {
+      const client = createLexiconClient("http://api", async () => ({
+        ok: true,
+        status: 200,
+        json: async () => body,
+      }));
+      expect(await client.lemmatize("es", ["miraba"])).toBeNull();
+    }
   });
 });
 

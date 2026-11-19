@@ -69,7 +69,7 @@ export function createLexiconClient(
   async function lemmaChunk(
     lang: string,
     words: readonly string[],
-  ): Promise<Record<string, string>> {
+  ): Promise<Record<string, string> | null> {
     try {
       const response = await fetcher(`${baseUrl}/lemmas`, {
         method: "POST",
@@ -77,24 +77,33 @@ export function createLexiconClient(
         body: JSON.stringify({ lang, words }),
       });
       if (!response.ok) {
-        return {};
+        return null;
       }
-      return ((await response.json()) as { lemmas: Record<string, string> }).lemmas;
+      const body = (await response.json()) as { lemmas?: unknown } | null;
+      const lemmas = body?.lemmas;
+      if (typeof lemmas !== "object" || lemmas === null || Array.isArray(lemmas)) {
+        return null;
+      }
+      return lemmas as Record<string, string>;
     } catch {
-      return {};
+      return null;
     }
   }
 
   async function lemmatize(
     lang: string,
     words: readonly string[],
-  ): Promise<Record<string, string>> {
+  ): Promise<Record<string, string> | null> {
     if (!baseUrl) {
-      return {};
+      return null;
     }
     const result: Record<string, string> = {};
     for (let start = 0; start < words.length; start += LEMMA_CHUNK) {
-      Object.assign(result, await lemmaChunk(lang, words.slice(start, start + LEMMA_CHUNK)));
+      const chunk = await lemmaChunk(lang, words.slice(start, start + LEMMA_CHUNK));
+      if (chunk === null) {
+        return null;
+      }
+      Object.assign(result, chunk);
     }
     return result;
   }

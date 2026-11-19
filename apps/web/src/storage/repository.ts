@@ -12,6 +12,7 @@ export interface StoredBook {
   lang: Lang;
   seq: number;
   addedAt: number;
+  lemmatized?: boolean;
   book: Book;
 }
 
