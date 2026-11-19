@@ -1,6 +1,7 @@
 import type { Book, Chapter, Lang, Sentence } from "../types";
 import { type HeadingChapter, splitByNumeralHeadings } from "./chapter-headings";
 import { cutGutenbergBoilerplate, dropContentsRuns } from "./clean-gutenberg";
+import { dropEnglishBlocks } from "./drop-english-blocks";
 import { findRootfilePath, parseOpf, resolveHref } from "./epub-package";
 import { type TextBlock, extractBlocks } from "./html-blocks";
 import { splitSentences, tokenizeSentence } from "./split-text";
@@ -68,7 +69,8 @@ export function buildEpubBook(
     const item = opf.items.get(idref);
     return item && CONTENT_TYPES.has(item.mediaType) ? [resolveHref(opfPath, item.href)] : [];
   });
-  const parsed = cutGutenbergBoilerplate(chapterBlocks(files, paths)).map(dropContentsRuns);
+  const cleaned = cutGutenbergBoilerplate(chapterBlocks(files, paths)).map(dropContentsRuns);
+  const parsed = options.lang === "es" ? dropEnglishBlocks(cleaned) : cleaned;
   const groups = splitByNumeralHeadings(parsed.flat()) ?? documentChapters(parsed);
 
   let nextId = options.firstSentenceId;
