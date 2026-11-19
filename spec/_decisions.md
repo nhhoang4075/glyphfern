@@ -85,3 +85,8 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Not used: etymology, examples, synonyms, derived terms. Static dictionary entries keep their hand-written notes.
 - Reason: these facts are accurate, cheap and need no machine translation; labels are worded in Vietnamese by a fixed table.
 
+
+## D-018 Vietnamese meanings for looked-up words are deferred
+- Date: 2026-11-19. Decided by: owner ("note it, not now").
+- Words outside the static dictionary show English glosses only. Machine translation of single glosses was tried and dropped: it returned the word unchanged or a wrong sense ("zorro" became a vulgar word).
+- Options when this is picked up: Vietnamese Wiktionary (free, partial coverage), an LLM short definition with a cache (best quality, has a cost), or a hybrid. The `Translator` interface in `apps/api` is the place to plug a provider in.
