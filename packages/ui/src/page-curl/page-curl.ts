@@ -67,6 +67,8 @@ function samplePaper(front: HTMLCanvasElement): Rgb {
   return DEFAULT_PAPER;
 }
 
+const DISSOLVE_MS = 140;
+
 export function createPageCurl(options: PageCurlOptions): PageCurl {
   const { book, cornerRight, cornerLeft, glCanvas, getPageSurface, onTurn } = options;
   const clock = options.clock;
@@ -92,6 +94,7 @@ export function createPageCurl(options: PageCurlOptions): PageCurl {
   let begun = false;
   let stopTween: (() => void) | null = null;
   let norTimer: ReturnType<typeof setTimeout> | null = null;
+  let dissolveTimer: ReturnType<typeof setTimeout> | null = null;
   const listeners: Array<{ target: HTMLElement; type: string; handler: (e: never) => void }> = [];
 
   const bw = (): number => book.clientWidth;
@@ -111,6 +114,7 @@ export function createPageCurl(options: PageCurlOptions): PageCurl {
   }
 
   function begin(c: Corner): void {
+    cancelDissolve();
     begun = true;
     const direction = directionOf(c);
     if (!glFailed) {
@@ -160,16 +164,41 @@ export function createPageCurl(options: PageCurlOptions): PageCurl {
     restoreStatic();
   }
 
+  function cancelDissolve(): void {
+    if (dissolveTimer) clearTimeout(dissolveTimer);
+    dissolveTimer = null;
+    glCanvas.style.transition = "";
+    glCanvas.style.opacity = "";
+  }
+
+  function dissolveGl(): void {
+    cancelDissolve();
+    glCanvas.style.transition = `opacity ${DISSOLVE_MS}ms linear`;
+    glCanvas.style.opacity = "0";
+    dissolveTimer = setTimeout(() => {
+      cancelDissolve();
+      gl?.end();
+    }, DISSOLVE_MS + 20);
+  }
+
   function finalize(direction: TurnDirection): void {
     stopTween = null;
     book.classList.add("nort");
-    clearStatic();
+    const keepGl = glActive;
+    if (keepGl) {
+      glActive = false;
+      begun = false;
+      if (options.domFold) clearDomFold(options.domFold);
+    } else {
+      clearStatic();
+    }
     busy = false;
     dragging = false;
     moved = false;
     idleHeight = IDLE_HEIGHT;
     try {
       onTurn(direction);
+      if (keepGl) dissolveGl();
     } finally {
       if (norTimer) clearTimeout(norTimer);
       norTimer = setTimeout(() => {
@@ -308,6 +337,7 @@ export function createPageCurl(options: PageCurlOptions): PageCurl {
     },
     destroy() {
       disable();
+      cancelDissolve();
       destroyed = true;
       gl?.dispose();
       gl = null;
