@@ -24,6 +24,7 @@ export function defaultPreferences(prefersReducedMotion: boolean): Preferences {
     paper: "#FCFBF9",
     turn: defaultTurnStyle(prefersReducedMotion),
     hl: 1,
+    voice: "system",
     lang: "es",
     bookId: null,
     positions: {},
