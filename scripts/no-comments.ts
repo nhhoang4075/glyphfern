@@ -1,12 +1,16 @@
 import { Glob } from "bun";
 
-const codeFiles = new Glob("{apps,packages,scripts}/**/*.{ts,tsx,js,jsx,css,html}");
-const commentLine = /^\s*(\/\/|\/\*|\*\s|\*\/|<!--)/;
+const codeFiles = new Glob("{apps,packages,scripts}/**/*.{ts,tsx,js,jsx,css,html,py,sh}");
+const hashCommentExtensions = new Set([".py", ".sh"]);
+const slashCommentLine = /^\s*(\/\/|\/\*|\*\s|\*\/|<!--)/;
+const hashCommentLine = /^\s*#(?!!)/;
 const allowedDirectives = /^\s*\/\/\s*(biome-ignore|@ts-expect-error)/;
 
 const offenders: string[] = [];
 for await (const path of codeFiles.scan(".")) {
-  if (path.includes("node_modules")) continue;
+  if (path.includes("node_modules") || path.includes(".venv")) continue;
+  const extension = path.slice(path.lastIndexOf("."));
+  const commentLine = hashCommentExtensions.has(extension) ? hashCommentLine : slashCommentLine;
   const lines = (await Bun.file(path).text()).split("\n");
   lines.forEach((line, index) => {
     if (commentLine.test(line) && !allowedDirectives.test(line)) {
