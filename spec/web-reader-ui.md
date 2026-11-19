@@ -80,7 +80,7 @@ Top to bottom:
 Colour hierarchy inside the panel: the panel surface is `#FDFEFC` (white), tiles inside it are tinted (`--paper-2`). Buttons that sit on a tinted tile are white, except when active.
 
 ### 3.4 Aa popover
-Rows, each a segmented control of icon buttons: size slider (A small / A large), line height (three icons), highlights on/off, page-turn style (slide, curl, still), font (serif / sans sample), paper (three swatches: white `#FCFBF9`, linen `#F1EDE4`, night `#1B2420`).
+Rows, each a segmented control of icon buttons: size slider (A small / A large), line height (three icons), highlights on/off, page-turn style (slide, curl, still), font (serif / sans sample), paper (three swatches: white `#FCFBF9`, linen `#F1EDE4`, night `#1B2420`), reading voice (two text buttons: "Giọng máy" for the system voice, "Giọng AI" for the server voice; see logic spec §10).
 - Placement: right edge aligned with the Aa button, top = button bottom + 4px, width `min(290px, 100% - 16px)` on mobile.
 - Surface `#FDFEFC`, tiles tinted. Choosing the night swatch applies the night palette to the whole app.
 - "Still" disables curl and slide, and sets all transition and animation durations to .01ms inside the app (D-004).

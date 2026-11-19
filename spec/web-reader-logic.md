@@ -123,7 +123,11 @@ Korean morpheme analysis: a token carries `morphemes`, each a form and a Vietnam
 
 - Word pronunciation (panel speaker button): rate 0.88. Sentence reading (panel context button and review flip): rate 0.78. Locale from the active language.
 - Speaking cancels any utterance in progress.
-- **Prototype**: Web Speech API only. **Target**: a `Tts` port with adapters (system voice, local neural voice, cloud voice) as described in the architecture document; system voice remains the default adapter.
+- A `Tts` port with two adapters (D-021): `system` (Web Speech API, the default adapter) and `server` (Kokoro neural voice synthesized by the API). The choice is the preference `voice`: `"system"` or `"server"`, default `"system"`, saved with the other preferences.
+- `server` adapter: asks `GET /tts?lang=<lang>&text=<text>&speed=<rate>` (see the API README), plays the returned `audio/mpeg`, and cancels the clip in progress when a new one starts. When the API is not configured, unreachable, rate limited or answers anything but 200, it speaks the same text through the `system` adapter instead; the user sees no error.
+- `speed` is the rate of the call site (0.88 word, 0.78 sentence), sent unchanged.
+- No Web Speech and no audio playback: speaker buttons do nothing and raise no error.
+- **Open**: local neural voice in the browser (rejected for now: about 120 MB per device) and other cloud voices (Gemini TTS needs prepaid credit, Google Cloud TTS needs billing).
 
 ## 11. Review
 
