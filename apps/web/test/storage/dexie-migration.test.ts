@@ -58,7 +58,6 @@ describe("opening a version 2 database with the current schema", () => {
       "reviewLog",
       "wordStates",
     ]);
-    expect(await repository.isSeeded("es")).toBe(true);
     const snapshot = await repository.loadLanguage("es");
     expect(snapshot.states).toEqual({ leña: { kind: "learning", level: 3 } });
     expect(snapshot.cards).toEqual([{ lemma: "leña", sentenceId: 2 }]);

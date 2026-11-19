@@ -12,7 +12,8 @@ import { openTestRepository } from "../../src/test-support";
 const DAY = 86_400_000;
 const TODAY_NOON = new Date(2026, 5, 10, 12, 0, 0).getTime();
 const TOMORROW_AFTER_MIDNIGHT = new Date(2026, 5, 11, 0, 30, 0).getTime();
-const STARTER_LEMMAS = ["leña", "borde", "roble", "enfermo", "recoger", "despacio", "conocer"];
+const CARD_LEMMAS = ["leña", "borde", "roble", "enfermo", "recoger", "despacio", "conocer"];
+const CARD_LEVELS = [3, 2, 2, 1, 1, 1, 1];
 
 interface Clock {
   time: number;
@@ -51,18 +52,31 @@ function matureSchedule(now: number): CardSchedule {
   };
 }
 
-async function openStoreWithSchedules(
-  clock: Clock,
-  schedules: Record<string, CardSchedule>,
-): Promise<{ store: AppStore; repository: MemoryRepository }> {
+async function seededRepository(
+  schedules: Record<string, CardSchedule> = {},
+): Promise<MemoryRepository> {
   const repository = new MemoryRepository();
-  const seeded = await openStore(repository, clock);
-  for (const [lemma, schedule] of Object.entries(schedules)) {
-    const card = cardOf(seeded, lemma);
-    if (card) {
-      await repository.saveCard("es", { ...card, schedule });
-    }
+  await repository.saveWordState("es", "casa", { kind: "known" });
+  for (const [index, lemma] of CARD_LEMMAS.entries()) {
+    const schedule = schedules[lemma];
+    await repository.saveCard("es", {
+      lemma,
+      sentenceId: index + 2,
+      ...(schedule ? { schedule } : {}),
+    });
+    await repository.saveWordState("es", lemma, {
+      kind: "learning",
+      level: CARD_LEVELS[index] ?? 1,
+    });
   }
+  return repository;
+}
+
+async function openSeededStore(
+  clock: Clock,
+  schedules: Record<string, CardSchedule> = {},
+): Promise<{ store: AppStore; repository: MemoryRepository }> {
+  const repository = await seededRepository(schedules);
   return { store: await openStore(repository, clock), repository };
 }
 
@@ -76,8 +90,7 @@ function rateAllGood(store: AppStore, queue: string[]) {
 describe("rating a card", () => {
   test("a new card gets a schedule, a log entry and the derived word state", async () => {
     const clock = createClock(TODAY_NOON);
-    const repository = new MemoryRepository();
-    const store = await openStore(repository, clock);
+    const { store, repository } = await openSeededStore(clock);
     const card = cardOf(store, "borde");
     expect(card?.schedule).toBeUndefined();
 
@@ -107,7 +120,7 @@ describe("rating a card", () => {
   });
 
   test("easy on a new card does not make the word known by itself", async () => {
-    const store = await openStore(new MemoryRepository(), createClock(TODAY_NOON));
+    const { store } = await openSeededStore(createClock(TODAY_NOON));
     store.actions.rateCard(["enfermo"], "easy");
     const schedule = cardOf(store, "enfermo")?.schedule;
     expect(schedule).toBeDefined();
@@ -120,7 +133,7 @@ describe("rating a card", () => {
   test("again on a mature card in state Review returns the word to learning level 3", async () => {
     const clock = createClock(TODAY_NOON);
     const mature = matureSchedule(TODAY_NOON);
-    const { store, repository } = await openStoreWithSchedules(clock, { enfermo: mature });
+    const { store, repository } = await openSeededStore(clock, { enfermo: mature });
     store.actions.setWordState("enfermo", "known");
     expect(store.getApi().stateOf("enfermo")).toEqual({ kind: "known" });
 
@@ -136,14 +149,13 @@ describe("rating a card", () => {
 
   test("good on a mature card keeps stability high and the word known", async () => {
     const clock = createClock(TODAY_NOON);
-    const { store } = await openStoreWithSchedules(clock, { enfermo: matureSchedule(TODAY_NOON) });
+    const { store } = await openSeededStore(clock, { enfermo: matureSchedule(TODAY_NOON) });
     store.actions.rateCard(["enfermo"], "good");
     expect(store.getApi().stateOf("enfermo")).toEqual({ kind: "known" });
   });
 
   test("a word without a card is never touched and nothing is logged", async () => {
-    const repository = new MemoryRepository();
-    const store = await openStore(repository, createClock(TODAY_NOON));
+    const { store, repository } = await openSeededStore(createClock(TODAY_NOON));
     expect(store.getApi().stateOf("casa")).toEqual({ kind: "known" });
     expect(cardOf(store, "casa")).toBeUndefined();
 
@@ -155,14 +167,14 @@ describe("rating a card", () => {
   });
 
   test("rating keeps the order of the cards", async () => {
-    const store = await openStore(new MemoryRepository(), createClock(TODAY_NOON));
+    const { store } = await openSeededStore(createClock(TODAY_NOON));
     const before = store.getApi().state.cards.map((card) => card.lemma);
     store.actions.rateCard([before[2] ?? ""], "good");
     expect(store.getApi().state.cards.map((card) => card.lemma)).toEqual(before);
   });
 
   test("the queue follows the session rules: again re-appends, hard reinserts at index 2", async () => {
-    const store = await openStore(new MemoryRepository(), createClock(TODAY_NOON));
+    const { store } = await openSeededStore(createClock(TODAY_NOON));
     const queue = ["leña", "borde", "roble", "enfermo"];
     expect(store.actions.rateCard(queue, "again")).toEqual(["borde", "roble", "enfermo", "leña"]);
     expect(store.actions.rateCard(queue, "hard")).toEqual(["borde", "roble", "leña", "enfermo"]);
@@ -173,8 +185,7 @@ describe("rating a card", () => {
 
   test("an again rating then a good rating of the same card counts as one new card", async () => {
     const clock = createClock(TODAY_NOON);
-    const repository = new MemoryRepository();
-    const store = await openStore(repository, clock);
+    const { store, repository } = await openSeededStore(clock);
     let queue = ["leña", "borde"];
     queue = store.actions.rateCard(queue, "again");
     expect(queue).toEqual(["borde", "leña"]);
@@ -190,8 +201,7 @@ describe("rating a card", () => {
   });
 
   test("removing a card keeps its log entries", async () => {
-    const repository = new MemoryRepository();
-    const store = await openStore(repository, createClock(TODAY_NOON));
+    const { store, repository } = await openSeededStore(createClock(TODAY_NOON));
     store.actions.rateCard(["leña"], "good");
     store.actions.removeCard("leña");
     await store.settled();
@@ -201,8 +211,8 @@ describe("rating a card", () => {
 
 describe("startReview", () => {
   test("a legacy card without a schedule is a new card due now", async () => {
-    const store = await openStore(new MemoryRepository(), createClock(TODAY_NOON));
-    expect(await store.actions.startReview()).toEqual(STARTER_LEMMAS);
+    const { store } = await openSeededStore(createClock(TODAY_NOON));
+    expect(await store.actions.startReview()).toEqual(CARD_LEMMAS);
   });
 
   test("a card due in the future is excluded and a card due now is included", async () => {
@@ -210,7 +220,7 @@ describe("startReview", () => {
     const reviewed = rateSchedule(undefined, "good", TODAY_NOON - 5 * DAY);
     const dueNow: CardSchedule = { ...reviewed, due: TODAY_NOON };
     const dueLater: CardSchedule = { ...reviewed, due: TODAY_NOON + 1 };
-    const { store } = await openStoreWithSchedules(clock, { leña: dueLater, borde: dueNow });
+    const { store } = await openSeededStore(clock, { leña: dueLater, borde: dueNow });
 
     const queue = await store.actions.startReview();
 
@@ -221,13 +231,12 @@ describe("startReview", () => {
 
   test("new cards are limited to 10 per local day and allowed again after local midnight", async () => {
     const clock = createClock(TODAY_NOON);
-    const repository = new MemoryRepository();
-    const store = await openStore(repository, clock);
+    const { store } = await openSeededStore(clock);
     const extra = ["uno", "dos", "tres", "cuatro", "cinco"];
     for (const lemma of extra) {
       store.actions.addCard(lemma, 1);
     }
-    expect(store.getApi().state.cards).toHaveLength(STARTER_LEMMAS.length + extra.length);
+    expect(store.getApi().state.cards).toHaveLength(CARD_LEMMAS.length + extra.length);
 
     const first = await store.actions.startReview();
     expect(first).toHaveLength(NEW_CARDS_PER_DAY);
@@ -237,14 +246,14 @@ describe("startReview", () => {
 
     clock.time = TOMORROW_AFTER_MIDNIGHT;
     const nextDay = await store.actions.startReview();
-    const waiting = [...STARTER_LEMMAS, ...extra].slice(NEW_CARDS_PER_DAY);
+    const waiting = [...CARD_LEMMAS, ...extra].slice(NEW_CARDS_PER_DAY);
     expect(nextDay.slice(-waiting.length)).toEqual(waiting);
     expect(nextDay).toHaveLength(NEW_CARDS_PER_DAY + waiting.length);
   });
 
   test("cards removed or rated away do not reappear in a rebuilt queue before they are due", async () => {
     const clock = createClock(TODAY_NOON);
-    const store = await openStore(new MemoryRepository(), clock);
+    const { store } = await openSeededStore(clock);
     store.actions.rateCard(["leña"], "good");
     store.actions.removeCard("borde");
     const queue = await store.actions.startReview();
@@ -257,6 +266,13 @@ describe("review data through Dexie", () => {
   test("schedules and the review log survive a reload", async () => {
     const clock = createClock(TODAY_NOON);
     const { name, repository } = await openTestRepository();
+    for (const [index, lemma] of CARD_LEMMAS.entries()) {
+      await repository.saveCard("es", { lemma, sentenceId: index + 2 });
+      await repository.saveWordState("es", lemma, {
+        kind: "learning",
+        level: CARD_LEVELS[index] ?? 1,
+      });
+    }
     const store = await AppStore.open(repository, {
       prefersReducedMotion: false,
       initialRoute: "review",

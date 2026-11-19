@@ -86,10 +86,6 @@ export class GlyphfernDatabase extends Dexie {
   }
 }
 
-function seededKey(lang: Lang): string {
-  return `seeded:${lang}`;
-}
-
 export class DexieRepository implements Repository {
   readonly kind = "indexeddb" as const;
   private cardSeq = 0;
@@ -119,31 +115,6 @@ export class DexieRepository implements Repository {
       await this.db.pins.clear();
       await this.db.pins.bulkPut(pins.map((bookId, order) => ({ bookId, order })));
     });
-  }
-
-  async isSeeded(lang: Lang): Promise<boolean> {
-    const row = await this.db.meta.get(seededKey(lang));
-    return row?.value === true;
-  }
-
-  async seedLanguage(lang: Lang, snapshot: LanguageSnapshot): Promise<void> {
-    const stateRows: WordStateRow[] = Object.entries(snapshot.states).map(([lemma, state]) => ({
-      key: stateKey(lang, lemma),
-      lang,
-      lemma,
-      state,
-    }));
-    const cardRows: CardRow[] = snapshot.cards.map((card) => this.cardRow(lang, card));
-    await this.db.transaction(
-      "rw",
-      [this.db.wordStates, this.db.cards, this.db.bookmarks, this.db.meta],
-      async () => {
-        await this.db.wordStates.bulkPut(stateRows);
-        await this.db.cards.bulkPut(cardRows);
-        await this.db.bookmarks.put({ lang, sentenceIds: [...snapshot.bookmarks] });
-        await this.db.meta.put({ key: seededKey(lang), value: true });
-      },
-    );
   }
 
   async loadLanguage(lang: Lang): Promise<LanguageSnapshot> {

@@ -3,7 +3,6 @@ import { buildBook, buildDictionary } from "../build-book";
 import { koRawChapters } from "./book";
 import { koRawDictionary } from "./dictionary";
 import { koNotes } from "./notes";
-import { koKnownLemmas, koLearningLemmas } from "./starter";
 
 export const koPack: LanguagePack = {
   lang: "ko",
@@ -19,6 +18,4 @@ export const koPack: LanguagePack = {
     notes: koNotes,
   }),
   dict: buildDictionary(koRawDictionary),
-  knownLemmas: koKnownLemmas,
-  learningLemmas: koLearningLemmas,
 };

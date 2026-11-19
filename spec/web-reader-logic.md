@@ -42,7 +42,7 @@ Per lemma: `new` (no entry), `learning(level)` with level 1, 2 or 3 (3 is the ne
 
 - Highlight strength follows level: 1 → 38% alpha, 2 → 60%, 3 → 85% of `#C2D94C`. New and known words are not highlighted.
 - Every occurrence of a lemma shows its state. The state key is the **lemma**. **Target**: key is `(lang, lemma)` so lemmas of two languages can never collide. **Prototype**: key is the lemma alone and works only because the two demo languages use different scripts.
-- A word that is in the "known" starter list is marked known the first time its language is opened.
+- A first run has no word states: every word is new until the reader changes it (D-022).
 
 ## 4. Coverage
 
@@ -110,8 +110,8 @@ A language is a pack: tokenizer and lemmatizer output, dictionary, TTS locale, f
 
 Switching language:
 1. Save the current bookmarks and cards under the current language.
-2. Load (once) the target language: parse its sentences, merge its dictionary, mark its starter known words and its learning words, create starter cards pointing at the first occurrence.
-3. Restore that language's bookmarks and cards (or the starter set the first time).
+2. Load (once) the target language: parse its sentences and merge its dictionary.
+3. Restore that language's word states, bookmarks and cards (empty the first time).
 4. Set `data-lang` on the root element and `lang` on the flow, rebuild the flow, go to page 0.
 5. The active language is persisted and restored on startup.
 
@@ -144,7 +144,7 @@ Korean morpheme analysis: a token carries `morphemes`, each a form and a Vietnam
 
 - **Prototype**: one `localStorage` object holds `st` (states), `bm`, `cards`, `bms` (other languages' bookmarks and cards), `pins`, `lang`, `size`, `lh`, `font`, `paper`, `turn`, `hl`. Every read and write is wrapped in try/catch; the app MUST render without it.
 - **Target**: IndexedDB (Dexie) for states, cards, review log and bookmarks; the settings above in one preferences record; an outbox for sync as in the architecture document.
-- Starter data: a first run seeds known words, learning words and starter cards per language.
+- A first run starts empty: no word states, cards or bookmarks (D-022).
 
 ## 13. Errors and degradation
 

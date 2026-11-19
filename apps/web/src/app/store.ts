@@ -20,7 +20,6 @@ import {
 import { packs as defaultPacks } from "@glyphfern/languages";
 import { startOfLocalDay } from "../review/review-queue";
 import type { LanguageSnapshot, Repository, StoredBook } from "../storage/repository";
-import { ensureLanguage } from "../storage/seed";
 import type {
   AppActions,
   AppApi,
@@ -94,7 +93,7 @@ export class AppStore {
     const preferences: Preferences = { ...merged, positions: { ...merged.positions } };
     const lang: Lang = packs[preferences.lang] ? preferences.lang : defaults.lang;
     const base = packs[lang];
-    const snapshot = await ensureLanguage(repository, base);
+    const snapshot = await repository.loadLanguage(base.lang);
     const pins = await repository.loadPins();
     const userBooks = await repository.loadBooks();
     const bookId = userBooks.some((stored) => stored.id === preferences.bookId)
@@ -399,7 +398,7 @@ export class AppStore {
     if (known) {
       return known;
     }
-    const snapshot = await ensureLanguage(this.repository, this.packs[lang]);
+    const snapshot = await this.repository.loadLanguage(lang);
     this.loaded.set(lang, snapshot);
     return snapshot;
   }
@@ -414,7 +413,7 @@ export class AppStore {
     const sameLang = lang === this.current.lang;
     const snapshot = sameLang
       ? undefined
-      : (this.loaded.get(lang) ?? (await ensureLanguage(this.repository, base)));
+      : (this.loaded.get(lang) ?? (await this.repository.loadLanguage(lang)));
     if (token !== this.switchToken) {
       return;
     }

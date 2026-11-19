@@ -59,6 +59,4 @@ export interface LanguagePack {
   hyphenate: boolean;
   book: Book;
   dict: Record<string, DictEntry>;
-  knownLemmas: string[];
-  learningLemmas: Record<string, LearningLevel>;
 }

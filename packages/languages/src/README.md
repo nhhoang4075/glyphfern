@@ -2,7 +2,7 @@
 
 Purpose: typed, side-effect-free data for each language pack (`es`, `ko`). Each pack is a `LanguagePack` from `@glyphfern/core`.
 
-Layout: `es/` and `ko/` each hold `book.ts` (raw chapters), `notes.ts` (sentence notes), `dictionary.ts` (raw dictionary tuples), `starter.ts` (known and learning lemmas) and `index.ts` (the pack). `build-book.ts` turns raw data into `Book` and `DictEntry` values.
+Layout: `es/` and `ko/` each hold `book.ts` (raw chapters), `notes.ts` (sentence notes), `dictionary.ts` (raw dictionary tuples) and `index.ts` (the pack). `build-book.ts` turns raw data into `Book` and `DictEntry` values.
 
 Flow: `buildBook` walks chapters in order. Each chapter gets a title sentence (`kind: "title"`, id assigned first), then body sentences in paragraph order (`kind: "body"`). Ids are global and consecutive from 0. Body sentence `n` takes `notes[n]`; a missing or extra notes entry throws.
 

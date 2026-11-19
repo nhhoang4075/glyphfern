@@ -114,3 +114,10 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Reason: free, no per-character bill, Spanish voices of acceptable quality, and no 120 MB download on every device. `kokoro-js` was not usable because it ships English voices and an English-only phonemizer.
 - Rejected: Piper (per-voice licences, one model per voice), Cloudflare Aura-2 (paid per character), Gemini TTS (prepaid credit), Google Cloud TTS (billing), local neural voice in the browser (about 120 MB per device).
 - Korean has no Kokoro voice; Korean keeps the system voice until a Korean source is chosen.
+
+## D-022 No starter progress and no placeholder books
+- Date: 2026-11-19. Decided by: owner ("remove the seed and placeholder data").
+- Original choice: a first run seeded known words, learning words and one starter card per learning word for each language, and the library showed three placeholder books (Platero y yo, Don Quijote, Rotkäppchen) with invented progress.
+- Now: a first run starts empty (no word states, cards or bookmarks); the library lists only the two sample books (Spanish, Korean) and books the reader imports. The sample books and their hand-written dictionary stay as demo content.
+- Existing databases keep what they already stored; nothing is deleted. The `meta` table stays in the schema, unused, so no migration is needed.
+- Reason: invented progress is misleading once real books are read.

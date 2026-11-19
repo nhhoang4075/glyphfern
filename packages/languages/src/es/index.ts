@@ -4,7 +4,6 @@ import { esRawChapters } from "./book";
 import { esRawDictionary } from "./dictionary";
 import { expandPos } from "./expand-pos";
 import { esNotes } from "./notes";
-import { esKnownLemmas, esLearningLemmas } from "./starter";
 
 export const esPack: LanguagePack = {
   lang: "es",
@@ -20,8 +19,6 @@ export const esPack: LanguagePack = {
     notes: esNotes,
   }),
   dict: buildDictionary(esRawDictionary, expandPos),
-  knownLemmas: esKnownLemmas,
-  learningLemmas: esLearningLemmas,
 };
 
 export { expandPos };

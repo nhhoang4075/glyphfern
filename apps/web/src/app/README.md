@@ -17,7 +17,7 @@ State (`AppState`), always describing the active language:
 - `cards`: `{ lemma, sentenceId, schedule? }[]` in the order they were added. `schedule` is the FSRS `CardSchedule` (epoch milliseconds); a card without one has never been reviewed and counts as a new card due now.
 - `bookmarks`: sentence ids of the active language.
 - `books`: every book of the active language (the sample book first, then imported ones); `userBooks`: all imported books as stored.
-- `pins`: book ids in pin order (all languages and placeholder books).
+- `pins`: book ids in pin order.
 - `preferences`: `size, lh, font, paper, turn, hl, voice, lang, bookId, positions`. `voice` is `"system"` (Web Speech API, default) or `"server"` (Kokoro voice from the API); preferences stored before it existed load as `"system"` through the defaults merge in `AppStore.open`; see `../speech`. `positions` maps a book id (`pack.book.id` for the sample book, `StoredBook.id` for an imported one) to the sentence id the reader was on.
 - `focusRequest`: pending `{ lemma, sentenceId }` set by the Words screen.
 - `persistence`: `indexeddb` or `memory` (session-only fallback).
@@ -50,7 +50,7 @@ Flow, one book at a time for every user book whose `lemmatized` is not `true` (a
 3. Build `lemmaChanges(before, after)`: old lemma to new lemma for every token whose lemma changed, then `migrateProgress` (`lemma-migration.ts`, pure) computes the new progress of the book's language:
    - a card whose `sentenceId` lies in this book and whose lemma changed moves to the new lemma with the same `sentenceId`; if a card for the new lemma already exists (including one moved earlier in the same run) the old card is deleted instead; cards of other books are never touched;
    - a word state of the old lemma is copied to the new lemma when the new lemma has none; the old entry stays because other books may still use it.
-4. The changes are written through the repository. When the book's language is the active one they also patch `wordStates` and `cards` in the state; otherwise the snapshot in `loaded` (or the repository, through `ensureLanguage`) is updated so a later language switch shows the migrated progress.
+4. The changes are written through the repository. When the book's language is the active one they also patch `wordStates` and `cards` in the state; otherwise the snapshot in `loaded` (or the repository) is updated so a later language switch shows the migrated progress.
 
 ## Reading positions
 
@@ -63,7 +63,7 @@ A position is a sentence id, never a page. `preferences.positions` is one object
 ## Language switching (logic spec section 9)
 
 1. Every change is written to the repository as it happens, so the current bookmarks and cards are already saved under the current language.
-2. The target language is loaded once through `ensureLanguage`: first run seeds known words, learning words and one starter card per learning lemma pointing at its first body occurrence; later runs read what was stored.
+2. The target language is loaded once from the repository: word states, cards and bookmarks as stored; a first run has none.
 3. Its bookmarks and cards replace the active ones.
 4. `preferences.lang` changes and the provider sets `data-lang`.
 5. `preferences.lang` is persisted and restored by `AppStore.open`.
@@ -72,8 +72,8 @@ A newer `switchLanguage` call supersedes an older one that is still loading.
 
 ## Storage
 
-See `../storage`. IndexedDB (Dexie) tables: `wordStates` and `cards` keyed by `stateKey(lang, lemma)` (a card row also holds its schedule), `bookmarks` per language, `pins`, one `preferences` record, `meta` (seeded flags), `books`, and the append-only `reviewLog`. When IndexedDB cannot open, `createRepository` returns an in-memory repository and the app runs session-only. Writes are fire-and-forget; a failed write never reaches the UI. `AppStore.settled()` resolves when all pending writes ended (used by tests).
+See `../storage`. IndexedDB (Dexie) tables: `wordStates` and `cards` keyed by `stateKey(lang, lemma)` (a card row also holds its schedule), `bookmarks` per language, `pins`, one `preferences` record, `meta` (unused since D-022, kept so existing databases open without a migration), `books`, and the append-only `reviewLog`. When IndexedDB cannot open, `createRepository` returns an in-memory repository and the app runs session-only. Writes are fire-and-forget; a failed write never reaches the UI. `AppStore.settled()` resolves when all pending writes ended (used by tests).
 
 ## Testing
 
-`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. `review.test.ts` covers rating, the review log and `startReview` with an injected clock (`StoreOptions.now`, default `Date.now`, used for all scheduling). `books.test.ts` covers import and `relemmatize.test.ts` covers the lemmatized flag, retries and progress migration. Expected values come from the state table and review rules of the logic spec and from the prototype starter data.
+`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. `review.test.ts` covers rating, the review log and `startReview` with an injected clock (`StoreOptions.now`, default `Date.now`, used for all scheduling). `books.test.ts` covers import and `relemmatize.test.ts` covers the lemmatized flag, retries and progress migration. Expected values come from the state table and review rules of the logic spec.

@@ -16,7 +16,6 @@ export class MemoryRepository implements Repository {
   readonly kind = "memory" as const;
   private preferences: Preferences | undefined;
   private pins: string[] = [];
-  private readonly seeded = new Set<Lang>();
   private readonly states = new Map<string, WordState>();
   private readonly cards = new Map<string, StoredCard>();
   private readonly bookmarks = new Map<Lang, number[]>();
@@ -37,21 +36,6 @@ export class MemoryRepository implements Repository {
 
   async savePins(pins: readonly string[]): Promise<void> {
     this.pins = [...pins];
-  }
-
-  async isSeeded(lang: Lang): Promise<boolean> {
-    return this.seeded.has(lang);
-  }
-
-  async seedLanguage(lang: Lang, snapshot: LanguageSnapshot): Promise<void> {
-    for (const [lemma, state] of Object.entries(snapshot.states)) {
-      this.states.set(stateKey(lang, lemma), state);
-    }
-    for (const card of snapshot.cards) {
-      this.cards.set(stateKey(lang, card.lemma), { ...card, lang });
-    }
-    this.bookmarks.set(lang, [...snapshot.bookmarks]);
-    this.seeded.add(lang);
   }
 
   async loadLanguage(lang: Lang): Promise<LanguageSnapshot> {

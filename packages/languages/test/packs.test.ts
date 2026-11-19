@@ -105,20 +105,6 @@ describe("Spanish book", () => {
     expect(esPack.dict.con).toEqual({ pos: "giới từ", pronunciation: "/kon/", meaning: "với" });
     expect(esPack.dict.borde?.note).toBe("al borde de = bên rìa.");
   });
-
-  test("starter lists match the prototype", () => {
-    expect(esPack.knownLemmas).toHaveLength(28);
-    expect(esPack.knownLemmas.slice(0, 3)).toEqual(["uno", "el", "con"]);
-    expect(esPack.learningLemmas).toEqual({
-      leña: 3,
-      borde: 2,
-      roble: 2,
-      enfermo: 1,
-      recoger: 1,
-      despacio: 1,
-      conocer: 1,
-    });
-  });
 });
 
 describe("Korean book", () => {
@@ -161,16 +147,5 @@ describe("Korean book", () => {
       }
     }
     expect([...missing]).toEqual([]);
-  });
-
-  test("starter lists match the prototype", () => {
-    expect(koPack.knownLemmas).toEqual(["한", "가다", "있다", "집", "어디", "날"]);
-    expect(koPack.learningLemmas).toEqual({
-      늑대: 3,
-      줍다: 2,
-      지름길: 2,
-      꺾다: 1,
-      천천히: 1,
-    });
   });
 });

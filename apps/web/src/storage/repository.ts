@@ -22,8 +22,6 @@ export interface Repository {
   savePreferences(preferences: Preferences): Promise<void>;
   loadPins(): Promise<string[]>;
   savePins(pins: readonly string[]): Promise<void>;
-  isSeeded(lang: Lang): Promise<boolean>;
-  seedLanguage(lang: Lang, snapshot: LanguageSnapshot): Promise<void>;
   loadLanguage(lang: Lang): Promise<LanguageSnapshot>;
   saveWordState(lang: Lang, lemma: string, state: WordState): Promise<void>;
   saveCard(lang: Lang, card: Card): Promise<void>;
