@@ -1,0 +1,15 @@
+**/node_modules
+**/test
+**/.venv
+**/models
+.git
+.claude
+.playwright-mcp
+.env
+.env.*
+docs
+data
+experiments
+spec
+*.log
+.DS_Store
