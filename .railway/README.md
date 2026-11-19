@@ -17,7 +17,7 @@ Purpose: the infrastructure of Glyphfern on Railway, written as code in `railway
 
 Written in `railway.ts`: `DATABASE_URL`, `ALLOWED_ORIGIN`, `TRUST_PROXY=1`, `TTS_URL` (the private domain of `tts`), and for `web` `PORT`, `API_ORIGIN` (the private domain of `api`) and `VITE_API_URL=/api`. `VITE_API_URL` is read at build time as a Docker build argument, so changing it needs a new build of `web`.
 
-Not written: `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` of `api` use `preserve()`. Set them once in the dashboard; apply never overwrites them. Without them translation answers 503 and the rest still works.
+Not written: `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` of `api` use `preserve()`. Set them once in the dashboard; apply never overwrites them. Without them translation answers 503 and the rest still works. `GOOGLE_CLIENT_ID` and `ALLOWED_EMAILS` of `api` also use `preserve()`; without them sign-in is off and the app stays local-only.
 
 ## First deployment
 
