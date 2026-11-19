@@ -42,4 +42,17 @@ describe("looking up a word", () => {
   test("an unknown word has no result", async () => {
     expect(await lookupWord(memoryStore(), "es", "zzzz")).toBeUndefined();
   });
+
+  test("proper nouns come after common readings", async () => {
+    const store: LexiconStore = {
+      async findByWord() {
+        return [
+          { word: "como", pos: "name", ipa: null, glosses: ["Como (a city)"], lemma: null },
+          { word: "como", pos: "adv", ipa: null, glosses: ["as"], lemma: null },
+        ];
+      },
+    };
+    const result = await lookupWord(store, "es", "como");
+    expect(result?.entries.map((entry) => entry.pos)).toEqual(["adv", "name"]);
+  });
 });

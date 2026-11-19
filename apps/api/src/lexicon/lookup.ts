@@ -55,6 +55,7 @@ export async function lookupWord(
   if (entries.length === 0) {
     return undefined;
   }
+  entries.sort((a, b) => Number(a.pos === "name") - Number(b.pos === "name"));
   const primary = own.length > 0 ? surface.toLowerCase() : (lemmas[0] ?? surface.toLowerCase());
   return {
     surface,
