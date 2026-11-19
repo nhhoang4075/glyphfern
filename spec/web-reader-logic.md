@@ -21,11 +21,12 @@ Morpheme  { form: string, gloss: string }
 ## 2. Pagination and position
 
 - The page flow is one element laid out with CSS multi-column: column width = sheet width, column gap = 20% of sheet width, column fill auto. One page = one column. Step = width + gap.
-- After every layout, record for each sentence the first and last page it touches (`startPage`, `endPage`) from its client rects, and record each chapter's start page from its heading position.
+- The flow holds a **window of chapters**: the current chapter, the previous one and the next one (fewer at the ends of the book). Pages are numbered inside the window only. When reading moves into another chapter the window shifts by one chapter and the layout is rebuilt anchored on the sentence on screen; jumps (contents, search, bookmarks, restored position) rebuild the window around the target sentence's chapter.
+- After every layout, record for each sentence in the window the first and last page it touches (`startPage`, `endPage`) from its client rects, and record each windowed chapter's start page from its heading position.
 - Reading position is a **sentence**, never a page number. After any relayout (font size, line height, font family, window resize, fullscreen toggle, fonts loaded, language switch) the app re-anchors to the sentence that was on the current page and recomputes the page.
 - `layout()` MUST do nothing when the sheet has zero width (the reading view is hidden).
 - Current page for position purposes: the first sentence whose `endPage >= page`.
-- Progress track position = `page / (pages - 1)`.
+- Book progress = `(words before the current chapter + words of the current chapter read so far) / total words`, where words are token counts from the book data and "read so far" is `(page - chapter start page) / chapter pages` inside the current chapter. It does not depend on font size and needs no layout of the rest of the book. The same rule gives the progress bar of each chapter in the contents drawer (`clamp((page - start) / chapter pages)` for the current chapter, 1 before it, 0 after it) and the progress on the book card.
 
 ## 3. Word states
 

@@ -158,3 +158,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Date: 2026-11-20. Decided by: owner (chose "keep only the stories" for a learner book with appendices and quizzes).
 - Now: when a Spanish book has paragraph-style chapter headings of the form `Capítulo N` (optionally followed by a title) or `N. Title`, chapters are built from those headings with readable titles (`1 · El detective`, prefixed by the story name when a story heading precedes it: `El Castillo · 1 · El detective`; the last chapter ends at a standalone `FIN` line). Spine documents whose first line is an appendix, glossary, quiz or answer heading (`Anexo`, `Resumen`, `Vocabulario`, `Preguntas`, `Soluciones`, `Respuestas`) are dropped. A book without such headings is unchanged.
 - Reason: the quiz and glossary sections are not reading text and carry English glosses that the reader would treat as Spanish words.
+
+## D-029 The flow renders a window of three chapters; progress is by word count
+- Date: 2026-11-20. Decided by: owner ("do it", after the options and trade-offs were explained).
+- Original choice: the whole book was in the DOM and pages were numbered over the whole book; progress was `page / (pages - 1)`.
+- Now: the flow holds the current chapter and its neighbours; pages are numbered inside the window; progress is computed from token counts (`spec/web-reader-logic.md` §2). The sentence stays the position of record, so saved positions, bookmarks and cards are unaffected.
+- Reason: on a 50 thousand word book a page turn froze for about 8 seconds and every layout change reflowed the whole book; the cost grows with the square of the DOM size.
