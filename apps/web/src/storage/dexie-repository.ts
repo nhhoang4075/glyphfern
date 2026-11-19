@@ -1,7 +1,14 @@
-import { type Lang, type WordState, stateKey } from "@glyphfern/core";
+import {
+  type CardSchedule,
+  type Lang,
+  type ReviewLogEntry,
+  type WordState,
+  stateKey,
+} from "@glyphfern/core";
 import Dexie, { type DexieOptions, type Table } from "dexie";
 import type { Card, Preferences } from "../app/api";
 import type { LanguageSnapshot, Repository, StoredBook } from "./repository";
+import { isFirstReview } from "./review-log";
 
 export const DATABASE_NAME = "glyphfern";
 const PREFERENCES_ID = "main";
@@ -19,6 +26,12 @@ export interface CardRow {
   lemma: string;
   sentenceId: number;
   seq: number;
+  schedule?: CardSchedule;
+}
+
+export interface ReviewLogRow extends ReviewLogEntry {
+  id?: number;
+  lang: Lang;
 }
 
 export interface BookmarkRow {
@@ -48,6 +61,7 @@ export class GlyphfernDatabase extends Dexie {
   readonly preferences: Table<PreferencesRow, string>;
   readonly meta: Table<MetaRow, string>;
   readonly books: Table<StoredBook, string>;
+  readonly reviewLog: Table<ReviewLogRow, number>;
 
   constructor(name: string = DATABASE_NAME, options?: DexieOptions) {
     super(name, options);
@@ -60,6 +74,8 @@ export class GlyphfernDatabase extends Dexie {
       meta: "key",
     });
     this.version(2).stores({ books: "id, lang" });
+    this.version(3).stores({ reviewLog: "++id, lang, reviewedAt, [lang+reviewedAt]" });
+    this.reviewLog = this.table("reviewLog");
     this.books = this.table("books");
     this.wordStates = this.table("wordStates");
     this.cards = this.table("cards");
@@ -142,7 +158,12 @@ export class DexieRepository implements Repository {
     }
     const cards = cardRows
       .sort((a, b) => a.seq - b.seq)
-      .map((row) => ({ lemma: row.lemma, sentenceId: row.sentenceId }));
+      .map(
+        (row): Card =>
+          row.schedule
+            ? { lemma: row.lemma, sentenceId: row.sentenceId, schedule: row.schedule }
+            : { lemma: row.lemma, sentenceId: row.sentenceId },
+      );
     for (const row of cardRows) {
       this.cardSeq = Math.max(this.cardSeq, row.seq + 1);
     }
@@ -159,11 +180,32 @@ export class DexieRepository implements Repository {
   }
 
   async saveCard(lang: Lang, card: Card): Promise<void> {
-    await this.db.cards.put(this.cardRow(lang, card));
+    const existing = await this.db.cards.get(stateKey(lang, card.lemma));
+    await this.db.cards.put(this.cardRow(lang, card, existing?.seq));
   }
 
   async deleteCard(lang: Lang, lemma: string): Promise<void> {
     await this.db.cards.delete(stateKey(lang, lemma));
+  }
+
+  async appendReview(lang: Lang, entry: ReviewLogEntry): Promise<void> {
+    await this.db.reviewLog.add({ ...entry, lang });
+  }
+
+  async countNewReviewsSince(lang: Lang, since: number): Promise<number> {
+    return this.db.reviewLog
+      .where("[lang+reviewedAt]")
+      .between([lang, since], [lang, Dexie.maxKey])
+      .filter(isFirstReview)
+      .count();
+  }
+
+  async loadReviewLog(lang: Lang): Promise<ReviewLogEntry[]> {
+    const rows = await this.db.reviewLog
+      .where("[lang+reviewedAt]")
+      .between([lang, Dexie.minKey], [lang, Dexie.maxKey])
+      .toArray();
+    return rows.map(({ id: _id, lang: _lang, ...entry }) => entry);
   }
 
   async saveBookmarks(lang: Lang, sentenceIds: readonly number[]): Promise<void> {
@@ -183,15 +225,24 @@ export class DexieRepository implements Repository {
     await this.db.books.delete(id);
   }
 
-  private cardRow(lang: Lang, card: Card): CardRow {
-    const seq = this.cardSeq;
-    this.cardSeq += 1;
-    return {
+  private cardRow(lang: Lang, card: Card, keptSeq?: number): CardRow {
+    const seq = keptSeq ?? this.nextCardSeq();
+    const row: CardRow = {
       key: stateKey(lang, card.lemma),
       lang,
       lemma: card.lemma,
       sentenceId: card.sentenceId,
       seq,
     };
+    if (card.schedule) {
+      row.schedule = card.schedule;
+    }
+    return row;
+  }
+
+  private nextCardSeq(): number {
+    const seq = this.cardSeq;
+    this.cardSeq += 1;
+    return seq;
   }
 }

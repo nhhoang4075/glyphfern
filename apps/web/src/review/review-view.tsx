@@ -9,7 +9,13 @@ import { useLookup } from "../lexicon/use-lookup";
 import { SENTENCE_RATE, speak } from "../speech/speak";
 import { Button, Chip, IconButton } from "../ui";
 import { cardBack } from "./card-back";
-import { buildReviewQueue, progressDots, sentenceText } from "./review-queue";
+import {
+  EMPTY_SESSION,
+  progressDots,
+  sentenceText,
+  sessionWithQueue,
+  startSession,
+} from "./review-queue";
 
 interface RatingButton {
   rating: Rating;
@@ -53,19 +59,26 @@ function Cloze({
 export function ReviewView() {
   const { state, actions } = useApp();
   const active = state.route === "review";
-  const [queue, setQueue] = useState<string[]>([]);
-  const [total, setTotal] = useState(0);
+  const [session, setSession] = useState(EMPTY_SESSION);
   const [flipped, setFlipped] = useState(false);
+  const { queue, total } = session;
+  const { startReview } = actions;
 
   useEffect(() => {
     if (!active) {
       return;
     }
-    const fresh = buildReviewQueue(state.cards);
-    setQueue(fresh);
-    setTotal(fresh.length);
-    setFlipped(false);
-  }, [active, state.cards]);
+    let cancelled = false;
+    startReview().then((fresh) => {
+      if (!cancelled) {
+        setSession(startSession(fresh));
+        setFlipped(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [active, startReview]);
 
   const lemma = queue[0];
   const card = state.cards.find((candidate) => candidate.lemma === lemma);
@@ -102,7 +115,7 @@ export function ReviewView() {
   };
 
   const rate = (rating: Rating) => {
-    setQueue(actions.rateCard(queue, rating));
+    setSession(sessionWithQueue(session, actions.rateCard(queue, rating)));
     setFlipped(false);
   };
 

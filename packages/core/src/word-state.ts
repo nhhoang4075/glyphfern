@@ -1,4 +1,4 @@
-import type { LearningLevel, Rating, WordState } from "./types";
+import type { LearningLevel, WordState } from "./types";
 
 const NEW_STATE: WordState = { kind: "new" };
 const KNOWN_STATE: WordState = { kind: "known" };
@@ -36,29 +36,6 @@ export function onCardAdded(state: WordState): WordState {
 
 export function onCardRemoved(state: WordState): WordState {
   return state;
-}
-
-export function onRated(state: WordState, rating: Rating): WordState {
-  if (rating === "again" || rating === "hard") {
-    return state;
-  }
-  if (rating === "easy") {
-    return KNOWN_STATE;
-  }
-  if (state.kind !== "learning") {
-    return state;
-  }
-  return lowerLearningLevel(state.level);
-}
-
-function lowerLearningLevel(level: LearningLevel): WordState {
-  if (level === 3) {
-    return { kind: "learning", level: 2 };
-  }
-  if (level === 2) {
-    return { kind: "learning", level: 1 };
-  }
-  return KNOWN_STATE;
 }
 
 export function highlightAlpha(state: WordState): number {

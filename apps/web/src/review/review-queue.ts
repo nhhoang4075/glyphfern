@@ -1,8 +1,23 @@
 import type { ReviewProgress, Sentence } from "@glyphfern/core";
-import type { Card } from "../app/api";
 
-export function buildReviewQueue(cards: readonly Card[]): string[] {
-  return cards.map((card) => card.lemma);
+export interface ReviewSession {
+  queue: string[];
+  total: number;
+}
+
+export const EMPTY_SESSION: ReviewSession = { queue: [], total: 0 };
+
+export function startSession(queue: readonly string[]): ReviewSession {
+  return { queue: [...queue], total: queue.length };
+}
+
+export function sessionWithQueue(session: ReviewSession, queue: readonly string[]): ReviewSession {
+  return { queue: [...queue], total: session.total };
+}
+
+export function startOfLocalDay(time: number): number {
+  const date = new Date(time);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
 export function sentenceText(sentence: Sentence): string {

@@ -50,28 +50,6 @@ describe("store actions follow the word state table", () => {
     expect(store.getApi().stateOf("leña")).toEqual({ kind: "learning", level: 3 });
   });
 
-  test("ratings move level 3 to 2 to 1 to known on good, easy goes straight to known", async () => {
-    const store = await openMemoryStore();
-    expect(store.actions.ratingApplied("leña", "good")).toEqual({ kind: "learning", level: 2 });
-    expect(store.actions.ratingApplied("leña", "good")).toEqual({ kind: "learning", level: 1 });
-    expect(store.actions.ratingApplied("leña", "good")).toEqual({ kind: "known" });
-    expect(store.actions.ratingApplied("borde", "easy")).toEqual({ kind: "known" });
-    expect(store.actions.ratingApplied("roble", "again")).toEqual({ kind: "learning", level: 2 });
-    expect(store.actions.ratingApplied("roble", "hard")).toEqual({ kind: "learning", level: 2 });
-  });
-
-  test("rateCard reorders the queue by the review rules and applies the state change", async () => {
-    const store = await openMemoryStore();
-    const queue = ["leña", "borde", "roble", "enfermo"];
-    expect(store.actions.rateCard(queue, "again")).toEqual(["borde", "roble", "enfermo", "leña"]);
-    expect(store.actions.rateCard(queue, "hard")).toEqual(["borde", "roble", "leña", "enfermo"]);
-    expect(store.actions.rateCard(queue, "good")).toEqual(["borde", "roble", "enfermo"]);
-    expect(store.getApi().stateOf("leña")).toEqual({ kind: "learning", level: 2 });
-    expect(store.actions.rateCard(["borde"], "easy")).toEqual([]);
-    expect(store.getApi().stateOf("borde")).toEqual({ kind: "known" });
-    expect(store.actions.rateCard([], "good")).toEqual([]);
-  });
-
   test("focus request is stored once and consumed once", async () => {
     const store = await openMemoryStore();
     store.actions.requestFocus({ lemma: "leña", sentenceId: 2 });

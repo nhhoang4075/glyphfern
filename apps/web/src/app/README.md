@@ -14,7 +14,7 @@ State (`AppState`), always describing the active language:
 - `route`: `library | read | words | review`. Default `read`. Mirrors `location.hash`.
 - `lang`, `pack`: active language and its `LanguagePack` (book, dictionary, `ttsLocale`, ...).
 - `wordStates`: `lemma -> WordState`. A missing lemma is `new`; use `stateOf(lemma)`.
-- `cards`: `{ lemma, sentenceId }[]` in the order they were added.
+- `cards`: `{ lemma, sentenceId, schedule? }[]` in the order they were added. `schedule` is the FSRS `CardSchedule` (epoch milliseconds); a card without one has never been reviewed and counts as a new card due now.
 - `bookmarks`: sentence ids of the active language.
 - `books`: every book of the active language (the sample book first, then imported ones); `userBooks`: all imported books as stored.
 - `pins`: book ids in pin order (all languages and placeholder books).
@@ -26,7 +26,7 @@ Actions (`AppActions`, stable identities):
 - `navigate(route)`.
 - `setWordState(lemma, "new" | "learning" | "known")`: applies `tapNew`, `tapLearning`, `tapKnown`. Returns `{ state, pulse }`; `pulse` is true when the word became learning.
 - `addCard(lemma, sentenceId)`: ignored when the lemma already has a card. Applies `onCardAdded`. Returns `{ state, pulse, added }`.
-- `removeCard(lemma)`: applies `onCardRemoved` (state unchanged).
+- `removeCard(lemma)`: applies `onCardRemoved` (state unchanged). The review log keeps every entry of the removed card; `deleteBook` removes cards the same way and keeps the log too.
 - `toggleBookmark(sentenceId)`, `togglePin(bookId)`.
 - `setPreference(key, value)` for every preference except `lang`, `bookId` and `positions`.
 - `switchLanguage(lang)`: async, see below; it also returns to the sample book of that language.
@@ -34,8 +34,8 @@ Actions (`AppActions`, stable identities):
 - `openBook(bookId)`: makes a sample or imported book the active one (`state.pack.book`) and remembers it in `preferences.bookId`.
 - `deleteBook(bookId)`: removes an imported book with its cards, bookmarks, pin and reading position; word states stay.
 - `rememberPosition(bookId, sentenceId)`: stores the reading position of a book. It never publishes a new state, so a page turn does not re-render the app; see Reading positions.
-- `ratingApplied(lemma, rating)`: applies `onRated` to one lemma and returns the new state.
-- `rateCard(queue, rating)`: applies `rateReviewCard` to the head of the queue, commits the state change and returns the new queue.
+- `startReview()`: async. Builds the queue of a new review session: the cards due now plus new cards up to 10 per local day. It waits for pending writes, counts the first reviews logged since local midnight of `now()` (`countNewReviewsSince`) and returns `buildDueQueue(cards, now(), countedToday)`. A card without a schedule is a new card.
+- `rateCard(queue, rating)`: returns the queue after `rateReviewCard` (again re-appends, hard reinserts at index 2, good and easy remove the head). When the head lemma has a card, it also rates it: `rateSchedule` gives the new schedule, which is saved on the card (in `state.cards` and the repository); one `ReviewLogEntry` `{ lemma, sentenceId, rating, reviewedAt, before, after }` is appended to the review log; the word state becomes `wordStateFromSchedule(after)`. A lemma without a card is never touched and nothing is logged.
 - `requestFocus(request)` and `consumeFocus()`: the Words screen requests, the Reading screen consumes once. `consumeFocus` returns the request and clears it.
 
 `ReaderView` (the Reading screen) is mounted all the time and hidden with `display: none` while another route is active, as the layout rule in the logic spec requires. It can read `state.route` to know whether it is visible.
@@ -72,8 +72,8 @@ A newer `switchLanguage` call supersedes an older one that is still loading.
 
 ## Storage
 
-See `../storage`. IndexedDB (Dexie) tables: `wordStates` and `cards` keyed by `stateKey(lang, lemma)`, `bookmarks` per language, `pins`, one `preferences` record, `meta` (seeded flags). When IndexedDB cannot open, `createRepository` returns an in-memory repository and the app runs session-only. Writes are fire-and-forget; a failed write never reaches the UI. `AppStore.settled()` resolves when all pending writes ended (used by tests).
+See `../storage`. IndexedDB (Dexie) tables: `wordStates` and `cards` keyed by `stateKey(lang, lemma)` (a card row also holds its schedule), `bookmarks` per language, `pins`, one `preferences` record, `meta` (seeded flags), `books`, and the append-only `reviewLog`. When IndexedDB cannot open, `createRepository` returns an in-memory repository and the app runs session-only. Writes are fire-and-forget; a failed write never reaches the UI. `AppStore.settled()` resolves when all pending writes ended (used by tests).
 
 ## Testing
 
-`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. `books.test.ts` covers import and `relemmatize.test.ts` covers the lemmatized flag, retries and progress migration. Expected values come from the state table and review rules of the logic spec and from the prototype starter data.
+`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. `review.test.ts` covers rating, the review log and `startReview` with an injected clock (`StoreOptions.now`, default `Date.now`, used for all scheduling). `books.test.ts` covers import and `relemmatize.test.ts` covers the lemmatized flag, retries and progress migration. Expected values come from the state table and review rules of the logic spec and from the prototype starter data.

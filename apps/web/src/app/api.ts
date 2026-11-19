@@ -1,4 +1,4 @@
-import type { Book, Lang, LanguagePack, Rating, WordState } from "@glyphfern/core";
+import type { Book, CardSchedule, Lang, LanguagePack, Rating, WordState } from "@glyphfern/core";
 import type { StoredBook } from "../storage/repository";
 
 export type Route = "library" | "read" | "words" | "review";
@@ -29,6 +29,7 @@ export type PreferenceKey = Exclude<keyof Preferences, "lang" | "bookId" | "posi
 export interface Card {
   lemma: string;
   sentenceId: number;
+  schedule?: CardSchedule;
 }
 
 export interface FocusRequest {
@@ -77,7 +78,7 @@ export interface AppActions {
   openBook(bookId: string): Promise<void>;
   deleteBook(bookId: string): void;
   rememberPosition(bookId: string, sentenceId: number): void;
-  ratingApplied(lemma: string, rating: Rating): WordState;
+  startReview(): Promise<string[]>;
   rateCard(queue: readonly string[], rating: Rating): string[];
   requestFocus(request: FocusRequest): void;
   consumeFocus(): FocusRequest | null;

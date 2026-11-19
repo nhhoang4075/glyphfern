@@ -6,16 +6,19 @@ import {
   type WordState,
   applyLemmas,
   bookWords,
+  buildDueQueue,
   buildEpubBook,
   onCardAdded,
   onCardRemoved,
-  onRated,
   rateReviewCard,
+  rateSchedule,
   tapKnown,
   tapLearning,
   tapNew,
+  wordStateFromSchedule,
 } from "@glyphfern/core";
 import { packs as defaultPacks } from "@glyphfern/languages";
+import { startOfLocalDay } from "../review/review-queue";
 import type { LanguageSnapshot, Repository, StoredBook } from "../storage/repository";
 import { ensureLanguage } from "../storage/seed";
 import type {
@@ -58,6 +61,7 @@ export interface StoreOptions {
   prefersReducedMotion?: boolean;
   initialRoute?: Route;
   lemmatizer?: Lemmatizer;
+  now?: () => number;
 }
 
 export type Lemmatizer = (lang: Lang, words: string[]) => Promise<Record<string, string> | null>;
@@ -76,7 +80,8 @@ export class AppStore {
     private readonly repository: Repository,
     private readonly packs: Record<Lang, LanguagePack>,
     private current: AppState,
-    private readonly lemmatizer?: Lemmatizer,
+    private readonly lemmatizer: Lemmatizer | undefined,
+    private readonly now: () => number,
   ) {
     this.api = this.buildApi();
   }
@@ -110,7 +115,13 @@ export class AppStore {
       focusRequest: null,
       persistence: repository.kind,
     };
-    const store = new AppStore(repository, packs, state, options.lemmatizer);
+    const store = new AppStore(
+      repository,
+      packs,
+      state,
+      options.lemmatizer,
+      options.now ?? Date.now,
+    );
     store.loaded.set(lang, snapshot);
     store.persist(store.relemmatizePending());
     return store;
@@ -275,20 +286,24 @@ export class AppStore {
       this.persistPreferences(this.current.preferences);
     },
 
-    ratingApplied: (lemma, rating: Rating) => {
-      const next = onRated(this.stateOf(lemma), rating);
-      this.commitWordState(lemma, next);
-      return next;
-    },
-
     rateCard: (queue, rating) => {
       const lemma = queue[0];
-      if (lemma === undefined) {
-        return [];
+      const card = this.current.cards.find((candidate) => candidate.lemma === lemma);
+      if (card) {
+        this.rateStoredCard(card, rating);
       }
-      const result = rateReviewCard(queue, rating, this.stateOf(lemma));
-      this.commitWordState(lemma, result.state);
-      return result.queue;
+      return rateReviewCard(queue, rating);
+    },
+
+    startReview: async () => {
+      const lang = this.current.lang;
+      await this.settled();
+      const now = this.now();
+      const newCardsToday = await this.repository.countNewReviewsSince(lang, startOfLocalDay(now));
+      if (lang !== this.current.lang) {
+        return this.actions.startReview();
+      }
+      return buildDueQueue(this.current.cards, now, newCardsToday);
     },
 
     requestFocus: (request) => {
@@ -427,6 +442,30 @@ export class AppStore {
     this.persist(
       this.repository.savePreferences({ ...preferences, positions: { ...preferences.positions } }),
     );
+  }
+
+  private rateStoredCard(card: Card, rating: Rating) {
+    const reviewedAt = this.now();
+    const after = rateSchedule(card.schedule, rating, reviewedAt);
+    const rated: Card = { ...card, schedule: after };
+    const lang = this.current.lang;
+    this.patch({
+      cards: this.current.cards.map((candidate) =>
+        candidate.lemma === card.lemma ? rated : candidate,
+      ),
+    });
+    this.persist(this.repository.saveCard(lang, rated));
+    this.persist(
+      this.repository.appendReview(lang, {
+        lemma: card.lemma,
+        sentenceId: card.sentenceId,
+        rating,
+        reviewedAt,
+        before: card.schedule ?? null,
+        after,
+      }),
+    );
+    this.commitWordState(card.lemma, wordStateFromSchedule(after));
   }
 
   private stateOf(lemma: string): WordState {

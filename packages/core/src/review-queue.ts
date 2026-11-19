@@ -1,31 +1,18 @@
-import type { Rating, WordState } from "./types";
-import { onRated } from "./word-state";
+import type { Rating } from "./types";
 
 const HARD_REINSERT_INDEX = 2;
-
-export interface ReviewRatingResult {
-  queue: string[];
-  state: WordState;
-}
 
 export interface ReviewProgress {
   done: number;
   total: number;
 }
 
-export function rateReviewCard(
-  queue: readonly string[],
-  rating: Rating,
-  state: WordState,
-): ReviewRatingResult {
+export function rateReviewCard(queue: readonly string[], rating: Rating): string[] {
   const [currentLemma, ...rest] = queue;
   if (currentLemma === undefined) {
-    return { queue: [], state };
+    return [];
   }
-  return {
-    queue: queueAfterRating(currentLemma, rest, rating),
-    state: onRated(state, rating),
-  };
+  return queueAfterRating(currentLemma, rest, rating);
 }
 
 function queueAfterRating(currentLemma: string, rest: string[], rating: Rating): string[] {
