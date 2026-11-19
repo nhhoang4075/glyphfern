@@ -4,6 +4,8 @@ import type { TapTarget } from "../app/api";
 import { useApp } from "../app/use-app";
 import { Icon } from "../icons/icon";
 import type { IconName } from "../icons/icon-data";
+import { toDictEntry } from "../lexicon/lexicon-client";
+import { useLookup } from "../lexicon/use-lookup";
 import { SENTENCE_RATE, WORD_RATE, speak } from "../speech/speak";
 import { Chip, IconButton, Section, Segmented, Sheet } from "../ui";
 import {
@@ -62,7 +64,10 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
   const lemma = token?.lemma ?? "";
   const members = sentence && word ? groupMembers(sentence, word.tokenIndex) : [];
   const surface = sentence && word ? groupSurface(sentence, word.tokenIndex) : "";
-  const entry = state.pack.dict[lemma];
+  const staticEntry = state.pack.dict[lemma];
+  const looked = useLookup(state.lang, token?.surf ?? "", token !== undefined && !staticEntry);
+  const entry = staticEntry ?? (looked ? toDictEntry(looked) : undefined);
+  const lemmaShown = staticEntry ? lemma : (looked?.lemma ?? lemma);
   const current = stateOf(lemma);
   const hasCard = state.cards.some((card) => card.lemma === lemma);
   const locale = state.pack.ttsLocale;
@@ -95,10 +100,10 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
       </div>
       <Section className="chips">
         <Chip>{entry?.pos ?? ""}</Chip>
-        {token && showsLemmaChip(lemma, surface) ? (
+        {token && showsLemmaChip(lemmaShown, surface) ? (
           <Chip className="lem">
             <Icon name="root" />
-            {lemma}
+            {lemmaShown}
           </Chip>
         ) : null}
         <Chip className="ipa">{entry?.pronunciation ?? ""}</Chip>
