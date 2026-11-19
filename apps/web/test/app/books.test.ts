@@ -18,6 +18,24 @@ function epubFiles(title: string): Record<string, string> {
   };
 }
 
+describe("import preview", () => {
+  const files = {
+    ...epubFiles("Dos"),
+    "c.opf": `<package><metadata><dc:title>Dos</dc:title></metadata><manifest><item id="a" href="a.xhtml" media-type="application/xhtml+xml"/><item id="b" href="b.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="a"/><itemref idref="b"/></spine></package>`,
+    "b.xhtml": `<body><h1>Dos</h1><p>${LONG.repeat(2)}</p></body>`,
+  };
+
+  test("previewing stores nothing and importing keeps only the chosen chapters", async () => {
+    const store = await AppStore.open(new MemoryRepository(), options);
+    const preview = store.actions.previewEpub(files);
+    expect(preview.chapters).toHaveLength(2);
+    expect(store.getApi().state.userBooks).toEqual([]);
+    const stored = await store.actions.importEpub(files, [preview.chapters[1]?.id ?? ""]);
+    expect(stored.book.chapters).toHaveLength(1);
+    expect(store.getApi().state.userBooks).toHaveLength(1);
+  });
+});
+
 describe("the app ships no book", () => {
   test("a fresh store has no books and the active book is the empty book", async () => {
     const state = (await AppStore.open(new MemoryRepository(), options)).getApi().state;

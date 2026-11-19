@@ -2,6 +2,12 @@ export interface OpfItem {
   id: string;
   href: string;
   mediaType: string;
+  properties: readonly string[];
+}
+
+export interface SpineDocument {
+  idref: string;
+  linear: boolean;
 }
 
 export interface OpfPackage {
@@ -9,11 +15,12 @@ export interface OpfPackage {
   language: string;
   items: ReadonlyMap<string, OpfItem>;
   spine: readonly string[];
+  documents: readonly SpineDocument[];
 }
 
 const ATTRIBUTE_PATTERN = /([A-Za-z_:][\w:.-]*)\s*=\s*"([^"]*)"/g;
 
-function attributesOf(tag: string): Record<string, string> {
+export function attributesOf(tag: string): Record<string, string> {
   const attributes: Record<string, string> = {};
   for (const match of tag.matchAll(ATTRIBUTE_PATTERN)) {
     attributes[(match[1] ?? "").toLowerCase()] = match[2] ?? "";
@@ -40,14 +47,24 @@ export function parseOpf(opfXml: string): OpfPackage {
     const id = attributes.id;
     const href = attributes.href;
     if (id && href) {
-      items.set(id, { id, href, mediaType: attributes["media-type"] ?? "" });
+      items.set(id, {
+        id,
+        href,
+        mediaType: attributes["media-type"] ?? "",
+        properties: (attributes.properties ?? "").split(/\s+/).filter(Boolean),
+      });
     }
   }
   const spine: string[] = [];
+  const documents: SpineDocument[] = [];
   for (const match of opfXml.matchAll(/<itemref\b[^>]*>/gi)) {
     const attributes = attributesOf(match[0]);
-    if (attributes.idref && attributes.linear !== "no") {
-      spine.push(attributes.idref);
+    if (attributes.idref) {
+      const linear = attributes.linear !== "no";
+      documents.push({ idref: attributes.idref, linear });
+      if (linear) {
+        spine.push(attributes.idref);
+      }
     }
   }
   return {
@@ -55,7 +72,15 @@ export function parseOpf(opfXml: string): OpfPackage {
     language: elementText(opfXml, "language"),
     items,
     spine,
+    documents,
   };
+}
+
+export function splitHref(href: string): { path: string; fragment: string } {
+  const hash = href.indexOf("#");
+  return hash < 0
+    ? { path: href, fragment: "" }
+    : { path: href.slice(0, hash), fragment: decodeURIComponent(href.slice(hash + 1)) };
 }
 
 export function resolveHref(basePath: string, href: string): string {

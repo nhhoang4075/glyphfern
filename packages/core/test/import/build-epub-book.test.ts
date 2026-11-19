@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { EpubImportError, buildEpubBook } from "../../src/import/build-epub-book";
+import { buildEpubBook } from "../../src/import/build-epub-book";
 import { findRootfilePath, parseOpf, resolveHref } from "../../src/import/epub-package";
 import { decodeEntities, extractBlocks } from "../../src/import/html-blocks";
+import { EpubImportError } from "../../src/import/import-error";
 import { splitSentences, tokenizeSentence } from "../../src/import/split-text";
 
 const CONTAINER = `<?xml version="1.0"?><container><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`;

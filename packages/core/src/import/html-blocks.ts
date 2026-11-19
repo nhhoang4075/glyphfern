@@ -66,15 +66,25 @@ function removeNonContent(html: string): string {
     .replace(/<\?[\s\S]*?\?>/g, "");
 }
 
-export function extractBlocks(html: string): TextBlock[] {
+export interface AnchoredBlocks {
+  blocks: TextBlock[];
+  anchors: ReadonlyMap<string, number>;
+}
+
+const TAG_PATTERN = /<[A-Za-z][^>]*>/g;
+const ANCHOR_ATTRIBUTE = /\b(?:id|name)\s*=\s*"([^"]+)"/gi;
+
+export function extractAnchoredBlocks(html: string): AnchoredBlocks {
   const cleaned = removeNonContent(html);
   const blocks: TextBlock[] = [];
+  const ends: number[] = [];
   let kind: TextBlock["kind"] = "paragraph";
   let cursor = 0;
   const flush = (end: number) => {
     const text = stripInline(cleaned.slice(cursor, end));
     if (text.length > 0) {
       blocks.push({ kind, text });
+      ends.push(end);
     }
   };
   for (const match of cleaned.matchAll(BLOCK_PATTERN)) {
@@ -89,5 +99,26 @@ export function extractBlocks(html: string): TextBlock[] {
     kind = !closing && HEADING_PATTERN.test(tag) ? "heading" : "paragraph";
   }
   flush(cleaned.length);
-  return blocks;
+  const anchors = new Map<string, number>();
+  for (const tag of cleaned.matchAll(TAG_PATTERN)) {
+    const position = tag.index ?? 0;
+    for (const attribute of tag[0].matchAll(ANCHOR_ATTRIBUTE)) {
+      const id = attribute[1] ?? "";
+      if (!anchors.has(id)) {
+        const found = ends.findIndex((end) => end > position);
+        anchors.set(id, found < 0 ? blocks.length : found);
+      }
+    }
+  }
+  return { blocks, anchors };
+}
+
+export function extractBlocks(html: string): TextBlock[] {
+  return extractAnchoredBlocks(html).blocks;
+}
+
+const WORD_PATTERN = /[\p{L}\p{N}]+(?:['’][\p{L}]+)?/gu;
+
+export function countWords(blocks: readonly TextBlock[]): number {
+  return blocks.reduce((sum, block) => sum + (block.text.match(WORD_PATTERN)?.length ?? 0), 0);
 }
