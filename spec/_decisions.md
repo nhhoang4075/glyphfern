@@ -121,3 +121,11 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Now: a first run starts empty (no word states, cards or bookmarks); the library lists only the two sample books (Spanish, Korean) and books the reader imports. The sample books and their hand-written dictionary stay as demo content.
 - Existing databases keep what they already stored; nothing is deleted. The `meta` table stays in the schema, unused, so no migration is needed.
 - Reason: invented progress is misleading once real books are read.
+
+## D-023 No sample books, Spanish only
+- Date: 2026-11-19. Decided by: owner ("back up the two sample books, then remove them").
+- Original choice: the app shipped a Spanish sample book ("La niña y el lobo") and a Korean one, with hand-written sentence notes, and the Korean book switched the active language.
+- Now: the app ships no book. The library holds only books the reader imports. The two sample books and their sentence notes are removed (a copy is kept outside the repository and in git history). The hand-written Spanish dictionary stays as a lookup source.
+- `Lang` is `"es"` only. The Korean pack, its styles and the language switch are removed; Korean returns together with its analyzer and an import path.
+- With no book the reading screen shows an empty state that points to the library; the Words screen shows empty coverage.
+- Reason: sample content is demo data, and a second language has no content once its sample book is gone.
