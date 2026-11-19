@@ -21,6 +21,9 @@
     "packages/languages": {
       "name": "@glyphfern/languages",
       "version": "0.0.0",
+      "dependencies": {
+        "@glyphfern/core": "workspace:*",
+      },
     },
     "packages/ui": {
       "name": "@glyphfern/ui",
