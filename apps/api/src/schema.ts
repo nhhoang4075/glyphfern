@@ -20,4 +20,9 @@ CREATE TABLE IF NOT EXISTS translation (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (source_lang, target_lang, text_hash)
 );
+CREATE TABLE IF NOT EXISTS tts_audio (
+  hash TEXT PRIMARY KEY,
+  audio BYTEA NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;

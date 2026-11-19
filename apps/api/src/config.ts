@@ -8,6 +8,9 @@ export interface Config {
   clientDailyCharLimit: number;
   clientRequestsPerMinute: number;
   trustProxy: boolean;
+  ttsUrl: string | undefined;
+  ttsVoiceEs: string;
+  ttsDailyCharLimit: number;
 }
 
 const DEFAULT_PORT = 8787;
@@ -16,6 +19,8 @@ const DEFAULT_ORIGIN = "http://localhost:5183";
 const DEFAULT_DAILY_CHAR_LIMIT = 100_000;
 const DEFAULT_CLIENT_DAILY_CHARS = 20_000;
 const DEFAULT_CLIENT_RPM = 30;
+const DEFAULT_TTS_VOICE_ES = "ef_dora";
+const DEFAULT_TTS_DAILY_CHARS = 50_000;
 
 export function readConfig(env: Record<string, string | undefined> = process.env): Config {
   const port = Number(env.PORT ?? DEFAULT_PORT);
@@ -29,5 +34,8 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     clientDailyCharLimit: Number(env.CLIENT_DAILY_CHAR_LIMIT ?? DEFAULT_CLIENT_DAILY_CHARS),
     clientRequestsPerMinute: Number(env.CLIENT_REQUESTS_PER_MINUTE ?? DEFAULT_CLIENT_RPM),
     trustProxy: env.TRUST_PROXY === "1",
+    ttsUrl: env.TTS_URL || undefined,
+    ttsVoiceEs: env.TTS_VOICE_ES || DEFAULT_TTS_VOICE_ES,
+    ttsDailyCharLimit: Number(env.TTS_DAILY_CHAR_LIMIT ?? DEFAULT_TTS_DAILY_CHARS),
   };
 }

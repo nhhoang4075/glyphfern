@@ -1,6 +1,6 @@
 # API
 
-Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma requests from Postgres and translates short texts through a pluggable translator with a shared cache.
+Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma requests from Postgres, translates short texts through a pluggable translator with a shared cache, and reads short texts aloud through the Kokoro sidecar (`apps/tts`) with a shared audio cache.
 
 ## Endpoints
 
@@ -8,6 +8,7 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 - `GET /lookup?lang=es&word=...`: entries (lemma, part of speech, IPA, English glosses, `facts`). Proper nouns are listed last.
 - `POST /lemmas` `{ lang, words }`: map of inflected form to lemma. Words that have their own dictionary entry are not remapped. Body at most 512 KB, 5000 words.
 - `POST /translate` `{ from, to, texts }`: pairs `es:vi`, `es:en`, `en:vi`; at most 20 texts of 500 characters. Answers 503 when no translator is configured, 429 when the daily character budget is used up, 502 when the provider fails.
+- `GET /tts?lang=es&text=...&speed=0.78`: MP3 audio (`audio/mpeg`, mono, 48 kbit/s) of the text read by the Kokoro voice of that language. `lang` must be `es` (400 `unsupported_language`); `text` is trimmed and 1 to 500 characters (400 `invalid_text`); `speed` is a number from 0.5 to 1.5, default 1 (400 `invalid_speed`). Answers 503 `tts_not_configured` when `TTS_URL` is unset, 429 `rate_limited` for the client limits, 429 `budget_exceeded` when the daily character budget is used up, 502 `tts_failed` when the sidecar fails. Success carries `cache-control: public, max-age=604800` and the CORS header.
 
 ## Translation flow
 
@@ -15,6 +16,16 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 2. Before any of this, the client (IP address) must be within its own per-minute request and daily character limits; limits are in memory and per process; IPv6 clients are grouped by their /64 prefix and IPv4-mapped addresses count as IPv4; IPv4 addresses embedded in IPv6 (mapped, compatible, NAT64) count as that IPv4, and only global unicast IPv6 is grouped by /64; when the client table is full only entries of a past day are evicted and further new clients share one overflow bucket with its own limits.
 3. A miss consumes its length from the global daily budget (in memory, resets at 00:00 UTC, per process), then calls the `Translator`.
 4. The result is stored in the cache. Translators are replaceable: implement `Translator` in `src/translate`.
+
+## Speech flow
+
+1. `/tts` answers 503 when no sidecar is configured, then validates `lang`, `text` and `speed`, then checks the client (the same limiter instance and limits as `/translate`: the two routes share each client's counters) with `text.length` characters. Only after that does the service run.
+2. The speed is rounded to 2 decimals; `0.78` and `0.780` are the same request. The cache key is the SHA-256 hex of `${voice}|${speed}|${text}`, where the voice is the configured one for the language (`TTS_VOICE_ES`).
+3. A hit in the `tts_audio` table is returned without calling the sidecar and without touching the budget.
+4. A miss consumes `text.length` from the global daily budget (the same in-memory, per-process, 00:00 UTC mechanism as translation, with its own counter), then calls the `Synthesizer`, then stores the audio.
+5. The `Synthesizer` implemented in `src/tts/kokoro-synthesizer.ts` posts `{ text, voice, speed }` to `{TTS_URL}/synthesize` with a 30 second timeout and returns the MP3 bytes. Any network failure, timeout, non-200 reply or empty body is a `SynthesizerError`. Other engines are added by implementing `Synthesizer` in `src/tts`.
+
+The sidecar is internal: it has no authentication and must only be reachable from this service.
 
 ## Configuration
 
@@ -25,8 +36,11 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 | `ALLOWED_ORIGIN` | CORS origin of the web app | `http://localhost:5183` |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | enable the Cloudflare Workers AI translator (`@cf/meta/m2m100-1.2b`) | unset (translation disabled) |
 | `TRANSLATE_DAILY_CHAR_LIMIT` | global backstop: characters of provider calls per day | `100000` |
-| `CLIENT_DAILY_CHAR_LIMIT` | characters one client may send to `/translate` per day | `20000` |
-| `CLIENT_REQUESTS_PER_MINUTE` | `/translate` requests one client may make per minute | `30` |
+| `CLIENT_DAILY_CHAR_LIMIT` | characters one client may send to `/translate` and `/tts` together per day | `20000` |
+| `CLIENT_REQUESTS_PER_MINUTE` | `/translate` and `/tts` requests one client may make per minute | `30` |
+| `TTS_URL` | base URL of the Kokoro sidecar, for example `http://127.0.0.1:8788` | unset (`/tts` answers 503) |
+| `TTS_VOICE_ES` | Kokoro voice used for `lang=es` | `ef_dora` |
+| `TTS_DAILY_CHAR_LIMIT` | global backstop: characters sent to the sidecar per day (cache hits are free) | `50000` |
 | `TRUST_PROXY` | set to `1` behind a proxy (Railway) to identify clients by the last `X-Forwarded-For` entry | unset |
 
 Secrets live in `apps/api/.env` or the host's variables, never in the repository.
@@ -43,6 +57,12 @@ Each lemma entry carries `facts` (null when nothing applies), taken from the Wik
 
 `bun run migrate` creates the tables and adds missing columns. `bun run load-lexicon <kaikki.jsonl> es` replaces all entries of that language from a kaikki.org Wiktionary extract (about 1.1 GB for Spanish, loads in seconds).
 
+## Failure modes
+
+- Sidecar down, slow (over 30 seconds) or answering an error: `/tts` answers 502 `tts_failed` and stores nothing;
+- Budget used up: new texts answer 429 `budget_exceeded`; texts already in `tts_audio` keep answering.
+- Process restart: the budgets and client limits reset; the cached audio stays in Postgres.
+
 ## Testing
 
-`bun test apps/api`. The Postgres test creates and drops its own database on `localhost`; it is skipped when Postgres is unreachable.
+`bun test apps/api`. The speech tests use a fake `Synthesizer` and an in-memory cache. The Postgres tests (lexicon, `tts_audio`) create and drop their own database on `localhost`; they are skipped when Postgres is unreachable.
