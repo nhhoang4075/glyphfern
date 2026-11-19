@@ -54,3 +54,11 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Date: 2026-11-19. Decided by: owner ("do it like the demo").
 - Cover radius 20px; cover title in Lexend 600 at 1.05rem; coverage counts body sentences only.
 - Reason: the first spec text copied older prototype values.
+
+## D-013 Reader values follow the prototype where the first spec text differed
+- Date: 2026-11-19. Decided by: owner ("the spec was made from the demo, the demo is right").
+- Mobile breakpoint is 760px (dock, sheet insets, drawer); the side panel docks at 1100px.
+- Top bar 64px, 56px at 760px and below. Progress track: 3px tinted line with a `--wing` to `--lamp` fill.
+- State buttons: new `--ink-2`, learning `--lamp`, known `--ok`, card `--wing`. Page radius 26px.
+- Esc closes panel, drawer and popover together; fullscreen exits only when none was open.
+- Reason: the first spec text transcribed these values incorrectly from the prototype.

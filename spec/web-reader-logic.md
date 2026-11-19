@@ -57,7 +57,7 @@ Per lemma: `new` (no entry), `learning(level)` with level 1, 2 or 3 (3 is the ne
 3. Fill meaning and note, build the context sentence with the selected tokens marked.
 4. Reset both reveal toggles, sync the state buttons and card button to stored state, open the panel.
 5. Translate toggle shows `sentence.vi`; analysis toggle shows `sentence.notes`. Both blocks exist in the DOM at all times and animate open and closed (UI spec 3.3).
-6. Closing the panel clears the selection. Turning a page, opening the drawer or Aa, or tapping outside the page closes it. The Esc key closes the topmost of: panel, drawer, popover; if none is open and fullscreen is on, it exits fullscreen.
+6. Closing the panel clears the selection. Turning a page, opening the drawer or Aa, or tapping outside the page closes it. The Esc key closes the panel, the drawer and the popover together; if none was open and fullscreen is on, it exits fullscreen.
 
 ## 6. Bookmarks, search, contents
 

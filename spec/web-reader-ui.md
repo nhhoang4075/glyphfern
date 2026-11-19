@@ -18,7 +18,7 @@ Scope: `apps/web` (PWA). Visual direction is Glyphfern (D-001). All user-facing 
 | --- | --- | --- | --- |
 | width >= 1100px | vertical dock on the left (rail) | side panel on the right, 350px wide; page shifts left (padding-right 380px) | centred, book width `min(36rem, 100%)`, max height 900px |
 | width < 1100px | bottom dock | bottom sheet, max height 62%, max width 560px, top corners 26px | full width |
-| width <= 540px | bottom dock, white `#FDFEFC`, 1px top border `--line`, no shadow, padding 8px top and 8px + safe-area bottom | same sheet | sheet insets 34px top, 26px right, 52px bottom, 34px left |
+| width <= 760px | bottom dock, white `#FDFEFC`, 1px top border `--line`, no shadow, padding 8px top and 8px + safe-area bottom | same sheet | sheet insets 34px top, 26px right, 52px bottom, 34px left |
 
 Mobile drawer and its scrim are `position: fixed`, full viewport height, above the dock (z-index 45 and 44). The word panel is also above the dock.
 
@@ -36,14 +36,14 @@ Reading sheet insets (inside the book): desktop 44/46/56/52px (top/right/bottom/
 ### 3.2 Reading
 Elements: top bar, page (book), prev/next buttons, word panel, Aa popover, drawer, dock.
 
-**Top bar** (64px, icons only, background = app background):
+**Top bar** (64px, 56px at width <= 760px, icons only, background = app background):
 - Contents (opens drawer), progress track, bookmark, Aa, fullscreen.
-- Track: a 2px line with 24px transparent side borders so the marker never touches the ends. Tick marks mark chapter starts; ticks on page 0 and ticks within 22px of the marker are omitted. The marker is a 32px circle filled with `--bg`, 2px ring in `--lamp`, containing the fern glyph. The line itself is `--line`-coloured (a different green from the marker ring so they never merge). Tapping the track maps `x - 24` over `width - 48` to a page.
+- Track: a 2px line with 24px transparent side borders so the marker never touches the ends. Tick marks mark chapter starts; ticks on page 0 and ticks within 22px of the marker are omitted. The marker is a 32px circle filled with `--bg`, 2px ring in `--lamp`, containing the fern glyph. The line is 3px and tinted green `rgba(46,106,78,.16)`, with a 3px fill from `--wing` to `--lamp` showing reading progress (width animates .45s). Ticks that are already passed are filled `--wing`. Tapping the track maps `x - 24` over `width - 48` to a page.
 - There is exactly one progress indicator in the top bar. The coverage ring is shown only in the Words screen.
 - Bookmark icon is outline when the current page has no bookmark and filled when it has.
 
 **Page (book)**:
-- Radius 20px, 1px `--line` ring plus a soft shadow (45% of the original prototype shadow opacity). No spine or fake page edges. No idle dog-ear.
+- Radius 26px, 1px `--line` ring plus a soft shadow (45% of the original prototype shadow opacity). No spine or fake page edges. No idle dog-ear.
 - Chapter heading: fern glyph 44px, then the title in uppercase sans, weight 600, letter spacing .14em. Chapter titles are tappable words (D-007).
 - Text: serif, size `--fs` (17-28px, default 21; 19 on mobile), line height `--lh` (1.45/1.62/1.85).
 - Prev/next buttons: small round buttons centred at the bottom of the page, always visible, never hidden by the page turn style (D-005).
@@ -73,7 +73,7 @@ Top to bottom:
 2. Chips: part of speech (spelled out: never "dt", "đg"), pronunciation (IPA, or romanization for Korean), lemma chip with a sprout icon only when the lemma differs from the tapped surface, and for languages with morphology one chip per morpheme: bold form and gloss.
 3. Meaning (Vietnamese).
 4. Word note (bulb icon) when the dictionary has one.
-5. State buttons: three icon buttons (new = circle, learning = flame, known = check) forming a segmented group, and a card button (cards-plus icon) at the right. The active state is a solid `--wing`/`--lamp` fill with a visible icon. All inactive buttons use the tinted tile colour.
+5. State buttons: three icon buttons (new = circle, learning = flame, known = check) forming a segmented group, and a card button (cards-plus icon) at the right. The active state is a solid fill with a visible icon: new = `--ink-2` with white icon, learning = `--lamp`, known = `--ok`, card button = `--wing`. All inactive buttons use the tinted tile colour.
 6. Context box: the sentence with the word marked, then three round white buttons: speak sentence (rate 0.78), translate, grammar analysis.
 7. Revealed blocks (translation, grammar notes) expand below with a height and opacity animation of .38s (`grid-template-rows 0fr -> 1fr`). Closed state has no layout gap. Opening a different word resets both toggles.
 
@@ -104,7 +104,7 @@ Left drawer with three tabs (contents, bookmarks, search). On mobile it is full 
 - Empty queue shows the rest illustration (fern glyph and check).
 
 ### 3.8 Fullscreen reading
-Hides dock and top bar; the page fills the app area. A thin strip at the top reveals the bar for 3.2s when touched or hovered. Tapping a word still opens the word panel. Esc exits (first closes any open panel, drawer or popover). Browser Fullscreen API MUST NOT be used (D-006).
+Hides dock and top bar; the page fills the app area. A thin strip at the top reveals the bar for 3.2s when touched or hovered. Tapping a word still opens the word panel. Esc exits (if a panel, drawer or popover is open, one press closes all of them and fullscreen stays). Browser Fullscreen API MUST NOT be used (D-006).
 
 ## 4. Page turning
 
@@ -136,7 +136,7 @@ Turning a page closes any open word panel.
 | Mobile dock | `#FDFEFC` | night surface |
 
 - Fonts: Literata (serif, book and words), Lexend (sans, interface). Korean books override to Noto Serif KR and Noto Sans KR.
-- Radii: 10 / 16 / 24px; page 20px; cover 20px.
+- Radii: 10 / 16 / 24px; page 26px; cover 20px.
 - Shadows: all app shadows are 45% of the original opacity. Dock has no shadow, only a top border.
 - Hover on night surfaces MUST keep legible text (no grey hover with white text).
 
