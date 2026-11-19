@@ -28,6 +28,7 @@ export interface Authenticated {
 }
 
 const MAX_CREDENTIAL_CHARS = 8192;
+const MAX_CREDENTIAL_BODY_BYTES = 16 * 1024;
 
 function publicUser(user: AuthUser) {
   return { email: user.email, name: user.name, picture: user.picture };
@@ -53,6 +54,10 @@ export async function authenticate(
   const tokenHash = await hashToken(token);
   const session = await auth.store.findSession(tokenHash, (auth.now ?? Date.now)());
   if (!session) {
+    return unauthorized();
+  }
+  if (!auth.allowedEmails.includes(session.user.email.toLowerCase())) {
+    await auth.store.deleteSession(tokenHash);
     return unauthorized();
   }
   return { user: session.user, tokenHash, expiresAt: session.expiresAt };
@@ -88,6 +93,10 @@ async function googleRoute(request: Request, deps: AccountDeps): Promise<Respons
   const auth = deps.auth;
   if (!auth) {
     return notConfigured(deps);
+  }
+  const declared = Number(request.headers.get("content-length") ?? Number.NaN);
+  if (!Number.isFinite(declared) || declared > MAX_CREDENTIAL_BODY_BYTES) {
+    return json({ error: "invalid_credential" }, 401, deps);
   }
   let credential: unknown;
   try {

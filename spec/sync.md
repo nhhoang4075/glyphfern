@@ -51,6 +51,8 @@ A book's sentences are numbered from `slot * 1_000_000` where `slot` is the book
 - Sync runs on sign-in, on app start, 2 seconds after the last local change, when the tab becomes visible and when the browser comes back online. Order: push the outbox, then pull until `more` is false, then fetch any book whose metadata is new or newer and not stored locally (and delete locally the books whose tombstone is newer than the local copy).
 - Applying a pulled record uses the same last-write-wins rule; the in-memory store is refreshed after each pull that changed something.
 - The token is kept in `localStorage` under `glyphfern.session`. A 401 clears it and shows the signed-out state; local data is never deleted by signing out.
+- Signing in as a different account than the one the local data was last synced for never uploads that local data: the outbox is cleared, the cursor resets and no snapshot is taken.
+- A session whose email is no longer in `ALLOWED_EMAILS` is deleted and answers 401. `POST /auth/google` reads its body only when `Content-Length` is present and at most 16 KB.
 - A signed-out device can import and read exactly as today.
 
 ## 6. Interface

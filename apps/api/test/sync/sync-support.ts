@@ -57,6 +57,9 @@ export async function createApi(): Promise<Api> {
     const response = await handle(
       new Request("http://api.test/auth/google", {
         method: "POST",
+        headers: {
+          "content-length": String(new TextEncoder().encode(JSON.stringify({ credential })).length),
+        },
         body: JSON.stringify({ credential }),
       }),
       deps,

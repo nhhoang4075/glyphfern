@@ -37,10 +37,14 @@ async function ensureSnapshot(deps: SyncDeps, loaded: SyncState): Promise<SyncSt
   if (loaded.snapshotFor === deps.email) {
     return loaded;
   }
-  const state: SyncState = {
-    ...(loaded.snapshotFor === null ? loaded : emptySyncState()),
-    snapshotFor: deps.email,
-  };
+  if (loaded.snapshotFor !== null) {
+    const pending = await deps.repository.readOutbox();
+    await deps.repository.removeOutbox(pending.map((entry) => entry.id as number));
+    const foreign: SyncState = { ...emptySyncState(), snapshotFor: deps.email };
+    await deps.repository.saveSyncState(foreign);
+    return foreign;
+  }
+  const state: SyncState = { ...loaded, snapshotFor: deps.email };
   const [data, books] = await Promise.all([
     deps.repository.exportLocal(),
     deps.repository.loadBooks(),

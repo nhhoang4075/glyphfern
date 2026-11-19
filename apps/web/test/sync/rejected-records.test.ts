@@ -41,3 +41,34 @@ test("a record the server rejects is dropped and the others are still pushed", a
   expect(pushed).toEqual(["es:good"]);
   expect(await repository.readOutbox()).toEqual([]);
 });
+
+test("signing in as a different account never uploads the previous account's data", async () => {
+  const { repository } = await openTestRepository();
+  const pushed: string[] = [];
+  const api: SyncApi = {
+    async push(records: readonly SyncRecord[]) {
+      pushed.push(...records.map((record) => record.key));
+      return { accepted: records.length, cursor: 1 };
+    },
+    async pull() {
+      return { records: [], books: [], cursor: 0, more: false };
+    },
+    async putBook() {},
+    async getBook() {
+      return null;
+    },
+    async deleteBook() {},
+  };
+  await repository.saveSyncState({
+    cursor: 7,
+    lastSyncedAt: 1,
+    bookUploaded: [],
+    snapshotFor: "first@example.com",
+  });
+  await repository.saveWordState("es", "casa", { kind: "known" });
+  await syncOnce({ repository, api, email: "second@example.com", now: () => 10 });
+  expect(pushed).toEqual([]);
+  const state = await repository.loadSyncState();
+  expect(state.snapshotFor).toBe("second@example.com");
+  expect(state.cursor).toBe(0);
+});

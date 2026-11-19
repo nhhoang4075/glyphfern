@@ -10,6 +10,7 @@ import {
   CLIENT_ID,
   ORIGIN,
   OWNER_EMAIL,
+  SECOND_EMAIL,
   type TestKeys,
   claims,
   createAuthDeps,
@@ -31,6 +32,17 @@ beforeAll(async () => {
   keys = await createTestKeys();
 });
 
+function postCredential(
+  call: (path: string, init?: RequestInit) => Promise<Response>,
+  body: string,
+) {
+  return call("/auth/google", {
+    method: "POST",
+    headers: { "content-length": String(new TextEncoder().encode(body).length) },
+    body,
+  });
+}
+
 function setup() {
   const store = createMemoryAuthStore();
   const clock = { now: Date.now() };
@@ -42,8 +54,7 @@ function setup() {
   };
   const call = (path: string, init: RequestInit = {}) =>
     handle(new Request(`http://api.test${path}`, init), deps);
-  const signIn = (credential: string) =>
-    call("/auth/google", { method: "POST", body: JSON.stringify({ credential }) });
+  const signIn = (credential: string) => postCredential(call, JSON.stringify({ credential }));
   return { store, clock, deps, call, signIn };
 }
 
@@ -163,6 +174,21 @@ describe("session lifecycle", () => {
     await call("/auth/me", { headers: auth });
     const extended = (await store.findSession(hash, clock.now))?.expiresAt ?? 0;
     expect(extended - clock.now).toBe(90 * 24 * 3600 * 1000);
+  });
+
+  test("a session whose email left the allow list is refused and removed", async () => {
+    const { call, auth, deps, store, token, clock } = await session();
+    deps.auth.allowedEmails = [SECOND_EMAIL];
+    expect((await call("/auth/me", { headers: auth })).status).toBe(401);
+    expect(await store.findSession(await hashToken(token), clock.now)).toBeUndefined();
+  });
+
+  test("a sign-in body over 16 KB is refused before it is read", async () => {
+    const { call } = setup();
+    const body = JSON.stringify({ credential: "x".repeat(20_000) });
+    expect((await postCredential(call, body)).status).toBe(401);
+    const noLength = await call("/auth/google", { method: "POST", body: "{}" });
+    expect(noLength.status).toBe(401);
   });
 
   test("an expired session is refused", async () => {
