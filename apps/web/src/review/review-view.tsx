@@ -4,8 +4,11 @@ import { indexBook } from "../app/book-index";
 import { useApp } from "../app/use-app";
 import { Fern, Icon } from "../icons/icon";
 import type { IconName } from "../icons/icon-data";
+import { toDictEntry } from "../lexicon/lexicon-client";
+import { useLookup } from "../lexicon/use-lookup";
 import { SENTENCE_RATE, speak } from "../speech/speak";
 import { Button, Chip, IconButton } from "../ui";
+import { cardBack } from "./card-back";
 import { buildReviewQueue, progressDots, sentenceText } from "./review-queue";
 
 interface RatingButton {
@@ -58,20 +61,25 @@ export function ReviewView() {
     if (!active) {
       return;
     }
-    const fresh = buildReviewQueue(state.cards, state.pack.dict);
+    const fresh = buildReviewQueue(state.cards);
     setQueue(fresh);
     setTotal(fresh.length);
     setFlipped(false);
-  }, [active, state.cards, state.pack.dict]);
+  }, [active, state.cards]);
 
   const lemma = queue[0];
   const card = state.cards.find((candidate) => candidate.lemma === lemma);
   const sentence = card
     ? state.books.map((book) => indexBook(book).byId.get(card.sentenceId)).find(Boolean)
     : undefined;
-  const entry = lemma === undefined ? undefined : state.pack.dict[lemma];
+  const staticEntry = lemma === undefined ? undefined : state.pack.dict[lemma];
+  const looked = useLookup(
+    state.lang,
+    lemma ?? "",
+    active && lemma !== undefined && staticEntry === undefined,
+  );
 
-  if (lemma === undefined || !sentence || !entry) {
+  if (lemma === undefined || !sentence) {
     return (
       <div className="rv">
         <div className="rest">
@@ -83,6 +91,7 @@ export function ReviewView() {
   }
 
   const progress = reviewProgress(total, queue);
+  const back = cardBack(lemma, staticEntry, looked ? toDictEntry(looked) : undefined);
 
   const flip = () => {
     if (flipped) {
@@ -108,9 +117,10 @@ export function ReviewView() {
         <Cloze sentence={sentence} lemma={lemma} revealed={flipped} />
         {flipped ? (
           <span className="back">
-            <span className="lemma">{lemma}</span>
-            <Chip className="ipa">{entry.pronunciation}</Chip>
-            <span className="mean">{entry.meaning}</span>
+            <span className="lemma">{back.lemma}</span>
+            {back.pronunciation ? <Chip className="ipa">{back.pronunciation}</Chip> : null}
+            <span className={back.meaningFound ? "mean" : "mean missing"}>{back.meaning}</span>
+            {back.note ? <small className="note">{back.note}</small> : null}
           </span>
         ) : null}
       </Button>
