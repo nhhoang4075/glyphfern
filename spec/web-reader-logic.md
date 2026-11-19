@@ -129,7 +129,7 @@ Korean morpheme analysis: a token carries `morphemes`, each a form and a Vietnam
 
 ## 11. Review
 
-- Queue: all cards of the active language whose lemma has a dictionary entry.
+- Queue: all cards of the active language. A card whose lemma has no static dictionary entry shows the looked-up entry on its back, or "Chưa tra được nghĩa" when the lookup is unavailable.
 - Card front: sentence with the target token blanked. Tap flips: reveals the answer, reads the sentence, enables rating.
 - Ratings: 1 again (re-append to the end of the queue), 2 hard (reinsert at index min(2, length)), 3 good, 4 easy. Level changes follow section 3.
 - Progress dots: `total` dots; done = dots before `total - queue.length`.

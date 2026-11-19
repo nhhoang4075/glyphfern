@@ -90,3 +90,10 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Date: 2026-11-19. Decided by: owner ("note it, not now").
 - Words outside the static dictionary show English glosses only. Machine translation of single glosses was tried and dropped: it returned the word unchanged or a wrong sense ("zorro" became a vulgar word).
 - Options when this is picked up: Vietnamese Wiktionary (free, partial coverage), an LLM short definition with a cache (best quality, has a cost), or a hybrid. The `Translator` interface in `apps/api` is the place to plug a provider in.
+
+## D-019 Review cards cover words of imported books
+- Date: 2026-11-19. Decided by: owner (asked that imported words show a meaning in review).
+- Original choice: the review queue held only cards whose lemma had a static dictionary entry.
+- Now every card is queued. Without a static entry the back shows the looked-up lemma, IPA, English glosses and Wiktionary note; when the lookup fails it shows the lemma and "Chưa tra được nghĩa".
+- Reason: words from imported books never reached review.
+
