@@ -491,6 +491,7 @@ html[data-night] .w.sel {
   visibility: hidden;
   pointer-events: none;
   opacity: 0;
+  transition: transform 0.4s var(--ease), opacity 0.25s, visibility 0s 0.25s;
 }
 
 .pw {
@@ -595,7 +596,7 @@ html[data-night] .w.sel {
   place-items: center;
   background: var(--paper-2);
   color: var(--ink-2);
-  transition: all 0.25s var(--ease);
+  transition: background 0.25s var(--ease), color 0.25s var(--ease), box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
 }
 
 .st:hover {
