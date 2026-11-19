@@ -22,14 +22,6 @@ export type FetchLike = (
 const LEMMA_CHUNK = 2000;
 
 const MAX_GLOSSES_SHOWN = 4;
-const MAX_FIRST_GLOSS_CHARS = 60;
-
-export function firstGloss(result: LookupResult): string | undefined {
-  const entry =
-    result.entries.find((candidate) => candidate.lemma === result.lemma) ?? result.entries[0];
-  const gloss = entry?.glosses[0]?.replace(/\s*\(.*$/, "").trim();
-  return gloss && gloss.length <= MAX_FIRST_GLOSS_CHARS ? gloss : undefined;
-}
 
 export function toDictEntry(result: LookupResult): DictEntry | undefined {
   const entry =

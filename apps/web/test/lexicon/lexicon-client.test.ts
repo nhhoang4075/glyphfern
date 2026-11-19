@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import {
   type LookupResult,
   createLexiconClient,
-  firstGloss,
   toDictEntry,
 } from "../../src/lexicon/lexicon-client";
 import { posLabel } from "../../src/lexicon/pos-label";
@@ -97,22 +96,5 @@ describe("machine translation", () => {
     expect(await client.translate("es", "vi", "lobo")).toBe("vi:lobo");
     expect(await client.translate("es", "vi", "lobo")).toBe("vi:lobo");
     expect(calls).toBe(2);
-  });
-
-  test("the first gloss drops the parenthetical and long glosses are not translated", () => {
-    expect(
-      firstGloss({
-        surface: "lobo",
-        lemma: "lobo",
-        entries: [{ lemma: "lobo", pos: "noun", ipa: null, glosses: ["wolf (wild Canis lupus)"] }],
-      }),
-    ).toBe("wolf");
-    expect(
-      firstGloss({
-        surface: "x",
-        lemma: "x",
-        entries: [{ lemma: "x", pos: "noun", ipa: null, glosses: ["a".repeat(80)] }],
-      }),
-    ).toBeUndefined();
   });
 });

@@ -4,7 +4,7 @@ import type { TapTarget } from "../app/api";
 import { useApp } from "../app/use-app";
 import { Icon } from "../icons/icon";
 import type { IconName } from "../icons/icon-data";
-import { firstGloss, toDictEntry } from "../lexicon/lexicon-client";
+import { toDictEntry } from "../lexicon/lexicon-client";
 import { useLookup } from "../lexicon/use-lookup";
 import { useTranslation } from "../lexicon/use-translation";
 import { SENTENCE_RATE, WORD_RATE, speak } from "../speech/speak";
@@ -74,12 +74,6 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
   const staticEntry = state.pack.dict[lemma];
   const looked = useLookup(state.lang, token?.surf ?? "", token !== undefined && !staticEntry);
   const entry = staticEntry ?? (looked ? toDictEntry(looked) : undefined);
-  const glossVi = useTranslation(
-    "en",
-    "vi",
-    looked && !staticEntry ? firstGloss(looked) : undefined,
-    looked !== null && !staticEntry,
-  );
   const sentenceEn = sentence ? sentenceText(sentence) : undefined;
   const machineSentence = useTranslation(
     state.lang,
@@ -135,12 +129,6 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
         ))}
       </Section>
       <p className="mean">{entry?.meaning ?? ""}</p>
-      {glossVi.text ? (
-        <p className="mean mt">
-          {glossVi.text}
-          <small>Máy dịch</small>
-        </p>
-      ) : null}
       <div className="note" hidden={!entry?.note}>
         <Icon name="bulb" />
         <span>{entry?.note ?? ""}</span>

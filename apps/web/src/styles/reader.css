@@ -551,12 +551,6 @@ html[data-night] .w.sel {
   color: var(--ink);
 }
 
-.mean.mt {
-  margin-top: 4px;
-  color: var(--ink);
-}
-
-.mean.mt small,
 .extra small.mt {
   display: block;
   margin-top: 2px;
