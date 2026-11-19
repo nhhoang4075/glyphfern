@@ -165,3 +165,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Now: the flow holds the current chapter and its neighbours; pages are numbered inside the window; progress is computed from token counts (`spec/web-reader-logic.md` §2). The sentence stays the position of record, so saved positions, bookmarks and cards are unaffected.
 - Reason: on a 50 thousand word book a page turn froze for about 8 seconds and every layout change reflowed the whole book; the cost grows with the square of the DOM size.
 - Amendment 2026-11-20 (owner): the contents drawer shows an estimated start page per chapter, computed from word counts and the measured words per page of the window (as in Apple Books); the number is an estimate and is recomputed on relayout.
+
+## D-030 Chapters come from the EPUB navigation and the owner confirms them in an import preview
+- Date: 2026-11-20. Decided by: owner (chose "do 1 and 2" after the D-028 rules were judged too specific to one book).
+- Original choice: D-028 detected learner-book structure from book-specific headings and word lists.
+- Now: `spec/import.md`. Chapters come from the EPUB `nav`/`ncx`; the heading-based rules remain only as a fallback; book-specific word lists are removed; an import preview lets the owner check which chapters to keep. This supersedes the appendix-name list of D-028.
+- Reason: D-028 does not generalise to other books; the EPUB already declares its structure, and the owner is the final judge of what is reading text.
