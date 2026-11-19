@@ -1,4 +1,12 @@
-import type { Book, CardSchedule, Lang, LanguagePack, Rating, WordState } from "@glyphfern/core";
+import type {
+  Book,
+  CardSchedule,
+  EpubPreview,
+  Lang,
+  LanguagePack,
+  Rating,
+  WordState,
+} from "@glyphfern/core";
 import type { StoredBook } from "../storage/repository";
 
 export type Route = "library" | "read" | "words" | "review";
@@ -75,7 +83,11 @@ export interface AppActions {
   toggleBookmark(sentenceId: number): void;
   togglePin(bookId: string): void;
   setPreference<K extends PreferenceKey>(key: K, value: Preferences[K]): void;
-  importEpub(files: Readonly<Record<string, string>>): Promise<StoredBook>;
+  previewEpub(files: Readonly<Record<string, string>>): EpubPreview;
+  importEpub(
+    files: Readonly<Record<string, string>>,
+    chapterIds?: readonly string[],
+  ): Promise<StoredBook>;
   openBook(bookId: string): Promise<void>;
   deleteBook(bookId: string): void;
   rememberPosition(bookId: string, sentenceId: number): void;

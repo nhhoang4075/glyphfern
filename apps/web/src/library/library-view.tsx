@@ -1,4 +1,4 @@
-import { EpubImportError } from "@glyphfern/core";
+import { EpubImportError, type EpubPreview } from "@glyphfern/core";
 import { type ChangeEvent, useRef, useState } from "react";
 import { useApp } from "../app/use-app";
 import { EpubFileError, readEpubFile } from "../import/read-epub";
@@ -6,6 +6,7 @@ import { AccountRow } from "../sync/account-row";
 import { Badge, Button, ConfirmDialog, IconButton } from "../ui";
 import { type LibraryBook, orderBooks, userLibraryBook } from "./books";
 import { CoverArt } from "./cover-art";
+import { ImportPreviewDialog } from "./import-preview-dialog";
 
 function BookCard({ book, pinned }: { book: LibraryBook; pinned: boolean }) {
   const { actions } = useApp();
@@ -73,6 +74,21 @@ const IMPORT_ERRORS = {
   other: "Không thêm được sách. Hãy thử tệp EPUB khác.",
 } as const;
 
+interface PendingImport {
+  files: Readonly<Record<string, string>>;
+  preview: EpubPreview;
+}
+
+function importErrorMessage(error: unknown): string {
+  if (error instanceof EpubFileError) {
+    return IMPORT_ERRORS.file;
+  }
+  if (error instanceof EpubImportError) {
+    return error.reason === "empty" ? IMPORT_ERRORS.empty : IMPORT_ERRORS.file;
+  }
+  return IMPORT_ERRORS.other;
+}
+
 export function LibraryView() {
   const { state, actions } = useApp();
   const input = useRef<HTMLInputElement>(null);
@@ -85,6 +101,8 @@ export function LibraryView() {
     state.pins,
   );
 
+  const [pending, setPending] = useState<PendingImport | null>(null);
+
   const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -94,16 +112,26 @@ export function LibraryView() {
     setBusy(true);
     setMessage("");
     try {
-      await actions.importEpub(await readEpubFile(file));
+      const files = await readEpubFile(file);
+      setPending({ files, preview: actions.previewEpub(files) });
     } catch (error) {
-      if (error instanceof EpubFileError) {
-        setMessage(IMPORT_ERRORS.file);
-      } else if (error instanceof EpubImportError) {
-        setMessage(error.reason === "empty" ? IMPORT_ERRORS.empty : IMPORT_ERRORS.file);
-      } else {
-        setMessage(IMPORT_ERRORS.other);
-      }
+      setMessage(importErrorMessage(error));
     } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmImport = async (chapterIds: readonly string[]) => {
+    if (!pending) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await actions.importEpub(pending.files, chapterIds);
+    } catch (error) {
+      setMessage(importErrorMessage(error));
+    } finally {
+      setPending(null);
       setBusy(false);
     }
   };
@@ -132,6 +160,14 @@ export function LibraryView() {
           <BookCard key={book.id} book={book} pinned={state.pins.includes(book.id)} />
         ))}
       </div>
+      {pending ? (
+        <ImportPreviewDialog
+          preview={pending.preview}
+          busy={busy}
+          onImport={confirmImport}
+          onCancel={() => setPending(null)}
+        />
+      ) : null}
     </>
   );
 }

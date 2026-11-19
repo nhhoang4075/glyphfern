@@ -7,10 +7,12 @@ import {
   type WordState,
   applyLemmas,
   bookWords,
+  buildBookFromChapters,
   buildDueQueue,
-  buildEpubBook,
+  defaultSelectedIds,
   onCardAdded,
   onCardRemoved,
+  parseEpubChapters,
   rateReviewCard,
   rateSchedule,
   tapKnown,
@@ -230,18 +232,24 @@ export class AppStore {
       this.persistPreferences(preferences);
     },
 
-    importEpub: async (files) => {
+    previewEpub: (files) => parseEpubChapters(files, this.importParseOptions()),
+
+    importEpub: async (files, chapterIds) => {
       const seq = allocateSlot(
         this.current.userBooks.map((stored) => stored.seq),
         this.random,
       );
       const id = `user-${seq}-${Date.now().toString(36)}`;
-      const { book } = buildEpubBook(files, {
+      const preview = parseEpubChapters(files, this.importParseOptions());
+      const defaults = defaultSelectedIds(preview);
+      const selected =
+        chapterIds ??
+        (defaults.length > 0 ? defaults : preview.chapters.map((chapter) => chapter.id));
+      const { book } = buildBookFromChapters(preview, selected, {
         id,
         lang: IMPORT_LANG,
         locale: IMPORT_LOCALE,
         firstSentenceId: seq * SENTENCE_ID_SPAN,
-        fallbackTitle: (chapterNumber) => `Capítulo ${chapterNumber}`,
       });
       const lemmas = this.lemmatizer ? await this.lemmatizer(IMPORT_LANG, bookWords(book)) : null;
       const stored: StoredBook = {
@@ -410,6 +418,13 @@ export class AppStore {
       this.persist(this.repository.saveWordState(stored.lang, lemma, state));
     }
     this.patch({ wordStates: migration.states, cards: migration.cards });
+  }
+
+  private importParseOptions() {
+    return {
+      lang: IMPORT_LANG,
+      fallbackTitle: (chapterNumber: number) => `Capítulo ${chapterNumber}`,
+    };
   }
 
   private activate(bookId: string | null) {

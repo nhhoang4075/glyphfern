@@ -8,4 +8,6 @@ export * from "./token-parse";
 export * from "./review-queue";
 export * from "./review-schedule";
 export * from "./import/build-epub-book";
+export * from "./import/import-error";
+export * from "./import/parse-epub-chapters";
 export * from "./import/apply-lemmas";
