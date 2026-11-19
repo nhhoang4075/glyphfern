@@ -1,9 +1,12 @@
 import { type LemmaStore, resolveLemmas } from "./lexicon/lemmas";
 import { type LexiconStore, lookupWord } from "./lexicon/lookup";
+import { BudgetExceededError, type TranslateService } from "./translate/translate-service";
+import { TranslatorError } from "./translate/translator";
 
 export interface HandlerDeps {
   store: LexiconStore & LemmaStore;
   allowedOrigin: string;
+  translate?: TranslateService;
 }
 
 const SUPPORTED_LANGS = new Set(["es"]);
@@ -11,6 +14,9 @@ const MAX_WORD_LENGTH = 64;
 const WORD_PATTERN = /^[\p{L}\p{N}'’-]+$/u;
 const CACHE_SECONDS = 86400;
 const MAX_LEMMA_WORDS = 5000;
+const MAX_TRANSLATE_TEXTS = 20;
+const MAX_TRANSLATE_CHARS = 500;
+const TRANSLATE_PAIRS = new Set(["es:vi", "es:en", "en:vi"]);
 export const MAX_BODY_BYTES = 512 * 1024;
 
 function json(body: unknown, status: number, deps: HandlerDeps, cache = false): Response {
@@ -35,6 +41,9 @@ export async function handle(request: Request, deps: HandlerDeps): Promise<Respo
         "access-control-allow-headers": "content-type",
       },
     });
+  }
+  if (request.method === "POST" && url.pathname === "/translate") {
+    return translateRoute(request, deps);
   }
   if (request.method === "POST" && url.pathname === "/lemmas") {
     const declared = Number(request.headers.get("content-length") ?? Number.NaN);
@@ -83,4 +92,50 @@ export async function handle(request: Request, deps: HandlerDeps): Promise<Respo
     return result ? json(result, 200, deps, true) : json({ error: "not_found" }, 404, deps, true);
   }
   return json({ error: "not_found" }, 404, deps);
+}
+
+async function translateRoute(request: Request, deps: HandlerDeps): Promise<Response> {
+  if (!deps.translate) {
+    return json({ error: "translator_not_configured" }, 503, deps);
+  }
+  const declared = Number(request.headers.get("content-length") ?? Number.NaN);
+  if (!Number.isFinite(declared) || declared > MAX_BODY_BYTES) {
+    return json({ error: "payload_too_large" }, 413, deps);
+  }
+  let body: { from?: unknown; to?: unknown; texts?: unknown };
+  try {
+    body = (await request.json()) as { from?: unknown; to?: unknown; texts?: unknown };
+  } catch {
+    return json({ error: "invalid_body" }, 400, deps);
+  }
+  const texts = body.texts;
+  const pair = `${String(body.from)}:${String(body.to)}`;
+  const valid =
+    TRANSLATE_PAIRS.has(pair) &&
+    Array.isArray(texts) &&
+    texts.length > 0 &&
+    texts.length <= MAX_TRANSLATE_TEXTS &&
+    texts.every(
+      (text) =>
+        typeof text === "string" && text.trim().length > 0 && text.length <= MAX_TRANSLATE_CHARS,
+    );
+  if (!valid) {
+    return json({ error: "invalid_request" }, 400, deps);
+  }
+  try {
+    const translations = await deps.translate.translateAll(
+      texts as string[],
+      String(body.from),
+      String(body.to),
+    );
+    return json({ translations }, 200, deps);
+  } catch (error) {
+    if (error instanceof BudgetExceededError) {
+      return json({ error: "budget_exceeded" }, 429, deps);
+    }
+    if (error instanceof TranslatorError) {
+      return json({ error: "translator_failed" }, 502, deps);
+    }
+    throw error;
+  }
 }
