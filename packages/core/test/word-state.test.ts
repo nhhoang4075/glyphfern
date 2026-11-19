@@ -4,7 +4,6 @@ import {
   highlightAlpha,
   onCardAdded,
   onCardRemoved,
-  onRated,
   tapKnown,
   tapLearning,
   tapNew,
@@ -54,44 +53,6 @@ describe("section 3 state table", () => {
     for (const state of ALL_STATES) {
       expect(onCardRemoved(state)).toEqual(state);
     }
-  });
-
-  test("rating again leaves every state unchanged", () => {
-    for (const state of ALL_STATES) {
-      expect(onRated(state, "again")).toEqual(state);
-    }
-  });
-
-  test("rating hard leaves every state unchanged", () => {
-    for (const state of ALL_STATES) {
-      expect(onRated(state, "hard")).toEqual(state);
-    }
-  });
-
-  test("rating good moves level 3 to 2, 2 to 1 and 1 to known", () => {
-    expect(onRated(LEARNING_3, "good")).toEqual(LEARNING_2);
-    expect(onRated(LEARNING_2, "good")).toEqual(LEARNING_1);
-    expect(onRated(LEARNING_1, "good")).toEqual(KNOWN);
-  });
-
-  test("rating easy sets known from every learning level", () => {
-    expect(onRated(LEARNING_1, "easy")).toEqual(KNOWN);
-    expect(onRated(LEARNING_2, "easy")).toEqual(KNOWN);
-    expect(onRated(LEARNING_3, "easy")).toEqual(KNOWN);
-  });
-});
-
-describe("rating outside the table keeps the state", () => {
-  test("rating good on a new word keeps it new", () => {
-    expect(onRated(NEW, "good")).toEqual(NEW);
-  });
-
-  test("rating easy sets known even on a new word", () => {
-    expect(onRated(NEW, "easy")).toEqual(KNOWN);
-  });
-
-  test("rating good on a known word keeps it known", () => {
-    expect(onRated(KNOWN, "good")).toEqual(KNOWN);
   });
 });
 

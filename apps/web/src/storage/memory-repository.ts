@@ -1,9 +1,15 @@
-import { type Lang, type WordState, stateKey } from "@glyphfern/core";
+import { type Lang, type ReviewLogEntry, type WordState, stateKey } from "@glyphfern/core";
 import type { Card, Preferences } from "../app/api";
 import type { LanguageSnapshot, Repository, StoredBook } from "./repository";
+import { isFirstReview } from "./review-log";
 
 interface StoredCard extends Card {
   lang: Lang;
+}
+
+interface StoredReview {
+  lang: Lang;
+  entry: ReviewLogEntry;
 }
 
 export class MemoryRepository implements Repository {
@@ -15,6 +21,7 @@ export class MemoryRepository implements Repository {
   private readonly cards = new Map<string, StoredCard>();
   private readonly bookmarks = new Map<Lang, number[]>();
   private readonly books = new Map<string, StoredBook>();
+  private readonly reviewLog: StoredReview[] = [];
 
   async loadPreferences(): Promise<Preferences | undefined> {
     return this.preferences ? { ...this.preferences } : undefined;
@@ -58,7 +65,8 @@ export class MemoryRepository implements Repository {
     const cards: Card[] = [];
     for (const card of this.cards.values()) {
       if (card.lang === lang) {
-        cards.push({ lemma: card.lemma, sentenceId: card.sentenceId });
+        const { lang: _lang, ...plain } = card;
+        cards.push(structuredClone(plain));
       }
     }
     return { states, cards, bookmarks: [...(this.bookmarks.get(lang) ?? [])] };
@@ -74,13 +82,28 @@ export class MemoryRepository implements Repository {
   }
 
   async saveCard(lang: Lang, card: Card): Promise<void> {
-    const key = stateKey(lang, card.lemma);
-    this.cards.delete(key);
-    this.cards.set(key, { ...card, lang });
+    this.cards.set(stateKey(lang, card.lemma), { ...structuredClone(card), lang });
   }
 
   async deleteCard(lang: Lang, lemma: string): Promise<void> {
     this.cards.delete(stateKey(lang, lemma));
+  }
+
+  async appendReview(lang: Lang, entry: ReviewLogEntry): Promise<void> {
+    this.reviewLog.push({ lang, entry: structuredClone(entry) });
+  }
+
+  async countNewReviewsSince(lang: Lang, since: number): Promise<number> {
+    return this.reviewLog.filter(
+      (row) => row.lang === lang && row.entry.reviewedAt >= since && isFirstReview(row.entry),
+    ).length;
+  }
+
+  async loadReviewLog(lang: Lang): Promise<ReviewLogEntry[]> {
+    return this.reviewLog
+      .filter((row) => row.lang === lang)
+      .map((row) => structuredClone(row.entry))
+      .sort((a, b) => a.reviewedAt - b.reviewedAt);
   }
 
   async saveBookmarks(lang: Lang, sentenceIds: readonly number[]): Promise<void> {
