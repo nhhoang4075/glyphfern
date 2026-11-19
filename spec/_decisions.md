@@ -141,3 +141,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Sign-in is Google only (ID token verified by the API with the public client id), restricted to the emails in `ALLOWED_EMAILS` (owner only, no public sign-up).
 - Sync follows the architecture draft: client outbox, server `seq` cursor, last write wins for states, cards, bookmarks, pins, preferences and positions, append-only review log. Built book JSON (not the source EPUB) is stored in Postgres so sentence ids stay identical across devices. Sentence id ranges use random slots so offline imports on two devices do not collide. Full rules: `spec/sync.md`.
 - Reason: reading and review data must follow the owner across phone and computer without importing again.
+
+## D-026 Drop English blocks when importing a Spanish book
+- Date: 2026-11-20. Decided by: owner (an imported learner book showed English copyright text and its words were looked up as Spanish).
+- Original choice: every block of text of an EPUB became reading content.
+- Now: when the book language is Spanish, blocks whose text is detected as English (function-word scoring, conservative) and blocks that are plain publishing front matter (copyright line, "All rights reserved", ISBN, publisher name lines) are dropped on import. Spanish blocks that contain a few English words are kept. A book with no detectable English is unchanged.
+- Reason: the reader treats every word as Spanish; English summaries, glossaries and legal text would be looked up and learned as Spanish words.
