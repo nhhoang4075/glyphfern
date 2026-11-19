@@ -3,11 +3,14 @@ import { type LexiconStore, lookupWord } from "./lexicon/lookup";
 import type { ClientLimiter } from "./translate/client-limiter";
 import { BudgetExceededError, type TranslateService } from "./translate/translate-service";
 import { TranslatorError } from "./translate/translator";
+import { SynthesizerError } from "./tts/synthesizer";
+import { type TtsService, roundSpeed } from "./tts/tts-service";
 
 export interface HandlerDeps {
   store: LexiconStore & LemmaStore;
   allowedOrigin: string;
   translate?: TranslateService;
+  tts?: TtsService;
   limiter?: ClientLimiter;
 }
 
@@ -19,6 +22,11 @@ const MAX_LEMMA_WORDS = 5000;
 const MAX_TRANSLATE_TEXTS = 20;
 const MAX_TRANSLATE_CHARS = 500;
 const TRANSLATE_PAIRS = new Set(["es:vi", "es:en", "en:vi"]);
+const MAX_TTS_CHARS = 500;
+const MIN_TTS_SPEED = 0.5;
+const MAX_TTS_SPEED = 1.5;
+const DEFAULT_TTS_SPEED = 1;
+const TTS_CACHE_SECONDS = 604800;
 export const MAX_BODY_BYTES = 512 * 1024;
 
 function json(body: unknown, status: number, deps: HandlerDeps, cache = false): Response {
@@ -28,6 +36,17 @@ function json(body: unknown, status: number, deps: HandlerDeps, cache = false): 
       "content-type": "application/json; charset=utf-8",
       "access-control-allow-origin": deps.allowedOrigin,
       ...(cache ? { "cache-control": `public, max-age=${CACHE_SECONDS}` } : {}),
+    },
+  });
+}
+
+function audio(body: Uint8Array, deps: HandlerDeps): Response {
+  return new Response(new Uint8Array(body), {
+    status: 200,
+    headers: {
+      "content-type": "audio/mpeg",
+      "access-control-allow-origin": deps.allowedOrigin,
+      "cache-control": `public, max-age=${TTS_CACHE_SECONDS}`,
     },
   });
 }
@@ -84,6 +103,9 @@ export async function handle(
   }
   if (url.pathname === "/health") {
     return json({ ok: true }, 200, deps);
+  }
+  if (url.pathname === "/tts") {
+    return ttsRoute(url, deps, client);
   }
   if (url.pathname === "/lookup") {
     const lang = url.searchParams.get("lang") ?? "";
@@ -149,6 +171,40 @@ async function translateRoute(
     }
     if (error instanceof TranslatorError) {
       return json({ error: "translator_failed" }, 502, deps);
+    }
+    throw error;
+  }
+}
+
+async function ttsRoute(url: URL, deps: HandlerDeps, client: string): Promise<Response> {
+  if (!deps.tts) {
+    return json({ error: "tts_not_configured" }, 503, deps);
+  }
+  const lang = url.searchParams.get("lang") ?? "";
+  if (!SUPPORTED_LANGS.has(lang)) {
+    return json({ error: "unsupported_language" }, 400, deps);
+  }
+  const text = (url.searchParams.get("text") ?? "").trim();
+  if (text.length === 0 || text.length > MAX_TTS_CHARS) {
+    return json({ error: "invalid_text" }, 400, deps);
+  }
+  const rawSpeed = url.searchParams.get("speed");
+  const speed = rawSpeed === null ? DEFAULT_TTS_SPEED : Number(rawSpeed);
+  if (!Number.isFinite(speed) || speed < MIN_TTS_SPEED || speed > MAX_TTS_SPEED) {
+    return json({ error: "invalid_speed" }, 400, deps);
+  }
+  if (deps.limiter && !deps.limiter.allow(client, text.length)) {
+    return json({ error: "rate_limited" }, 429, deps);
+  }
+  try {
+    const result = await deps.tts.synthesize({ lang, text, speed: roundSpeed(speed) });
+    return audio(result.audio, deps);
+  } catch (error) {
+    if (error instanceof BudgetExceededError) {
+      return json({ error: "budget_exceeded" }, 429, deps);
+    }
+    if (error instanceof SynthesizerError) {
+      return json({ error: "tts_failed" }, 502, deps);
     }
     throw error;
   }

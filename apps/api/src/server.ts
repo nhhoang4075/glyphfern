@@ -6,6 +6,9 @@ import { createClientLimiter } from "./translate/client-limiter";
 import { createCloudflareTranslator } from "./translate/cloudflare-translator";
 import { createSqlCache } from "./translate/sql-cache";
 import { createDailyBudget, createTranslateService } from "./translate/translate-service";
+import { createKokoroSynthesizer } from "./tts/kokoro-synthesizer";
+import { createTtsSqlCache } from "./tts/sql-cache";
+import { createTtsService } from "./tts/tts-service";
 
 const config = readConfig();
 const sql = connect(config.databaseUrl);
@@ -21,6 +24,15 @@ const translate =
         createDailyBudget(config.translateDailyCharLimit),
       )
     : undefined;
+
+const tts = config.ttsUrl
+  ? createTtsService(
+      createKokoroSynthesizer({ url: config.ttsUrl }),
+      createTtsSqlCache(sql),
+      createDailyBudget(config.ttsDailyCharLimit),
+      { es: config.ttsVoiceEs },
+    )
+  : undefined;
 
 const limiter = createClientLimiter({
   requestsPerMinute: config.clientRequestsPerMinute,
@@ -48,6 +60,7 @@ const server = Bun.serve({
         allowedOrigin: config.allowedOrigin,
         limiter,
         ...(translate ? { translate } : {}),
+        ...(tts ? { tts } : {}),
       },
       clientOf(request, bunServer.requestIP(request)?.address),
     ),
