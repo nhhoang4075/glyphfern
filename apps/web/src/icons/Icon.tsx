@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { FERN_MARKUP, ICON_MARKUP, type IconName } from "./iconData";
 import { parseMarkup, renderNodes } from "./markup";
 
-export function Icon({ name, className }: { name: IconName; className?: string }) {
+export function Icon({ name, className }: { name: IconName; className?: string | undefined }) {
   const children = useMemo(() => renderNodes(parseMarkup(ICON_MARKUP[name])), [name]);
   return (
     <svg

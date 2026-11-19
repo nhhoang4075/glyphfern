@@ -5,6 +5,7 @@ import { useApp } from "../app/useApp";
 import { Fern, Icon } from "../icons/Icon";
 import type { IconName } from "../icons/iconData";
 import { SENTENCE_RATE, speak } from "../speech/speak";
+import { Button, Chip, IconButton } from "../ui";
 import { buildReviewQueue, progressDots, sentenceText } from "./reviewQueue";
 
 interface RatingButton {
@@ -101,28 +102,27 @@ export function ReviewView() {
           <i key={dot.id} className={dot.className} />
         ))}
       </div>
-      <button type="button" className="card" aria-pressed={flipped} onClick={flip}>
+      <Button className="card" aria-pressed={flipped} onClick={flip}>
         <Cloze sentence={sentence} lemma={lemma} revealed={flipped} />
         {flipped ? (
           <span className="back">
             <span className="lemma">{lemma}</span>
-            <span className="chip ipa">{entry.pronunciation}</span>
+            <Chip className="ipa">{entry.pronunciation}</Chip>
             <span className="mean">{entry.meaning}</span>
           </span>
         ) : null}
-      </button>
+      </Button>
       <div className="rate" data-off={flipped ? "0" : "1"}>
         {RATING_BUTTONS.map((button) => (
-          <button
-            type="button"
+          <IconButton
             key={button.rating}
+            variant={null}
             className={button.className}
-            aria-label={button.label}
+            icon={button.icon}
+            label={button.label}
             disabled={!flipped}
             onClick={() => rate(button.rating)}
-          >
-            <Icon name={button.icon} />
-          </button>
+          />
         ))}
       </div>
     </div>

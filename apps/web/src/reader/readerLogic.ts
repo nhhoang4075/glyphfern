@@ -21,19 +21,17 @@ export function isRevealOpen(state: RevealState): boolean {
   return state.translation || state.grammar;
 }
 
-export type EscapeTarget = "popover" | "drawer" | "panel" | "fullscreen" | null;
+export type EscapeAction = "closeLayers" | "exitFullscreen" | "none";
 
-export function escapeTarget(open: {
+export function escapeAction(open: {
   popover: boolean;
   drawer: boolean;
   panel: boolean;
   fullscreen: boolean;
-}): EscapeTarget {
-  if (open.popover) return "popover";
-  if (open.drawer) return "drawer";
-  if (open.panel) return "panel";
-  if (open.fullscreen) return "fullscreen";
-  return null;
+}): EscapeAction {
+  if (open.popover || open.drawer || open.panel) return "closeLayers";
+  if (open.fullscreen) return "exitFullscreen";
+  return "none";
 }
 
 export const POPOVER_GAP = 4;

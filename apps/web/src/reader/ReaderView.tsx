@@ -22,7 +22,7 @@ import {
 } from "react";
 import { indexBook } from "../app/bookIndex";
 import { useApp } from "../app/useApp";
-import { Icon } from "../icons/Icon";
+import { Button, IconButton } from "../ui";
 import { Drawer, type DrawerTab } from "./Drawer";
 import { Flow } from "./Flow";
 import { TopBar } from "./TopBar";
@@ -33,7 +33,7 @@ import {
   type RevealState,
   bookmarksOnPage,
   chapterRows,
-  escapeTarget,
+  escapeAction,
   groupMembers,
   highlightClass,
   popoverPlacement,
@@ -454,16 +454,14 @@ export function ReaderView() {
     const onKey = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === "Escape") {
-        const target = escapeTarget({
+        const action = escapeAction({
           popover: live.current.popOpen,
           drawer: live.current.drawerOpen,
           panel: live.current.panelOpen,
           fullscreen: live.current.fullscreen,
         });
-        if (target === "popover") setPopOpen(false);
-        else if (target === "drawer") setDrawerOpen(false);
-        else if (target === "panel") closePanel();
-        else if (target === "fullscreen") {
+        if (action === "closeLayers") closeLayers();
+        else if (action === "exitFullscreen") {
           setFullscreen(false);
           setBarShown(false);
         }
@@ -475,7 +473,7 @@ export function ReaderView() {
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [visible, turn, closePanel]);
+  }, [visible, turn, closeLayers]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -637,8 +635,7 @@ export function ReaderView() {
           if (fullscreen) showBar();
         }}
       />
-      <button
-        type="button"
+      <Button
         className="topzone"
         aria-label="Thanh công cụ"
         tabIndex={-1}
@@ -697,24 +694,22 @@ export function ReaderView() {
           </div>
           <div className="corner r" ref={cornerRightRef} />
           <div className="corner l" ref={cornerLeftRef} />
-          <button
-            type="button"
-            className="hit l"
-            aria-label="Trang trước"
+          <IconButton
+            variant="hit"
+            className="l"
+            icon="left"
+            label="Trang trước"
             disabled={view.page === 0}
             onClick={() => turn(-1)}
-          >
-            <Icon name="left" />
-          </button>
-          <button
-            type="button"
-            className="hit r"
-            aria-label="Trang sau"
+          />
+          <IconButton
+            variant="hit"
+            className="r"
+            icon="right"
+            label="Trang sau"
             disabled={view.page >= view.pages - 1}
             onClick={() => turn(1)}
-          >
-            <Icon name="right" />
-          </button>
+          />
         </div>
       </div>
       <TypePopover open={popOpen} placement={placement} />

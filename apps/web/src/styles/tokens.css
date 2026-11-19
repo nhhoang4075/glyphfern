@@ -23,7 +23,7 @@
   --r-sm: 10px;
   --r-md: 16px;
   --r-lg: 24px;
-  --r-page: 20px;
+  --r-page: 26px;
   --r-cover: 5px 12px 12px 5px;
   --shadow-page: 0 0 0 1px var(--line), 0 26px 50px -30px rgba(24, 50, 38, 0.158);
   --shadow-float: 0 22px 44px -22px rgba(24, 50, 38, 0.203), 0 2px 6px rgba(24, 50, 38, 0.036);
@@ -32,6 +32,8 @@
   --glass: rgba(255, 255, 255, 0.78);
   --glass-line: rgba(255, 255, 255, 0.95);
   --hover: rgba(255, 255, 255, 0.6);
+  --scrim: rgba(29, 42, 36, 0.28);
+  --track: rgba(46, 106, 78, 0.16);
   --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
@@ -56,6 +58,7 @@ html[data-night] {
   --glass: rgba(255, 255, 255, 0.05);
   --glass-line: rgba(255, 255, 255, 0.08);
   --hover: rgba(255, 255, 255, 0.08);
+  --scrim: rgba(0, 0, 0, 0.5);
 }
 
 html[data-lang="ko"] {
@@ -63,7 +66,7 @@ html[data-lang="ko"] {
   --sans: "Noto Sans KR", "Lexend", system-ui, sans-serif;
 }
 
-@media (max-width: 540px) {
+@media (max-width: 760px) {
   :root {
     --fs: 19px;
   }

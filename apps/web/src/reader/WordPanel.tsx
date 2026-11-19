@@ -5,6 +5,7 @@ import { useApp } from "../app/useApp";
 import { Icon } from "../icons/Icon";
 import type { IconName } from "../icons/iconData";
 import { SENTENCE_RATE, WORD_RATE, speak } from "../speech/speak";
+import { Chip, IconButton, Section, Segmented, Sheet } from "../ui";
 import {
   type RevealState,
   groupMembers,
@@ -82,72 +83,65 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
   };
 
   return (
-    <div className="panel" hidden={!open} aria-hidden={!open} aria-label="Từ">
+    <Sheet variant="dock" open={open} aria-label="Từ">
       <div className="pw">
         <h3>{surface}</h3>
-        <button
-          type="button"
-          className="sm"
-          aria-label="Phát âm từ"
+        <IconButton
+          variant="sm"
+          icon="speaker"
+          label="Phát âm từ"
           onClick={() => speak(surface, locale, WORD_RATE)}
-        >
-          <Icon name="speaker" />
-        </button>
+        />
       </div>
-      <div className="chips">
-        <span className="chip">{entry?.pos ?? ""}</span>
-        <span className="chip ipa">{entry?.pronunciation ?? ""}</span>
+      <Section className="chips">
+        <Chip>{entry?.pos ?? ""}</Chip>
+        <Chip className="ipa">{entry?.pronunciation ?? ""}</Chip>
         {token && showsLemmaChip(lemma, surface) ? (
-          <span className="chip lem">
+          <Chip className="lem">
             <Icon name="root" />
             {lemma}
-          </span>
+          </Chip>
         ) : null}
         {token?.morphemes?.map((morpheme, index) => (
-          <span className="chip mo" key={`${index}-${morpheme.form}`}>
+          <Chip className="mo" key={`${index}-${morpheme.form}`}>
             <b>{morpheme.form}</b>
             {morpheme.gloss}
-          </span>
+          </Chip>
         ))}
-      </div>
+      </Section>
       <p className="mean">{entry?.meaning ?? ""}</p>
       <div className="note" hidden={!entry?.note}>
         <Icon name="bulb" />
         <span>{entry?.note ?? ""}</span>
       </div>
-      <div className="acts">
-        <fieldset className="stg" aria-label="Trạng thái">
-          {STATE_BUTTONS.map((button) => {
-            const active =
-              (button.target === "new" && current.kind === "new") ||
-              (button.target === "learning" && current.kind === "learning") ||
-              (button.target === "known" && current.kind === "known");
-            return (
-              <button
-                type="button"
-                key={button.target}
-                className={active ? `st ${button.className} on` : `st ${button.className}`}
-                aria-label={button.label}
-                aria-pressed={active}
-                onClick={() => choose(button.target)}
-              >
-                <Icon name={button.icon} />
-              </button>
-            );
-          })}
-        </fieldset>
+      <Section className="acts">
+        <Segmented
+          container="fieldset"
+          className="stg"
+          label="Trạng thái"
+          optionClassName="st"
+          activeClassName="on"
+          value={STATE_BUTTONS.find((button) => button.target === current.kind)?.target ?? null}
+          onChange={choose}
+          options={STATE_BUTTONS.map((button) => ({
+            value: button.target,
+            label: button.label,
+            className: button.className,
+            content: <Icon name={button.icon} />,
+          }))}
+        />
         <span className="sp" />
-        <button
-          type="button"
-          className={hasCard ? "st cd on" : "st cd"}
-          aria-label={hasCard ? "Xóa thẻ" : "Thêm thẻ"}
+        <IconButton
+          variant="st"
+          className="cd"
+          active={hasCard}
+          icon="cardplus"
+          label={hasCard ? "Xóa thẻ" : "Thêm thẻ"}
           aria-pressed={hasCard}
           onClick={toggleCard}
-        >
-          <Icon name="cardplus" />
-        </button>
-      </div>
-      <div className="ctx">
+        />
+      </Section>
+      <Section className="ctx">
         <p>
           {sentence?.tokens.map((item, index) => (
             <Fragment key={`${index}-${item.surf}`}>
@@ -161,34 +155,32 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
           ))}
         </p>
         <div className="tools">
-          <button
-            type="button"
-            className="sm"
-            aria-label="Đọc câu"
+          <IconButton
+            variant="sm"
+            icon="speaker"
+            label="Đọc câu"
             onClick={() => sentence && speak(sentenceText(sentence), locale, SENTENCE_RATE)}
-          >
-            <Icon name="speaker" />
-          </button>
-          <button
-            type="button"
-            className={reveal.translation ? "sm tgl on" : "sm tgl"}
-            aria-label="Dịch câu"
+          />
+          <IconButton
+            variant="sm"
+            className="tgl"
+            active={reveal.translation}
+            icon="translate"
+            label="Dịch câu"
             aria-pressed={reveal.translation}
             onClick={() => onToggleReveal("translation")}
-          >
-            <Icon name="translate" />
-          </button>
-          <button
-            type="button"
-            className={reveal.grammar ? "sm tgl on" : "sm tgl"}
-            aria-label="Phân tích câu"
+          />
+          <IconButton
+            variant="sm"
+            className="tgl"
+            active={reveal.grammar}
+            icon="sparkle"
+            label="Phân tích câu"
             aria-pressed={reveal.grammar}
             onClick={() => onToggleReveal("grammar")}
-          >
-            <Icon name="sparkle" />
-          </button>
+          />
         </div>
-      </div>
+      </Section>
       <div className={extraOpen ? "extra open" : "extra"}>
         <div className={reveal.translation ? "xw on" : "xw"}>
           <div className="xi">
@@ -207,6 +199,6 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
           </div>
         </div>
       </div>
-    </div>
+    </Sheet>
   );
 }

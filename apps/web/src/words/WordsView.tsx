@@ -3,6 +3,7 @@ import { useState } from "react";
 import { indexBook } from "../app/bookIndex";
 import { useApp } from "../app/useApp";
 import { Icon } from "../icons/Icon";
+import { ListRow, Segmented } from "../ui";
 import { CoverageRing } from "./CoverageRing";
 import { type WordFilter, buildWordRows, glowClass } from "./wordList";
 
@@ -24,24 +25,15 @@ export function WordsView() {
 
   return (
     <>
-      <div className="fil">
-        <button
-          type="button"
-          aria-label="Đang học"
-          aria-pressed={filter === "learning"}
-          onClick={() => setFilter("learning")}
-        >
-          <Icon name="flame" />
-        </button>
-        <button
-          type="button"
-          aria-label="Đã biết"
-          aria-pressed={filter === "known"}
-          onClick={() => setFilter("known")}
-        >
-          <Icon name="check" />
-        </button>
-      </div>
+      <Segmented
+        className="fil"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: "learning", label: "Đang học", content: <Icon name="flame" /> },
+          { value: "known", label: "Đã biết", content: <Icon name="check" /> },
+        ]}
+      />
       <div className="wl">
         <div className="stats">
           <CoverageRing percent={summary.percent} />
@@ -64,8 +56,7 @@ export function WordsView() {
           </div>
         ) : (
           rows.map((row) => (
-            <button
-              type="button"
+            <ListRow
               className="wr"
               key={row.lemma}
               onClick={() => openRow(row.lemma, row.sentenceId)}
@@ -73,7 +64,7 @@ export function WordsView() {
               <i className={`glow ${glowClass(row.state)}`} />
               <b>{row.lemma}</b>
               <span>{dict[row.lemma]?.meaning ?? ""}</span>
-            </button>
+            </ListRow>
           ))
         )}
       </div>
