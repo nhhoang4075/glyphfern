@@ -62,3 +62,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - State buttons: new `--ink-2`, learning `--lamp`, known `--ok`, card `--wing`. Page radius 26px.
 - Esc closes panel, drawer and popover together; fullscreen exits only when none was open.
 - Reason: the first spec text transcribed these values incorrectly from the prototype.
+
+## D-014 Bottom sheet is wider than the reading page
+- Date: 2026-11-19. Decided by: owner (asked for the sheet to be a little wider than the page).
+- Original choice: bottom sheet max width 560px, narrower than the 576px page. Now 624px.
+- The progress track keeps its centred position when the word panel is a bottom sheet (below 1100px); it only shifts left while the side panel is open (1100px and above), with its width reduced so it never covers the Contents button.
+- Reason: the track overlapped the Contents button and the dock at 761px to 1099px whenever the panel was open.

@@ -48,10 +48,6 @@
   .track + .ib {
     margin-left: auto;
   }
-
-  .rd:has(.stage.pan) .track {
-    left: calc(50% - 182px);
-  }
 }
 
 .track .ln {
@@ -1008,6 +1004,11 @@ html[data-night] .drawer {
   .stage.pan {
     padding-right: 380px;
   }
+
+  .rd:has(.stage.pan) .track {
+    left: calc(50% - 182px);
+    width: min(36rem, calc(100% - 664px));
+  }
 }
 
 @media (max-width: 1099px) {
@@ -1016,7 +1017,7 @@ html[data-night] .drawer {
     right: 0;
     bottom: 0;
     width: 100%;
-    max-width: 560px;
+    max-width: 624px;
     margin: 0 auto;
     max-height: 62%;
     border-radius: 26px 26px 0 0;

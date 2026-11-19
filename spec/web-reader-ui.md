@@ -17,7 +17,7 @@ Scope: `apps/web` (PWA). Visual direction is Glyphfern (D-001). All user-facing 
 | Breakpoint | Navigation | Word panel | Page |
 | --- | --- | --- | --- |
 | width >= 1100px | vertical dock on the left (rail) | side panel on the right, 350px wide; page shifts left (padding-right 380px) | centred, book width `min(36rem, 100%)`, max height 900px |
-| width < 1100px | bottom dock | bottom sheet, max height 62%, max width 560px, top corners 26px | full width |
+| width < 1100px | bottom dock | bottom sheet, max height 62%, max width 624px, top corners 26px | full width |
 | width <= 760px | bottom dock, white `#FDFEFC`, 1px top border `--line`, no shadow, padding 8px top and 8px + safe-area bottom | same sheet | sheet insets 34px top, 26px right, 52px bottom, 34px left |
 
 Mobile drawer and its scrim are `position: fixed`, full viewport height, above the dock (z-index 45 and 44). The word panel is also above the dock.
