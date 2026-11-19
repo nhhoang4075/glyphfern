@@ -86,8 +86,8 @@ describe("rating outside the table keeps the state", () => {
     expect(onRated(NEW, "good")).toEqual(NEW);
   });
 
-  test("rating easy on a new word keeps it new", () => {
-    expect(onRated(NEW, "easy")).toEqual(NEW);
+  test("rating easy sets known even on a new word", () => {
+    expect(onRated(NEW, "easy")).toEqual(KNOWN);
   });
 
   test("rating good on a known word keeps it known", () => {

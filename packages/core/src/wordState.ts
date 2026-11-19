@@ -43,7 +43,7 @@ export function onRated(state: WordState, rating: Rating): WordState {
     return state;
   }
   if (rating === "easy") {
-    return state.kind === "new" ? state : KNOWN_STATE;
+    return KNOWN_STATE;
   }
   if (state.kind !== "learning") {
     return state;
