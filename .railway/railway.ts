@@ -5,7 +5,7 @@ export const partial = "glyphfern";
 const REPOSITORY = "nhhoang4075/glyphfern";
 const REGION = "asia-southeast1-eqsg3a";
 const WEB_DOMAIN = "glyphfern.nguyenhuyhoang.work";
-const API_DOMAIN = "api.glyphfern.nguyenhuyhoang.work";
+const API_PORT = 8080;
 const TTS_PORT = 8788;
 const WEB_PORT = 8080;
 const SHARED_WATCH = [
@@ -48,8 +48,8 @@ export default defineRailway(() => {
       restartPolicyType: "ON_FAILURE",
       restartPolicyMaxRetries: 10,
     },
-    domains: [{ domain: API_DOMAIN, port: 8080 }],
     variables: {
+      PORT: String(API_PORT),
       DATABASE_URL: "${{Postgres.DATABASE_URL}}",
       ALLOWED_ORIGIN: `https://${WEB_DOMAIN}`,
       TRUST_PROXY: "1",
@@ -76,7 +76,8 @@ export default defineRailway(() => {
     domains: [{ domain: WEB_DOMAIN, port: WEB_PORT }],
     variables: {
       PORT: String(WEB_PORT),
-      VITE_API_URL: `https://${API_DOMAIN}`,
+      API_ORIGIN: `http://\${{api.RAILWAY_PRIVATE_DOMAIN}}:${API_PORT}`,
+      VITE_API_URL: "/api",
     },
     replicas: { [REGION]: 1 },
   });
