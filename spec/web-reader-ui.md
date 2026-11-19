@@ -172,6 +172,13 @@ Turning a page closes any open word panel.
 - Contrast of highlight strips against all three papers MUST be verified before release (not yet measured).
 - Reduced motion: the "still" mode plus OS preference default (D-004).
 
+### 7.1 App icon and install
+
+- Mark: the fern glyph in `--lamp` (`#c2d94c`) on a vertical gradient from `#357a58` to `#1f4a37`. Sources are SVG files in `assets/icons`; `bun scripts/build-icons.ts` renders the PNG files into `apps/web/public`.
+- Files: `favicon.svg` and `favicon-32.png` (browser tab), `apple-touch-icon.png` 180px full-bleed (iOS home screen), `icon-192.png` and `icon-512.png` with rounded corners (`any`), `icon-maskable-512.png` full-bleed with the glyph inside the central 80% (`maskable`).
+- `manifest.webmanifest`: name and short name Glyphfern, language `vi`, `display: standalone`, `theme_color` `#2e6a4e`, `background_color` `#e6ede7` (the light `--bg`).
+- The app is installable from the browser; offline use is not part of this section.
+
 ## 8. Not yet verified (prototype)
 
 Touch swipe on real devices, real speech voices across devices, screen-reader behaviour, colour contrast on every paper, curl animation playback on low-end GPUs, Safari clipping of the selection ring (no support for `overflow-clip-margin`).
