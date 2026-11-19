@@ -22,6 +22,7 @@ export interface Paginator {
   ranges(): readonly SentenceRange[];
   chapterStartPages(): ReadonlyMap<number, number>;
   sentenceOnCurrentPage(): string | null;
+  dispose(): void;
 }
 
 export interface PaginatorElements {
@@ -58,7 +59,35 @@ function measureChapters(
   return pagesByChapter;
 }
 
+const TURNING_ATTRIBUTE = "data-turning";
+
+function trackTurning(flow: HTMLElement, sheet: HTMLElement): () => void {
+  let running = 0;
+  const isFlowTransform = (event: TransitionEvent) =>
+    event.target === flow && event.propertyName === "transform";
+  const started = (event: TransitionEvent) => {
+    if (!isFlowTransform(event)) return;
+    running += 1;
+    sheet.setAttribute(TURNING_ATTRIBUTE, "");
+  };
+  const ended = (event: TransitionEvent) => {
+    if (!isFlowTransform(event)) return;
+    running = Math.max(0, running - 1);
+    if (running === 0) sheet.removeAttribute(TURNING_ATTRIBUTE);
+  };
+  flow.addEventListener("transitionrun", started);
+  flow.addEventListener("transitionend", ended);
+  flow.addEventListener("transitioncancel", ended);
+  return () => {
+    flow.removeEventListener("transitionrun", started);
+    flow.removeEventListener("transitionend", ended);
+    flow.removeEventListener("transitioncancel", ended);
+    sheet.removeAttribute(TURNING_ATTRIBUTE);
+  };
+}
+
 export function createPaginator({ flow, sheet }: PaginatorElements): Paginator {
+  const stopTrackingTurning = trackTurning(flow, sheet);
   let currentPage = 0;
   let pageTotal = 1;
   let pageStep = 0;
@@ -105,9 +134,9 @@ export function createPaginator({ flow, sheet }: PaginatorElements): Paginator {
     chapterPages = measureChapters(flow, flowLeft, pageStep);
     const anchored = sentenceRanges.find((range) => range.id === anchorId);
     currentPage = clampPage(anchored ? anchored.startPage : 0, pageTotal);
+    flow.style.transform = `translateX(${-currentPage * pageStep}px)`;
     void flow.offsetWidth;
     flow.style.transition = "";
-    go(currentPage);
   }
 
   return {
@@ -118,5 +147,6 @@ export function createPaginator({ flow, sheet }: PaginatorElements): Paginator {
     ranges: () => sentenceRanges,
     chapterStartPages: () => chapterPages,
     sentenceOnCurrentPage,
+    dispose: stopTrackingTurning,
   };
 }

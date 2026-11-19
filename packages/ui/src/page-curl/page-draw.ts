@@ -42,6 +42,7 @@ export type StripSegment = {
 
 const STRIP_ALPHA: Record<string, number> = { l1: 0.38, l2: 0.6, l3: 0.85 };
 const STRIP_COLOR = "194, 217, 76";
+const SPAN_MARGIN_PX = 2;
 
 export type Segments = {
   strips: StripSegment[];
@@ -102,126 +103,167 @@ export function chooseGlyphRect(rects: readonly { width: number }[], glyphWidth:
   return best;
 }
 
+export function pageSpan(
+  pages: readonly number[],
+  pageStep: number,
+  pageWidth: number,
+): readonly (readonly [number, number])[] {
+  return pages.map((page) => [
+    page * pageStep - SPAN_MARGIN_PX,
+    page * pageStep + pageWidth + SPAN_MARGIN_PX,
+  ]);
+}
+
+export function touchesSpan(
+  rects: readonly { left: number; right: number }[],
+  frameLeft: number,
+  spans: readonly (readonly [number, number])[],
+): boolean {
+  return rects.some((rect) =>
+    spans.some(([from, to]) => rect.right - frameLeft >= from && rect.left - frameLeft <= to),
+  );
+}
+
+export function blockElementsOnPages(
+  flow: HTMLElement,
+  pages: readonly number[],
+  pageStep: number,
+  pageWidth: number,
+): Element[] {
+  const frameLeft = flow.getBoundingClientRect().left;
+  const spans = pageSpan(pages, pageStep, pageWidth);
+  return [...flow.children].filter((block) =>
+    touchesSpan([...block.getClientRects()], frameLeft, spans),
+  );
+}
+
+export function preloadIcons(flow: HTMLElement): void {
+  for (const svg of flow.querySelectorAll<SVGElement>("svg")) iconImage(svg);
+}
+
 export function collectSegments(
   flow: HTMLElement,
   boxSelector: string = DEFAULT_BOX_SELECTOR,
+  scope: readonly Element[] = [flow],
 ): Segments {
   const frame = flow.getBoundingClientRect();
   const out: Segments = { texts: [], boxes: [], icons: [], dots: [], strips: [] };
-  const walker = document.createTreeWalker(flow, NodeFilter.SHOW_TEXT);
   const range = document.createRange();
   const measure = document.createElement("canvas").getContext("2d") as CanvasRenderingContext2D;
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const value = node.nodeValue ?? "";
-    const parent = node.parentElement;
-    if (!parent || !/\S/.test(value)) continue;
-    const style = getComputedStyle(parent);
-    const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    const upper = style.textTransform === "uppercase";
-    const words = /\S+/g;
-    for (let match = words.exec(value); match; match = words.exec(value)) {
-      range.setStart(node, match.index);
-      range.setEnd(node, match.index + match[0].length);
-      const rects = range.getClientRects();
-      const first = rects[0];
-      if (rects.length === 1 && first) {
-        out.texts.push({
-          text: wordText(match[0], upper),
-          x: first.left - frame.left,
-          y: first.top - frame.top,
-          w: first.width,
-          font,
-          color: style.color,
-          letterSpacing: style.letterSpacing,
-        });
+  for (const root of scope) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const value = node.nodeValue ?? "";
+      const parent = node.parentElement;
+      if (!parent || !/\S/.test(value)) continue;
+      const style = getComputedStyle(parent);
+      const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const upper = style.textTransform === "uppercase";
+      const words = /\S+/g;
+      for (let match = words.exec(value); match; match = words.exec(value)) {
+        range.setStart(node, match.index);
+        range.setEnd(node, match.index + match[0].length);
+        const rects = range.getClientRects();
+        const first = rects[0];
+        if (rects.length === 1 && first) {
+          out.texts.push({
+            text: wordText(match[0], upper),
+            x: first.left - frame.left,
+            y: first.top - frame.top,
+            w: first.width,
+            font,
+            color: style.color,
+            letterSpacing: style.letterSpacing,
+          });
+          continue;
+        }
+        measure.font = font;
+        for (let k = 0; k < match[0].length; k++) {
+          range.setStart(node, match.index + k);
+          range.setEnd(node, match.index + k + 1);
+          const char = match[0][k] ?? "";
+          const rects = [...range.getClientRects()];
+          const chosen = chooseGlyphRect(rects, measure.measureText(char).width);
+          const glyph = chosen === -1 ? undefined : rects[chosen];
+          const text = glyph ? glyphText(char, glyph.width, upper) : null;
+          if (glyph && text !== null) {
+            out.texts.push({
+              text,
+              x: glyph.left - frame.left,
+              y: glyph.top - frame.top,
+              w: glyph.width,
+              font,
+              color: style.color,
+              letterSpacing: style.letterSpacing,
+            });
+          }
+          const hyphen = chosen === -1 ? undefined : rects[chosen + 1];
+          if (hyphen && hyphen.width > 0 && chosen + 1 < rects.length) {
+            out.texts.push({
+              text: "-",
+              x: hyphen.left - frame.left,
+              y: hyphen.top - frame.top,
+              w: hyphen.width,
+              font,
+              color: style.color,
+              letterSpacing: style.letterSpacing,
+            });
+          }
+        }
+      }
+    }
+    for (const element of root.querySelectorAll<HTMLElement>(boxSelector)) {
+      const style = getComputedStyle(element);
+      if (style.backgroundImage !== "none") {
+        const level = ["l1", "l2", "l3"].find((name) => element.classList.contains(name));
+        const rects = element.getClientRects();
+        if (level && rects.length === 1 && !flow.classList.contains("nohl")) {
+          const rect = rects[0] as DOMRect;
+          const fontSize = Number.parseFloat(style.fontSize) || 16;
+          const height = fontSize * 0.42;
+          out.strips.push({
+            x: rect.left - frame.left,
+            y: rect.bottom - frame.top - fontSize * 0.07 - height,
+            w: rect.width,
+            h: height,
+            alpha: STRIP_ALPHA[level] as number,
+          });
+        }
+        if (element.classList.contains("nw") && !flow.classList.contains("nohl")) {
+          for (const rect of element.getClientRects()) {
+            out.dots.push({
+              x: rect.left - frame.left,
+              y: rect.top - frame.top,
+              w: rect.width,
+              h: rect.height,
+              fontSize: Number.parseFloat(style.fontSize) || 16,
+            });
+          }
+        }
         continue;
       }
-      measure.font = font;
-      for (let k = 0; k < match[0].length; k++) {
-        range.setStart(node, match.index + k);
-        range.setEnd(node, match.index + k + 1);
-        const char = match[0][k] ?? "";
-        const rects = [...range.getClientRects()];
-        const chosen = chooseGlyphRect(rects, measure.measureText(char).width);
-        const glyph = chosen === -1 ? undefined : rects[chosen];
-        const text = glyph ? glyphText(char, glyph.width, upper) : null;
-        if (glyph && text !== null) {
-          out.texts.push({
-            text,
-            x: glyph.left - frame.left,
-            y: glyph.top - frame.top,
-            w: glyph.width,
-            font,
-            color: style.color,
-            letterSpacing: style.letterSpacing,
-          });
-        }
-        const hyphen = chosen === -1 ? undefined : rects[chosen + 1];
-        if (hyphen && hyphen.width > 0 && chosen + 1 < rects.length) {
-          out.texts.push({
-            text: "-",
-            x: hyphen.left - frame.left,
-            y: hyphen.top - frame.top,
-            w: hyphen.width,
-            font,
-            color: style.color,
-            letterSpacing: style.letterSpacing,
-          });
-        }
-      }
-    }
-  }
-  for (const element of flow.querySelectorAll<HTMLElement>(boxSelector)) {
-    const style = getComputedStyle(element);
-    if (style.backgroundImage !== "none") {
-      const level = ["l1", "l2", "l3"].find((name) => element.classList.contains(name));
-      const rects = element.getClientRects();
-      if (level && rects.length === 1 && !flow.classList.contains("nohl")) {
-        const rect = rects[0] as DOMRect;
-        const fontSize = Number.parseFloat(style.fontSize) || 16;
-        const height = fontSize * 0.42;
-        out.strips.push({
+      const color = style.backgroundColor;
+      if (isTransparent(color)) continue;
+      for (const rect of element.getClientRects()) {
+        out.boxes.push({
           x: rect.left - frame.left,
-          y: rect.bottom - frame.top - fontSize * 0.07 - height,
+          y: rect.top - frame.top,
           w: rect.width,
-          h: height,
-          alpha: STRIP_ALPHA[level] as number,
+          h: rect.height,
+          color,
         });
       }
-      if (element.classList.contains("nw") && !flow.classList.contains("nohl")) {
-        for (const rect of element.getClientRects()) {
-          out.dots.push({
-            x: rect.left - frame.left,
-            y: rect.top - frame.top,
-            w: rect.width,
-            h: rect.height,
-            fontSize: Number.parseFloat(style.fontSize) || 16,
-          });
-        }
-      }
-      continue;
     }
-    const color = style.backgroundColor;
-    if (isTransparent(color)) continue;
-    for (const rect of element.getClientRects()) {
-      out.boxes.push({
+    for (const svg of root.querySelectorAll<SVGElement>("svg")) {
+      const rect = svg.getBoundingClientRect();
+      out.icons.push({
         x: rect.left - frame.left,
         y: rect.top - frame.top,
         w: rect.width,
         h: rect.height,
-        color,
+        image: iconImage(svg),
       });
     }
-  }
-  for (const svg of flow.querySelectorAll<SVGElement>("svg")) {
-    const rect = svg.getBoundingClientRect();
-    out.icons.push({
-      x: rect.left - frame.left,
-      y: rect.top - frame.top,
-      w: rect.width,
-      h: rect.height,
-      image: iconImage(svg),
-    });
   }
   return out;
 }

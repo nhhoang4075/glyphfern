@@ -10,7 +10,8 @@ Turns one flow element laid out with CSS multi-column into pages and keeps the r
 2. The anchor defaults to the first sentence whose `endPage >= current page`.
 3. Column width is the sheet width, gap is 20% of it (rounded), step is their sum.
 4. The flow is reset to translateX(0) with transitions off, then sentences (`.s[data-s]`) and chapter headings (`h2[data-ch]`) are measured from client rects.
-5. The page is recomputed from the anchor sentence's `startPage`, transitions are restored and `go(page)` sets the transform to `-page * step` px.
+5. The final transform is written while transitions are still off, then transitions are restored, so a relayout never animates from page 0. While a transform transition runs, the sheet carries `data-turning` (CSS drops the 22px clip margin so neighbouring text never shows at the edges). `dispose()` removes the listeners.
+6. The page is recomputed from the anchor sentence's `startPage`, transitions are restored and `go(page)` sets the transform to `-page * step` px.
 
 ## Contracts
 

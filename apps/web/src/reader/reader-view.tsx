@@ -1,12 +1,14 @@
 import {
   type PageCurl,
   type Paginator,
+  blockElementsOnPages,
   clampPage,
   collectSegments,
   createPageCurl,
   createPaginator,
   drawPage,
   gapFor,
+  preloadIcons,
   step,
 } from "@glyphfern/ui";
 import {
@@ -22,7 +24,8 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { indexBook } from "../app/book-index";
-import { useApp } from "../app/use-app";
+import { createSettler } from "../app/settle";
+import { LAYOUT_SETTLE_MS, useApp, useSettledLayoutKey } from "../app/use-app";
 import { Button, IconButton } from "../ui";
 import { Drawer, type DrawerTab } from "./drawer";
 import { EmptyReader } from "./empty-reader";
@@ -59,6 +62,7 @@ interface PanelState {
 const BAR_REVEAL_MS = 3200;
 const PULSE_MS = 900;
 const WIPE_MS = 900;
+const SETTLING_ATTRIBUTE = "data-settling";
 
 function sameView(a: ViewState, b: ViewState): boolean {
   return (
@@ -177,13 +181,18 @@ function BookReader() {
       frameRef.current = window.requestAnimationFrame(() => {
         const current = paginatorRef.current;
         const sheet = sheetRef.current;
-        if (!current || !sheet || sheet.clientWidth === 0) return;
+        if (!current || !sheet) return;
+        if (sheet.clientWidth === 0) {
+          sheet.removeAttribute(SETTLING_ATTRIBUTE);
+          return;
+        }
         const target = pendingAnchor.current ?? current.sentenceOnCurrentPage() ?? undefined;
         pendingAnchor.current = null;
         current.layout(target);
         sync();
         const flow = flowRef.current;
-        if (flow) collectSegments(flow);
+        if (flow) preloadIcons(flow);
+        sheet.removeAttribute(SETTLING_ATTRIBUTE);
       });
     },
     [sync],
@@ -259,11 +268,29 @@ function BookReader() {
     const sheet = sheetRef.current;
     if (!flow || !sheet) return;
     paginatorRef.current = createPaginator({ flow, sheet });
-    const observer = new ResizeObserver(() => relayout());
+    const settler = createSettler({
+      delayMs: LAYOUT_SETTLE_MS,
+      onUnsettled: () => sheet.setAttribute(SETTLING_ATTRIBUTE, ""),
+      onSettled: () => relayout(),
+    });
+    let observedWidth = 0;
+    let observedHeight = 0;
+    const observer = new ResizeObserver(() => {
+      const wasEmpty = observedWidth === 0 || observedHeight === 0;
+      const resized = sheet.clientWidth !== observedWidth || sheet.clientHeight !== observedHeight;
+      observedWidth = sheet.clientWidth;
+      observedHeight = sheet.clientHeight;
+      if (!resized) return;
+      if (wasEmpty) relayout();
+      else settler.touch();
+    });
     observer.observe(sheet);
     return () => {
+      settler.cancel();
+      sheet.removeAttribute(SETTLING_ATTRIBUTE);
       observer.disconnect();
       window.cancelAnimationFrame(frameRef.current);
+      paginatorRef.current?.dispose();
       paginatorRef.current = null;
     };
   }, [relayout]);
@@ -287,7 +314,7 @@ function BookReader() {
     relayout(opening === undefined ? undefined : sentenceKey(opening));
   }, [book, relayout]);
 
-  const layoutKey = `${preferences.size}|${preferences.lh}|${preferences.font}`;
+  const layoutKey = useSettledLayoutKey();
   const appliedLayoutKey = useRef(layoutKey);
   useEffect(() => {
     if (appliedLayoutKey.current === layoutKey) return;
@@ -381,7 +408,11 @@ function BookReader() {
         const current = paginatorRef.current;
         const page = current?.current() ?? 0;
         const target = clampPage(page + direction, current?.pages() ?? 1);
-        const segments = collectSegments(flow);
+        const segments = collectSegments(
+          flow,
+          undefined,
+          blockElementsOnPages(flow, [page, target], stepPx(), sheet.clientWidth),
+        );
         const base = {
           step: stepPx(),
           width: book.clientWidth,

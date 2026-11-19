@@ -57,7 +57,7 @@ A position is a sentence id, never a page. `preferences.positions` is one object
 
 ## Document effects
 
-`AppProvider` applies preferences to the root element: `data-night` when `paper` is the night paper, class `calm` when `turn` is `still`, `data-font`, `--lh`, `--fs` (the property is removed at the default size so the mobile CSS default applies) and `data-lang`. `prefers-color-scheme` is never read. `prefers-reduced-motion` only chooses the default `turn` on a first run.
+`AppProvider` applies size, line height and font (`data-font`, `--fs`, `--lh`) only after they are stable for 150 ms (`settle.ts`), all other preferences at once. It applies preferences to the root element: `data-night` when `paper` is the night paper, class `calm` when `turn` is `still`, `data-font`, `--lh`, `--fs` (the property is removed at the default size so the mobile CSS default applies) and `data-lang`. `prefers-color-scheme` is never read. `prefers-reduced-motion` only chooses the default `turn` on a first run.
 
 ## Active book
 

@@ -135,6 +135,14 @@
   overflow-clip-margin: 22px;
 }
 
+.sheet[data-turning] {
+  overflow-clip-margin: 0;
+}
+
+.sheet[data-settling] .flow {
+  visibility: hidden;
+}
+
 .flow {
   height: 100%;
   font-family: var(--serif);
