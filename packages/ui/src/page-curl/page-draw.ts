@@ -32,7 +32,19 @@ export type DotSegment = {
   fontSize: number;
 };
 
+export type StripSegment = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  alpha: number;
+};
+
+const STRIP_ALPHA: Record<string, number> = { l1: 0.38, l2: 0.6, l3: 0.85 };
+const STRIP_COLOR = "194, 217, 76";
+
 export type Segments = {
+  strips: StripSegment[];
   dots: DotSegment[];
   texts: TextSegment[];
   boxes: BoxSegment[];
@@ -95,7 +107,7 @@ export function collectSegments(
   boxSelector: string = DEFAULT_BOX_SELECTOR,
 ): Segments {
   const frame = flow.getBoundingClientRect();
-  const out: Segments = { texts: [], boxes: [], icons: [], dots: [] };
+  const out: Segments = { texts: [], boxes: [], icons: [], dots: [], strips: [] };
   const walker = document.createTreeWalker(flow, NodeFilter.SHOW_TEXT);
   const range = document.createRange();
   const measure = document.createElement("canvas").getContext("2d") as CanvasRenderingContext2D;
@@ -162,6 +174,20 @@ export function collectSegments(
   for (const element of flow.querySelectorAll<HTMLElement>(boxSelector)) {
     const style = getComputedStyle(element);
     if (style.backgroundImage !== "none") {
+      const level = ["l1", "l2", "l3"].find((name) => element.classList.contains(name));
+      const rects = element.getClientRects();
+      if (level && rects.length === 1 && !flow.classList.contains("nohl")) {
+        const rect = rects[0] as DOMRect;
+        const fontSize = Number.parseFloat(style.fontSize) || 16;
+        const height = fontSize * 0.42;
+        out.strips.push({
+          x: rect.left - frame.left,
+          y: rect.bottom - frame.top - fontSize * 0.07 - height,
+          w: rect.width,
+          h: height,
+          alpha: STRIP_ALPHA[level] as number,
+        });
+      }
       if (element.classList.contains("nw") && !flow.classList.contains("nohl")) {
         for (const rect of element.getClientRects()) {
           out.dots.push({
@@ -236,6 +262,13 @@ export function drawPage(
     if (!visible(box.x, box.w)) continue;
     ctx.fillStyle = box.color;
     ctx.fillRect(box.x, box.y, box.w, box.h);
+  }
+  for (const strip of segments.strips) {
+    if (!visible(strip.x, strip.w)) continue;
+    ctx.fillStyle = `rgba(${STRIP_COLOR}, ${strip.alpha})`;
+    ctx.beginPath();
+    ctx.roundRect(strip.x, strip.y, strip.w, strip.h, Math.min(3.5, strip.h / 2));
+    ctx.fill();
   }
   ctx.fillStyle = "rgba(109, 123, 115, 0.7)";
   for (const dot of segments.dots) {

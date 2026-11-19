@@ -14,7 +14,7 @@ Page-turn engine for the `curl` turn style (spec `web-reader-logic.md` section 7
 
 ## Contracts
 
-- `getPageSurface` is supplied by the app. `drawPage` and `collectSegments` draw a flow element (text, highlight and selection boxes, icons, bookmark ribbon) into a canvas.
+- `getPageSurface` is supplied by the app. `drawPage` and `collectSegments` draw a flow element (text, learning-word strips, new-word dots, selection boxes, icons, bookmark ribbon) into a canvas.
 - `domFold` (optional) holds the elements used by the DOM clip-path fallback.
 - `shader.ts` is the authoritative numeric detail for the GL look.
 
