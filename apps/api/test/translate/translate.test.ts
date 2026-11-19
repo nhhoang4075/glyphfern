@@ -192,7 +192,7 @@ describe("client limiter", () => {
     expect(limiter.allow("a", 3)).toBe(true);
   });
 
-  test("a full table refuses new clients instead of forgetting live ones", () => {
+  test("a full table sends new clients to a shared overflow bucket and keeps live ones", () => {
     const limiter = createClientLimiter({
       requestsPerMinute: 1,
       charactersPerDay: 5,
@@ -200,7 +200,11 @@ describe("client limiter", () => {
     });
     expect(limiter.allow("a", 1)).toBe(true);
     expect(limiter.allow("b", 1)).toBe(true);
-    expect(limiter.allow("c", 1)).toBe(false);
+    expect(limiter.allow("c", 1)).toBe(true);
+    expect(limiter.allow("d", 1)).toBe(true);
+    expect(limiter.allow("e", 1)).toBe(true);
+    expect(limiter.allow("f", 1)).toBe(true);
+    expect(limiter.allow("g", 1)).toBe(false);
     expect(limiter.allow("a", 1)).toBe(false);
   });
 
@@ -211,8 +215,8 @@ describe("client limiter", () => {
       () => now,
     );
     expect(limiter.allow("a", 1)).toBe(true);
-    expect(limiter.allow("b", 1)).toBe(false);
     now = new Date("2026-11-20T10:00:00Z");
+    expect(limiter.allow("b", 1)).toBe(true);
     expect(limiter.allow("b", 1)).toBe(true);
   });
 
@@ -222,7 +226,14 @@ describe("client limiter", () => {
     expect(normalizeClient("2001:db8:1:2:aaaa:bbbb:cccc:dddd")).toBe("2001:0db8:0001:0002::/64");
     expect(normalizeClient("2001:DB8:1:2::1")).toBe("2001:0db8:0001:0002::/64");
     expect(normalizeClient("2001:db8:1:3::1")).toBe("2001:0db8:0001:0003::/64");
-    expect(normalizeClient("::1")).toBe("0000:0000:0000:0000::/64");
+    expect(normalizeClient("::ffff:cb00:7105")).toBe("203.0.113.5");
+    expect(normalizeClient("0:0:0:0:0:ffff:cb00:7105")).toBe("203.0.113.5");
+    expect(normalizeClient("::203.0.113.5")).toBe("203.0.113.5");
+    expect(normalizeClient("64:ff9b::cb00:7105")).toBe("203.0.113.5");
+    expect(normalizeClient("64:ff9b::203.0.113.5")).toBe("203.0.113.5");
+    expect(normalizeClient("::1")).toBe("0000:0000:0000:0000:0000:0000:0000:0001");
+    expect(normalizeClient("fe80::1:2")).toBe("fe80:0000:0000:0000:0000:0000:0001:0002");
+    expect(normalizeClient("fe80::1:3")).toBe("fe80:0000:0000:0000:0000:0000:0001:0003");
     expect(normalizeClient("not-an-ip")).toBe("not-an-ip");
   });
 });
