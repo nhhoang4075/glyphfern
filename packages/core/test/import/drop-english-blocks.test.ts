@@ -170,12 +170,12 @@ describe("real epubs", () => {
     () => {
       const { book } = buildEpubBook(loadDirectory(OLLY_DIRECTORY ?? ""), OPTIONS);
       const first = book.chapters[0]?.paragraphs.flat().map(textOf) ?? [];
-      expect(first.slice(0, 2)).toEqual(["1.", "El Castillo"]);
+      expect(first[0]).toBe("Esta es la historia del caso más importante del detective Morgan.");
       const all = bodyText(book);
       for (const english of ENGLISH_MARKERS) {
         expect(all).not.toContain(english);
       }
-      expect(book.chapters).toHaveLength(72);
+      expect(book.chapters).toHaveLength(24);
     },
   );
 

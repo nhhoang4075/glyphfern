@@ -1,9 +1,11 @@
 import type { Book, Chapter, Lang, Sentence } from "../types";
 import { type HeadingChapter, splitByNumeralHeadings } from "./chapter-headings";
 import { cutGutenbergBoilerplate, dropContentsRuns } from "./clean-gutenberg";
+import { dropAppendixDocuments } from "./drop-appendix-documents";
 import { dropEnglishBlocks } from "./drop-english-blocks";
 import { findRootfilePath, parseOpf, resolveHref } from "./epub-package";
 import { type TextBlock, extractBlocks } from "./html-blocks";
+import { splitByChapterHeadings } from "./paragraph-chapters";
 import { splitSentences, tokenizeSentence } from "./split-text";
 
 export class EpubImportError extends Error {
@@ -71,7 +73,11 @@ export function buildEpubBook(
   });
   const cleaned = cutGutenbergBoilerplate(chapterBlocks(files, paths)).map(dropContentsRuns);
   const parsed = options.lang === "es" ? dropEnglishBlocks(cleaned) : cleaned;
-  const groups = splitByNumeralHeadings(parsed.flat()) ?? documentChapters(parsed);
+  const readable = dropAppendixDocuments(parsed);
+  const groups =
+    splitByChapterHeadings(readable.flat()) ??
+    splitByNumeralHeadings(readable.flat()) ??
+    documentChapters(readable);
 
   let nextId = options.firstSentenceId;
   const makeSentence = (text: string, chapter: number, kind: Sentence["kind"]): Sentence => {
