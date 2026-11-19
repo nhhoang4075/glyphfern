@@ -42,7 +42,7 @@ export default defineRailway(() => {
       watchPatterns: ["apps/api/**", ...SHARED_WATCH],
     },
     deploy: {
-      preDeployCommand: ["bun", "src/migrate.ts"],
+      preDeployCommand: ["bun src/migrate.ts"],
       healthcheckPath: "/health",
       healthcheckTimeout: 60,
       restartPolicyType: "ON_FAILURE",
