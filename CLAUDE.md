@@ -32,6 +32,12 @@ These rules apply to this project only. Where they conflict with the global `~/C
 - The product language (Vietnamese) is used only for text shown to the end user in the UI and for generated learner-facing text. LLM prompt templates are written in English and instruct the model which language to answer in.
 - Every sub-agent brief must state this rule.
 
+## File naming
+
+- Files and folders are named in kebab-case: `word-panel.tsx`, `page-curl/`, `solve-a.ts`. Never camelCase or PascalCase file names.
+- Identifiers inside files keep normal TypeScript conventions (PascalCase components and types, camelCase functions and variables).
+- Every sub-agent brief must state this rule.
+
 ## Everything else
 
 The global `~/CLAUDE.md` applies: spec fidelity, delegation briefs, verification, git rules (no AI co-author trailer, no "Generated with" line).
