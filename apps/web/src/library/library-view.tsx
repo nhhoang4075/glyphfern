@@ -2,12 +2,13 @@ import { EpubImportError } from "@glyphfern/core";
 import { type ChangeEvent, useRef, useState } from "react";
 import { useApp } from "../app/use-app";
 import { EpubFileError, readEpubFile } from "../import/read-epub";
-import { Badge, Button, IconButton } from "../ui";
+import { Badge, Button, ConfirmDialog, IconButton } from "../ui";
 import { type LibraryBook, orderBooks, userLibraryBook } from "./books";
 import { CoverArt } from "./cover-art";
 
 function BookCard({ book, pinned }: { book: LibraryBook; pinned: boolean }) {
   const { actions } = useApp();
+  const [confirming, setConfirming] = useState(false);
 
   const open = async () => {
     await actions.openBook(book.id);
@@ -43,13 +44,20 @@ function BookCard({ book, pinned }: { book: LibraryBook; pinned: boolean }) {
             className="del"
             icon="x"
             label="Xoá sách"
-            onClick={() => {
-              if (window.confirm(`Xoá "${book.title}" khỏi thư viện?`)) {
-                actions.deleteBook(book.id);
-              }
-            }}
+            onClick={() => setConfirming(true)}
           />
         ) : null}
+        <ConfirmDialog
+          open={confirming}
+          title={`Xoá "${book.title}" khỏi thư viện?`}
+          confirmLabel="Xoá"
+          cancelLabel="Huỷ"
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            actions.deleteBook(book.id);
+          }}
+        />
       </div>
       <div className="fl2">
         <Badge>{book.flag}</Badge>

@@ -179,3 +179,46 @@ html[data-night] .chip,
 html[data-night] .ctx {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
+
+.cfm {
+  margin: auto;
+  width: min(360px, calc(100vw - 32px));
+  padding: 22px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+}
+
+.cfm::backdrop {
+  background: var(--scrim);
+}
+
+.cfm-title {
+  margin: 0 0 20px;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.cfm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cfm-btn {
+  padding: 9px 18px;
+  border-radius: var(--r-sm);
+  background: var(--wing-soft);
+  color: var(--wing);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cfm-btn.danger {
+  background: var(--bad);
+  color: #fff;
+}

@@ -8,7 +8,7 @@ Small reusable components with no feature knowledge: they never read the app sto
 
 - Every component is typed, accepts `className` and appends it after its own base class. Class order is `base`, caller class, `on`.
 - Atoms: `Button` (defaults `type="button"`), `IconButton` (requires `label`, rendered as `aria-label`; no visible text), `Chip`, `Badge`, `Switch`, `Slider`, `Segmented`.
-- Molecules: `Popover` (`.pop`, hidden attribute plus `aria-hidden`), `Sheet` (`variant="side"` renders the `.drawer` aside toggled by the `on` class, `variant="dock"` renders the `.panel` toggled by `hidden`), `Scrim`, `ListRow` (`as="button"` default or `as="div"`), `Section` (labelled div).
+- Molecules: `Popover` (`.pop`, hidden attribute plus `aria-hidden`), `Sheet` (`variant="side"` renders the `.drawer` aside toggled by the `on` class, `variant="dock"` renders the `.panel` toggled by `hidden`), `Scrim`, `ConfirmDialog` (a native `dialog` opened with `showModal`; Escape calls `onCancel`), `ListRow` (`as="button"` default or `as="div"`), `Section` (labelled div).
 - `IconButton` variants map to base classes: `ib`, `sm`, `st`, `hit`, `pin`, `add`, `dk`; `variant={null}` renders no base class.
 - `Segmented` has two semantics: `pressed` (`aria-pressed` buttons, optional `fieldset` container) and `tab` (`role="tablist"` with `role="tab"` and `aria-selected`). `activeClassName` is added to the selected option.
 

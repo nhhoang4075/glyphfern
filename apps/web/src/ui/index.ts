@@ -1,6 +1,7 @@
 export { Badge } from "./badge";
 export { Button, type ButtonProps } from "./button";
 export { Chip } from "./chip";
+export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog";
 export { cx } from "./cx";
 export { IconButton, type IconButtonProps, type IconButtonVariant } from "./icon-button";
 export { ListRow, type ListRowProps } from "./list-row";
