@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { handle } from "../../src/handler";
-import { createClientLimiter } from "../../src/translate/client-limiter";
+import { createClientLimiter, normalizeClient } from "../../src/translate/client-limiter";
 import { createCloudflareTranslator } from "../../src/translate/cloudflare-translator";
 import {
   BudgetExceededError,
@@ -192,15 +192,37 @@ describe("client limiter", () => {
     expect(limiter.allow("a", 3)).toBe(true);
   });
 
-  test("the table of clients stays bounded", () => {
+  test("a full table refuses new clients instead of forgetting live ones", () => {
     const limiter = createClientLimiter({
       requestsPerMinute: 1,
       charactersPerDay: 5,
       maxClients: 2,
     });
-    limiter.allow("a", 1);
-    limiter.allow("b", 1);
-    limiter.allow("c", 1);
     expect(limiter.allow("a", 1)).toBe(true);
+    expect(limiter.allow("b", 1)).toBe(true);
+    expect(limiter.allow("c", 1)).toBe(false);
+    expect(limiter.allow("a", 1)).toBe(false);
+  });
+
+  test("entries from a previous day are evicted to make room", () => {
+    let now = new Date("2026-11-19T10:00:00Z");
+    const limiter = createClientLimiter(
+      { requestsPerMinute: 5, charactersPerDay: 5, maxClients: 1 },
+      () => now,
+    );
+    expect(limiter.allow("a", 1)).toBe(true);
+    expect(limiter.allow("b", 1)).toBe(false);
+    now = new Date("2026-11-20T10:00:00Z");
+    expect(limiter.allow("b", 1)).toBe(true);
+  });
+
+  test("IPv6 addresses collapse to their /64 and IPv4-mapped ones to IPv4", () => {
+    expect(normalizeClient("::ffff:203.0.113.5")).toBe("203.0.113.5");
+    expect(normalizeClient("203.0.113.5")).toBe("203.0.113.5");
+    expect(normalizeClient("2001:db8:1:2:aaaa:bbbb:cccc:dddd")).toBe("2001:0db8:0001:0002::/64");
+    expect(normalizeClient("2001:DB8:1:2::1")).toBe("2001:0db8:0001:0002::/64");
+    expect(normalizeClient("2001:db8:1:3::1")).toBe("2001:0db8:0001:0003::/64");
+    expect(normalizeClient("::1")).toBe("0000:0000:0000:0000::/64");
+    expect(normalizeClient("not-an-ip")).toBe("not-an-ip");
   });
 });

@@ -12,7 +12,7 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 ## Translation flow
 
 1. Each text is hashed (SHA-256). A cache hit in the `translation` table is returned without a provider call.
-2. Before any of this, the client (IP address) must be within its own per-minute request and daily character limits; limits are in memory and per process.
+2. Before any of this, the client (IP address) must be within its own per-minute request and daily character limits; limits are in memory and per process; IPv6 clients are grouped by their /64 prefix and IPv4-mapped addresses count as IPv4; when the client table is full only entries of a past day are evicted, otherwise new clients are refused.
 3. A miss consumes its length from the global daily budget (in memory, resets at 00:00 UTC, per process), then calls the `Translator`.
 4. The result is stored in the cache. Translators are replaceable: implement `Translator` in `src/translate`.
 
