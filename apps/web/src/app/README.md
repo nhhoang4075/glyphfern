@@ -55,4 +55,4 @@ See `../storage`. IndexedDB (Dexie) tables: `wordStates` and `cards` keyed by `s
 
 ## Testing
 
-`store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. Expected values come from the state table and review rules of the logic spec and from the prototype starter data.
+`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. Expected values come from the state table and review rules of the logic spec and from the prototype starter data.
