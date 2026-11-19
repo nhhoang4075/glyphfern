@@ -1,0 +1,182 @@
+#v-review {
+  place-items: center;
+  padding: 20px;
+}
+
+#v-review.on {
+  display: grid;
+}
+
+.rv {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  align-items: center;
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+  height: 12px;
+}
+
+.dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: all 0.3s;
+}
+
+.dots i.d {
+  background: var(--lamp);
+  box-shadow: 0 0 10px rgba(194, 217, 76, 0.7);
+}
+
+.dots i.c {
+  background: var(--wing);
+  transform: scale(1.35);
+}
+
+.card {
+  width: 100%;
+  min-height: 340px;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-tile);
+  padding: 34px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.35s var(--ease);
+}
+
+.card:active {
+  transform: scale(0.99);
+}
+
+.card .ex {
+  display: block;
+  font-family: var(--serif);
+  line-height: 1.55;
+}
+
+.card .ex.cz {
+  font-size: 1.5rem;
+  color: var(--ink);
+  margin: 0;
+}
+
+.card .back {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.card .lemma {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 2.2rem;
+  line-height: 1.1;
+}
+
+.card .mean {
+  font-size: 1.6rem;
+}
+
+.blank {
+  display: inline-block;
+  min-width: 3.4em;
+  border-bottom: 3px solid var(--ink-3);
+  color: transparent;
+  border-radius: 2px;
+  line-height: 1.1;
+  user-select: none;
+}
+
+.blank.ans {
+  color: var(--ink);
+  border-color: transparent;
+  background: linear-gradient(
+    transparent 63%,
+    rgba(194, 217, 76, 0.85) 63%,
+    rgba(194, 217, 76, 0.85) 95%,
+    transparent 95%
+  );
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.rate {
+  display: flex;
+  gap: 14px;
+}
+
+.rate button {
+  width: 66px;
+  height: 66px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #fff;
+  box-shadow: 0 12px 22px -14px rgba(24, 50, 38, 0.27);
+  transition: transform 0.2s var(--ease), opacity 0.25s;
+}
+
+html[data-night] .rate button {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.rate button:hover {
+  transform: translateY(-4px);
+}
+
+.rate button .ic {
+  width: 28px;
+  height: 28px;
+}
+
+.rate[data-off="1"] button {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.rate .r1 {
+  color: var(--bad);
+}
+
+.rate .r2 {
+  color: var(--lamp-deep);
+}
+
+.rate .r3 {
+  color: var(--wing);
+}
+
+.rate .r4 {
+  color: var(--ok);
+}
+
+.rest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  color: var(--wing);
+}
+
+.rest svg {
+  width: 120px;
+  height: 120px;
+  filter: drop-shadow(0 0 22px rgba(194, 217, 76, 0.7));
+}
