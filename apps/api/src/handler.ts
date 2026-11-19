@@ -1,5 +1,6 @@
 import { type LemmaStore, resolveLemmas } from "./lexicon/lemmas";
 import { type LexiconStore, lookupWord } from "./lexicon/lookup";
+import type { ClientLimiter } from "./translate/client-limiter";
 import { BudgetExceededError, type TranslateService } from "./translate/translate-service";
 import { TranslatorError } from "./translate/translator";
 
@@ -7,6 +8,7 @@ export interface HandlerDeps {
   store: LexiconStore & LemmaStore;
   allowedOrigin: string;
   translate?: TranslateService;
+  limiter?: ClientLimiter;
 }
 
 const SUPPORTED_LANGS = new Set(["es"]);
@@ -30,7 +32,11 @@ function json(body: unknown, status: number, deps: HandlerDeps, cache = false): 
   });
 }
 
-export async function handle(request: Request, deps: HandlerDeps): Promise<Response> {
+export async function handle(
+  request: Request,
+  deps: HandlerDeps,
+  client = "unknown",
+): Promise<Response> {
   const url = new URL(request.url);
   if (request.method === "OPTIONS") {
     return new Response(null, {
@@ -43,7 +49,7 @@ export async function handle(request: Request, deps: HandlerDeps): Promise<Respo
     });
   }
   if (request.method === "POST" && url.pathname === "/translate") {
-    return translateRoute(request, deps);
+    return translateRoute(request, deps, client);
   }
   if (request.method === "POST" && url.pathname === "/lemmas") {
     const declared = Number(request.headers.get("content-length") ?? Number.NaN);
@@ -94,7 +100,11 @@ export async function handle(request: Request, deps: HandlerDeps): Promise<Respo
   return json({ error: "not_found" }, 404, deps);
 }
 
-async function translateRoute(request: Request, deps: HandlerDeps): Promise<Response> {
+async function translateRoute(
+  request: Request,
+  deps: HandlerDeps,
+  client: string,
+): Promise<Response> {
   if (!deps.translate) {
     return json({ error: "translator_not_configured" }, 503, deps);
   }
@@ -121,6 +131,10 @@ async function translateRoute(request: Request, deps: HandlerDeps): Promise<Resp
     );
   if (!valid) {
     return json({ error: "invalid_request" }, 400, deps);
+  }
+  const characters = (texts as string[]).reduce((sum, text) => sum + text.length, 0);
+  if (deps.limiter && !deps.limiter.allow(client, characters)) {
+    return json({ error: "rate_limited" }, 429, deps);
   }
   try {
     const translations = await deps.translate.translateAll(

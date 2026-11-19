@@ -12,8 +12,9 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 ## Translation flow
 
 1. Each text is hashed (SHA-256). A cache hit in the `translation` table is returned without a provider call.
-2. A miss consumes its length from the daily budget (in memory, resets at 00:00 UTC, per process), then calls the `Translator`.
-3. The result is stored in the cache. Translators are replaceable: implement `Translator` in `src/translate`.
+2. Before any of this, the client (IP address) must be within its own per-minute request and daily character limits; limits are in memory and per process.
+3. A miss consumes its length from the global daily budget (in memory, resets at 00:00 UTC, per process), then calls the `Translator`.
+4. The result is stored in the cache. Translators are replaceable: implement `Translator` in `src/translate`.
 
 ## Configuration
 
@@ -23,7 +24,10 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 | `PORT` | HTTP port | `8787` |
 | `ALLOWED_ORIGIN` | CORS origin of the web app | `http://localhost:5183` |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | enable the Cloudflare Workers AI translator (`@cf/meta/m2m100-1.2b`) | unset (translation disabled) |
-| `TRANSLATE_DAILY_CHAR_LIMIT` | characters of provider calls per day | `100000` |
+| `TRANSLATE_DAILY_CHAR_LIMIT` | global backstop: characters of provider calls per day | `100000` |
+| `CLIENT_DAILY_CHAR_LIMIT` | characters one client may send to `/translate` per day | `20000` |
+| `CLIENT_REQUESTS_PER_MINUTE` | `/translate` requests one client may make per minute | `30` |
+| `TRUST_PROXY` | set to `1` behind a proxy (Railway) to identify clients by the last `X-Forwarded-For` entry | unset |
 
 Secrets live in `apps/api/.env` or the host's variables, never in the repository.
 

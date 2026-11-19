@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { handle } from "../../src/handler";
+import { createClientLimiter } from "../../src/translate/client-limiter";
 import { createCloudflareTranslator } from "../../src/translate/cloudflare-translator";
 import {
   BudgetExceededError,
@@ -156,5 +157,50 @@ describe("translate endpoint", () => {
       { ...deps, translate: tight },
     );
     expect(response.status).toBe(429);
+  });
+
+  test("one client cannot exceed its own request rate or daily characters", async () => {
+    const limiter = createClientLimiter({ requestsPerMinute: 2, charactersPerDay: 10 });
+    const limited = { ...deps, limiter };
+    const send = (client: string, text: string) =>
+      handle(
+        new Request("http://api.test/translate", {
+          method: "POST",
+          headers: { "content-length": "60" },
+          body: JSON.stringify({ from: "es", to: "vi", texts: [text] }),
+        }),
+        limited,
+        client,
+      );
+    expect((await send("a", "uno")).status).toBe(200);
+    expect((await send("a", "dos")).status).toBe(200);
+    expect((await send("a", "tres")).status).toBe(429);
+    expect((await send("b", "tres")).status).toBe(200);
+    expect((await send("b", "cuatrocientos")).status).toBe(429);
+  });
+});
+
+describe("client limiter", () => {
+  test("the window resets each minute and the character count each day", () => {
+    let now = new Date("2026-11-19T10:00:10Z");
+    const limiter = createClientLimiter({ requestsPerMinute: 1, charactersPerDay: 5 }, () => now);
+    expect(limiter.allow("a", 3)).toBe(true);
+    expect(limiter.allow("a", 1)).toBe(false);
+    now = new Date("2026-11-19T10:01:10Z");
+    expect(limiter.allow("a", 3)).toBe(false);
+    now = new Date("2026-11-20T10:00:10Z");
+    expect(limiter.allow("a", 3)).toBe(true);
+  });
+
+  test("the table of clients stays bounded", () => {
+    const limiter = createClientLimiter({
+      requestsPerMinute: 1,
+      charactersPerDay: 5,
+      maxClients: 2,
+    });
+    limiter.allow("a", 1);
+    limiter.allow("b", 1);
+    limiter.allow("c", 1);
+    expect(limiter.allow("a", 1)).toBe(true);
   });
 });
