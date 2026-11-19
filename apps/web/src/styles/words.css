@@ -135,7 +135,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 540px) {
+@media (max-width: 760px) {
   #v-words {
     padding-left: 18px;
     padding-right: 18px;

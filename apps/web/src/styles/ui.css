@@ -150,7 +150,7 @@ html[data-night] .seg button:hover {
   transform: translateX(18px);
 }
 
-@media (max-width: 540px) {
+@media (max-width: 760px) {
   .pop {
     width: min(290px, calc(100% - 16px));
   }

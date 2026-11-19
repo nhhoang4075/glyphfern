@@ -62,6 +62,7 @@ export function TopBar(props: TopBarProps) {
         }}
       >
         <div className="ln" />
+        <div className="fl" style={{ width: `${fraction * 100}%` }} />
         {ticks.map((tick) => (
           <i
             key={tick.chapter}

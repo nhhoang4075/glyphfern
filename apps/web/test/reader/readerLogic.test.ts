@@ -5,7 +5,7 @@ import {
   CLOSED_REVEAL,
   bookmarksOnPage,
   chapterRows,
-  escapeTarget,
+  escapeAction,
   groupMembers,
   groupSurface,
   hasLearningWord,
@@ -31,18 +31,18 @@ describe("reveal state", () => {
   });
 });
 
-describe("escapeTarget", () => {
-  test("closes the topmost layer first and leaves fullscreen last", () => {
+describe("escapeAction", () => {
+  test("closes every open layer at once and leaves fullscreen only when none was open", () => {
     const all = { popover: true, drawer: true, panel: true, fullscreen: true };
-    expect(escapeTarget(all)).toBe("popover");
-    expect(escapeTarget({ ...all, popover: false })).toBe("drawer");
-    expect(escapeTarget({ ...all, popover: false, drawer: false })).toBe("panel");
-    expect(escapeTarget({ ...all, popover: false, drawer: false, panel: false })).toBe(
-      "fullscreen",
+    expect(escapeAction(all)).toBe("closeLayers");
+    expect(escapeAction({ ...all, popover: false, drawer: false })).toBe("closeLayers");
+    expect(escapeAction({ ...all, popover: false })).toBe("closeLayers");
+    expect(escapeAction({ popover: false, drawer: false, panel: false, fullscreen: true })).toBe(
+      "exitFullscreen",
     );
-    expect(
-      escapeTarget({ popover: false, drawer: false, panel: false, fullscreen: false }),
-    ).toBeNull();
+    expect(escapeAction({ popover: false, drawer: false, panel: false, fullscreen: false })).toBe(
+      "none",
+    );
   });
 });
 

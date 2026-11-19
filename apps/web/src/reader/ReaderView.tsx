@@ -33,7 +33,7 @@ import {
   type RevealState,
   bookmarksOnPage,
   chapterRows,
-  escapeTarget,
+  escapeAction,
   groupMembers,
   highlightClass,
   popoverPlacement,
@@ -454,16 +454,14 @@ export function ReaderView() {
     const onKey = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === "Escape") {
-        const target = escapeTarget({
+        const action = escapeAction({
           popover: live.current.popOpen,
           drawer: live.current.drawerOpen,
           panel: live.current.panelOpen,
           fullscreen: live.current.fullscreen,
         });
-        if (target === "popover") setPopOpen(false);
-        else if (target === "drawer") setDrawerOpen(false);
-        else if (target === "panel") closePanel();
-        else if (target === "fullscreen") {
+        if (action === "closeLayers") closeLayers();
+        else if (action === "exitFullscreen") {
           setFullscreen(false);
           setBarShown(false);
         }
@@ -475,7 +473,7 @@ export function ReaderView() {
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [visible, turn, closePanel]);
+  }, [visible, turn, closeLayers]);
 
   useEffect(() => {
     const stage = stageRef.current;

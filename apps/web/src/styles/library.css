@@ -153,7 +153,7 @@ html[data-night] .pin.on {
   font-size: 13px;
 }
 
-@media (max-width: 540px) {
+@media (max-width: 760px) {
   #v-library {
     padding-left: 18px;
     padding-right: 18px;

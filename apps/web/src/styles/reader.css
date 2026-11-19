@@ -37,10 +37,21 @@
   left: 0;
   right: 0;
   top: 50%;
-  height: 2px;
-  margin-top: -1px;
-  border-radius: 2px;
-  background: var(--line);
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 3px;
+  background: var(--track);
+}
+
+.track .fl {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 3px;
+  background: var(--wing);
+  transition: width 0.45s var(--ease);
 }
 
 .track .tk {
@@ -579,6 +590,11 @@ html[data-night] .w.sel {
   color: #fff;
 }
 
+.st.on.nw {
+  background: var(--ink-2);
+  color: #fff;
+}
+
 .st.on.lamp {
   background: var(--lamp);
   color: #25330a;
@@ -965,11 +981,9 @@ html[data-night] .drawer {
 
 @media (max-width: 1099px) {
   .panel {
-    position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 40;
     width: 100%;
     max-width: 560px;
     margin: 0 auto;
@@ -994,13 +1008,24 @@ html[data-night] .drawer {
   }
 }
 
-@media (max-width: 540px) {
+@media (max-width: 760px) {
+  .panel {
+    position: fixed;
+    z-index: 40;
+    max-width: none;
+    margin: 0;
+    max-height: 72vh;
+    max-height: 72dvh;
+    padding: 14px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
   .bar {
     padding: 0 8px;
+    height: 56px;
   }
 
   .stage {
-    inset: 64px 0 14px 0;
+    inset: 56px 0 14px 0;
     padding: 0 10px;
   }
 
