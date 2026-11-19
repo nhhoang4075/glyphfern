@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
+  chapterAnchorPage,
   chapterPageOf,
   clampPage,
   endPageOf,
   gapFor,
   pageCount,
   pageSentence,
-  progressRatio,
   sentenceAtPage,
   startPageOf,
   step,
@@ -154,18 +154,14 @@ describe("clampPage", () => {
   });
 });
 
-describe("progressRatio", () => {
-  test("is 0 on the first page", () => {
-    expect(progressRatio(0, 11)).toBe(0);
+describe("chapterAnchorPage", () => {
+  test("adds the offset to the chapter start page", () => {
+    expect(chapterAnchorPage(7, 3)).toBe(10);
   });
-  test("is 1 on the last page", () => {
-    expect(progressRatio(10, 11)).toBe(1);
+  test("a missing chapter starts at page 0", () => {
+    expect(chapterAnchorPage(undefined, 2)).toBe(2);
   });
-  test("is page over pages minus one", () => {
-    expect(progressRatio(5, 11)).toBe(0.5);
-    expect(progressRatio(1, 5)).toBe(0.25);
-  });
-  test("is 0 when there is a single page", () => {
-    expect(progressRatio(0, 1)).toBe(0);
+  test("never goes below page 0", () => {
+    expect(chapterAnchorPage(1, -5)).toBe(0);
   });
 });

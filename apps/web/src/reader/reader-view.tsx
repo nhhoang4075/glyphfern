@@ -1,3 +1,4 @@
+import type { Book } from "@glyphfern/core";
 import {
   type PageCurl,
   type Paginator,
@@ -27,6 +28,7 @@ import { indexBook } from "../app/book-index";
 import { createSettler } from "../app/settle";
 import { LAYOUT_SETTLE_MS, useApp, useSettledLayoutKey } from "../app/use-app";
 import { Button, IconButton } from "../ui";
+import { chapterWindow, hasChapterAfter, hasChapterBefore, windowWords } from "./chapter-window";
 import { Drawer, type DrawerTab } from "./drawer";
 import { EmptyReader } from "./empty-reader";
 import { Flow } from "./flow";
@@ -43,6 +45,13 @@ import {
   sentenceText,
   toggleReveal,
 } from "./reader-logic";
+import {
+  bookProgress,
+  chapterWordCounts,
+  currentPageNumber,
+  pageFraction,
+  wordsPerPage,
+} from "./reading-progress";
 import { parseSentenceKey, sentenceKey } from "./sentence-key";
 import { TopBar } from "./top-bar";
 import { TypePopover } from "./type-popover";
@@ -51,7 +60,9 @@ import { type ActiveWord, WordPanel } from "./word-panel";
 interface ViewState {
   page: number;
   pages: number;
-  starts: number[];
+  chapter: number;
+  chapterStart: number;
+  chapterPages: number;
 }
 
 interface PanelState {
@@ -63,13 +74,23 @@ const BAR_REVEAL_MS = 3200;
 const PULSE_MS = 900;
 const WIPE_MS = 900;
 const SETTLING_ATTRIBUTE = "data-settling";
+const TURNING_ATTRIBUTE = "data-turning";
+const WINDOW_SHIFT_DELAY_MS = 560;
+const WINDOW_SHIFT_RETRY_MS = 100;
+
+function chapterOfKey(book: Book, key: string | null | undefined): number | null {
+  const id = parseSentenceKey(key ?? undefined);
+  if (id === null) return null;
+  return indexBook(book).byId.get(id)?.chapter ?? null;
+}
 
 function sameView(a: ViewState, b: ViewState): boolean {
   return (
     a.page === b.page &&
     a.pages === b.pages &&
-    a.starts.length === b.starts.length &&
-    a.starts.every((start, index) => start === b.starts[index])
+    a.chapter === b.chapter &&
+    a.chapterStart === b.chapterStart &&
+    a.chapterPages === b.chapterPages
   );
 }
 
@@ -113,12 +134,32 @@ function BookReader() {
   const paginatorRef = useRef<Paginator | null>(null);
   const curlRef = useRef<PageCurl | null>(null);
   const pendingAnchor = useRef<string | null>(null);
+  const shiftTimer = useRef(0);
+  const centerRef = useRef(0);
   const frameRef = useRef(0);
   const barTimer = useRef(0);
   const touchStartX = useRef<number | null>(null);
   const previousHighlights = useRef(preferences.hl);
 
-  const [view, setView] = useState<ViewState>({ page: 0, pages: 1, starts: [] });
+  const [view, setView] = useState<ViewState>({
+    page: 0,
+    pages: 1,
+    chapter: 0,
+    chapterStart: 0,
+    chapterPages: 1,
+  });
+  const [center, setCenter] = useState(() => {
+    const opening = openingSentenceId(
+      preferences.positions,
+      activeBookId,
+      index.byId,
+      pack.book.chapters[0]?.title.id,
+    );
+    return opening === undefined ? 0 : (index.byId.get(opening)?.chapter ?? 0);
+  });
+  centerRef.current = center;
+  const visibleChapters = chapterWindow(center, pack.book.chapters.length);
+  const windowKey = `${visibleChapters.first}-${visibleChapters.last}`;
   const [panel, setPanel] = useState<PanelState>({ open: false, word: null });
   const [reveal, setReveal] = useState<RevealState>(CLOSED_REVEAL);
   const [popOpen, setPopOpen] = useState(false);
@@ -127,6 +168,7 @@ function BookReader() {
   const [drawerTab, setDrawerTab] = useState<DrawerTab>("toc");
   const [fullscreen, setFullscreen] = useState(false);
   const [barShown, setBarShown] = useState(false);
+  const [settling, setSettling] = useState(false);
 
   const paginator = paginatorRef.current;
   const ranges = paginator?.ranges() ?? [];
@@ -167,10 +209,20 @@ function BookReader() {
   const sync = useCallback(() => {
     const current = paginatorRef.current;
     if (!current) return;
-    const starts = live.current.pack.book.chapters.map(
-      (_, chapter) => current.chapterStartPages().get(chapter) ?? 0,
-    );
-    const next: ViewState = { page: current.current(), pages: current.pages(), starts };
+    const book = live.current.pack.book;
+    const chapter =
+      chapterOfKey(book, current.sentenceOnCurrentPage()) ??
+      chapterWindow(centerRef.current, book.chapters.length).first;
+    const starts = current.chapterStartPages();
+    const chapterStart = starts.get(chapter) ?? 0;
+    const chapterEnd = starts.get(chapter + 1) ?? current.pages();
+    const next: ViewState = {
+      page: current.current(),
+      pages: current.pages(),
+      chapter,
+      chapterStart,
+      chapterPages: Math.max(1, chapterEnd - chapterStart),
+    };
     setView((previous) => (sameView(previous, next) ? previous : next));
   }, []);
 
@@ -188,11 +240,17 @@ function BookReader() {
         }
         const target = pendingAnchor.current ?? current.sentenceOnCurrentPage() ?? undefined;
         pendingAnchor.current = null;
+        const targetChapter = chapterOfKey(live.current.pack.book, target);
+        if (targetChapter !== null && targetChapter !== centerRef.current) {
+          centerRef.current = targetChapter;
+          flushSync(() => setCenter(targetChapter));
+        }
         current.layout(target);
         sync();
         const flow = flowRef.current;
         if (flow) preloadIcons(flow);
         sheet.removeAttribute(SETTLING_ATTRIBUTE);
+        setSettling(false);
       });
     },
     [sync],
@@ -207,6 +265,34 @@ function BookReader() {
     if (id !== null) actions.rememberPosition(live.current.bookId, id);
   }, [actions]);
 
+  const shiftWindow = useCallback(() => {
+    const current = paginatorRef.current;
+    if (!current) return;
+    const chapter = chapterOfKey(live.current.pack.book, current.sentenceOnCurrentPage());
+    if (chapter === null || chapter === centerRef.current) return;
+    const start = current.chapterStartPages().get(chapter);
+    if (start === undefined) return;
+    const offset = current.current() - start;
+    centerRef.current = chapter;
+    flushSync(() => setCenter(chapter));
+    current.layout({ chapter, offset });
+    sync();
+    const flow = flowRef.current;
+    if (flow) preloadIcons(flow);
+  }, [sync]);
+
+  const scheduleShift = useCallback(() => {
+    window.clearTimeout(shiftTimer.current);
+    const attempt = () => {
+      if (sheetRef.current?.hasAttribute(TURNING_ATTRIBUTE)) {
+        shiftTimer.current = window.setTimeout(attempt, WINDOW_SHIFT_RETRY_MS);
+        return;
+      }
+      shiftWindow();
+    };
+    shiftTimer.current = window.setTimeout(attempt, WINDOW_SHIFT_DELAY_MS);
+  }, [shiftWindow]);
+
   const goTo = useCallback(
     (page: number) => {
       const current = paginatorRef.current;
@@ -214,18 +300,50 @@ function BookReader() {
       current.go(page);
       sync();
       rememberCurrentPage();
+      scheduleShift();
     },
-    [sync, rememberCurrentPage],
+    [sync, rememberCurrentPage, scheduleShift],
   );
 
   const goToSentence = useCallback(
     (sentenceId: number) => {
       const current = paginatorRef.current;
-      const range = current?.ranges().find((candidate) => candidate.id === sentenceKey(sentenceId));
+      if (!current) return;
       closePanel();
-      goTo(range?.startPage ?? 0);
+      const key = sentenceKey(sentenceId);
+      const range = current.ranges().find((candidate) => candidate.id === key);
+      if (range) {
+        goTo(range.startPage);
+        return;
+      }
+      const chapter = indexBook(live.current.pack.book).byId.get(sentenceId)?.chapter;
+      if (chapter === undefined) return;
+      window.clearTimeout(shiftTimer.current);
+      centerRef.current = chapter;
+      flushSync(() => setCenter(chapter));
+      current.layout(key);
+      sync();
+      const flow = flowRef.current;
+      if (flow) preloadIcons(flow);
+      rememberCurrentPage();
     },
-    [closePanel, goTo],
+    [closePanel, goTo, sync, rememberCurrentPage],
+  );
+
+  const shiftAtEdge = useCallback(
+    (direction: 1 | -1) => {
+      const current = paginatorRef.current;
+      if (!current) return;
+      const count = live.current.pack.book.chapters.length;
+      const bounds = chapterWindow(centerRef.current, count);
+      const atEnd = direction === 1 && current.current() >= current.pages() - 1;
+      const atStart = direction === -1 && current.current() <= 0;
+      if ((atEnd && hasChapterAfter(bounds, count)) || (atStart && hasChapterBefore(bounds))) {
+        window.clearTimeout(shiftTimer.current);
+        shiftWindow();
+      }
+    },
+    [shiftWindow],
   );
 
   const turn = useCallback(
@@ -233,13 +351,14 @@ function BookReader() {
       closePanel();
       const current = paginatorRef.current;
       if (!current) return;
+      shiftAtEdge(direction);
       if (live.current.turn === "curl" && curlRef.current) {
         curlRef.current.turn(direction);
         return;
       }
       goTo(current.current() + direction);
     },
-    [closePanel, goTo],
+    [closePanel, goTo, shiftAtEdge],
   );
 
   const openWord = useCallback((sentenceId: number, tokenIndex: number) => {
@@ -270,7 +389,10 @@ function BookReader() {
     paginatorRef.current = createPaginator({ flow, sheet });
     const settler = createSettler({
       delayMs: LAYOUT_SETTLE_MS,
-      onUnsettled: () => sheet.setAttribute(SETTLING_ATTRIBUTE, ""),
+      onUnsettled: () => {
+        sheet.setAttribute(SETTLING_ATTRIBUTE, "");
+        setSettling(true);
+      },
       onSettled: () => relayout(),
     });
     let observedWidth = 0;
@@ -290,6 +412,7 @@ function BookReader() {
       sheet.removeAttribute(SETTLING_ATTRIBUTE);
       observer.disconnect();
       window.cancelAnimationFrame(frameRef.current);
+      window.clearTimeout(shiftTimer.current);
       paginatorRef.current?.dispose();
       paginatorRef.current = null;
     };
@@ -311,6 +434,10 @@ function BookReader() {
       book.chapters[0]?.title.id,
     );
     setPanel({ open: false, word: null });
+    const openingChapter =
+      opening === undefined ? 0 : (indexBook(book).byId.get(opening)?.chapter ?? 0);
+    centerRef.current = openingChapter;
+    setCenter(openingChapter);
     relayout(opening === undefined ? undefined : sentenceKey(opening));
   }, [book, relayout]);
 
@@ -324,7 +451,7 @@ function BookReader() {
 
   useLayoutEffect(() => {
     const flow = flowRef.current;
-    if (!flow || !pack) return;
+    if (!flow || !pack || windowKey === "") return;
     for (const element of flow.querySelectorAll<HTMLElement>(".w[data-l]")) {
       element.classList.remove("l1", "l2", "l3");
       const wordState = state.wordStates[element.dataset.l ?? ""] ?? { kind: "new" };
@@ -332,11 +459,11 @@ function BookReader() {
       if (name) element.classList.add(name);
       element.classList.toggle("nw", wordState.kind === "new");
     }
-  }, [state.wordStates, pack]);
+  }, [state.wordStates, pack, windowKey]);
 
   useLayoutEffect(() => {
     const flow = flowRef.current;
-    if (!flow) return;
+    if (!flow || windowKey === "") return;
     for (const element of flow.querySelectorAll(".w.sel, .w.grp")) {
       element.classList.remove("sel", "grp");
     }
@@ -348,7 +475,7 @@ function BookReader() {
         .querySelector(`.w[data-s="${key}"][data-i="${member}"]`)
         ?.classList.add(member === tokenIndex ? "sel" : "grp");
     }
-  }, [panel]);
+  }, [panel, windowKey]);
 
   useEffect(() => {
     const flow = flowRef.current;
@@ -444,6 +571,7 @@ function BookReader() {
         const current = paginatorRef.current;
         if (!current) return;
         current.go(current.current() + direction);
+        shiftWindow();
         flushSync(() => {
           setPanel((previous) => (previous.open ? { ...previous, open: false } : previous));
           sync();
@@ -453,6 +581,7 @@ function BookReader() {
       canTurn: (direction) => {
         const current = paginatorRef.current;
         if (!current) return false;
+        shiftAtEdge(direction);
         const target = current.current() + direction;
         return target >= 0 && target < current.pages();
       },
@@ -484,7 +613,7 @@ function BookReader() {
       curl.destroy();
       curlRef.current = null;
     };
-  }, [sync, rememberCurrentPage]);
+  }, [sync, rememberCurrentPage, shiftWindow, shiftAtEdge]);
 
   useEffect(() => {
     const curl = curlRef.current;
@@ -652,10 +781,18 @@ function BookReader() {
     setFullscreen((previous) => !previous);
   };
 
-  const currentSentence = parseSentenceKey(paginator?.sentenceOnCurrentPage() ?? undefined);
-  const currentChapter =
-    currentSentence === null ? 0 : (index.byId.get(currentSentence)?.chapter ?? 0);
-  const rows = chapterRows(view.starts, view.page, view.pages, currentChapter);
+  const wordCounts = chapterWordCounts(pack.book);
+  const chapterFraction = pageFraction(view.page, view.chapterStart, view.chapterPages);
+  const progress = bookProgress(wordCounts, view.chapter, chapterFraction);
+  const perPage = wordsPerPage(windowWords(wordCounts, visibleChapters), view.pages);
+  const pageNumber = currentPageNumber(wordCounts, view.chapter, chapterFraction, perPage);
+  const rows = chapterRows({
+    wordCounts,
+    currentChapter: view.chapter,
+    currentFraction: chapterFraction,
+    currentPageOffset: view.page - view.chapterStart,
+    perPage,
+  });
   const drawerChapters = rows.map((row) => {
     const title = pack.book.chapters[row.index]?.title;
     return { row, title: title ? sentenceText(title) : "" };
@@ -676,8 +813,7 @@ function BookReader() {
       <TopBar
         aaRef={aaRef}
         shown={barShown}
-        page={view.page}
-        pages={view.pages}
+        progress={progress}
         bookmarked={bookmarked}
         fullscreen={fullscreen}
         onContents={openDrawer}
@@ -737,7 +873,7 @@ function BookReader() {
                   onKeyDown={onFlowKeyDown}
                   onFocus={onFlowFocus}
                 >
-                  <Flow pack={pack} />
+                  <Flow pack={pack} span={visibleChapters} />
                 </div>
               </div>
             </div>
@@ -752,15 +888,23 @@ function BookReader() {
             className="l"
             icon="left"
             label="Trang trước"
-            disabled={view.page === 0}
+            disabled={view.page === 0 && !hasChapterBefore(visibleChapters)}
             onClick={() => turn(-1)}
           />
+          {settling ? null : (
+            <span className="pgno" aria-hidden="true">
+              {pageNumber}
+            </span>
+          )}
           <IconButton
             variant="hit"
             className="r"
             icon="right"
             label="Trang sau"
-            disabled={view.page >= view.pages - 1}
+            disabled={
+              view.page >= view.pages - 1 &&
+              !hasChapterAfter(visibleChapters, pack.book.chapters.length)
+            }
             onClick={() => turn(1)}
           />
         </div>
@@ -781,10 +925,10 @@ function BookReader() {
         chapters={drawerChapters}
         bookmarks={bookmarkSentences}
         sentences={index.sentences}
-        onChapter={(startPage) => {
+        onChapter={(chapterIndex) => {
+          const title = pack.book.chapters[chapterIndex]?.title;
           setDrawerOpen(false);
-          closePanel();
-          goTo(startPage);
+          if (title) goToSentence(title.id);
         }}
         onSentence={(id) => {
           setDrawerOpen(false);

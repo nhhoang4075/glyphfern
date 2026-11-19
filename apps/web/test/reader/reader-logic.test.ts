@@ -64,15 +64,29 @@ describe("popoverPlacement", () => {
 });
 
 describe("chapterRows", () => {
-  test("uses clamp((page + 1 - start) / (nextStart - start), 0, 1)", () => {
-    const rows = chapterRows([0, 4, 8], 5, 12, 1);
-    expect(rows.map((row) => row.fraction)).toEqual([1, 0.5, 0]);
-    expect(rows.map((row) => row.current)).toEqual([false, true, false]);
+  const input = {
+    wordCounts: [100, 200, 300, 400],
+    currentChapter: 1,
+    currentFraction: 0.25,
+    currentPageOffset: 2,
+    perPage: 50,
+  };
+
+  test("earlier chapters are full, the current one is the page fraction, later ones are empty", () => {
+    const rows = chapterRows(input);
+    expect(rows.map((row) => row.fraction)).toEqual([1, 0.25, 0, 0]);
+    expect(rows.map((row) => row.current)).toEqual([false, true, false, false]);
   });
 
-  test("the last chapter ends at the total page count", () => {
-    const rows = chapterRows([0, 4, 8], 9, 12, 2);
-    expect(rows[2]?.fraction).toBe(0.5);
+  test("estimates round(words before / words per page) + 1 and shows the real page for the current chapter", () => {
+    const rows = chapterRows(input);
+    expect(rows.map((row) => row.page)).toEqual([1, 3 + 2, 7, 13]);
+  });
+
+  test("rounds half up", () => {
+    const rows = chapterRows({ ...input, currentChapter: 0, perPage: 40 });
+    expect(rows[1]?.page).toBe(4);
+    expect(rows[2]?.page).toBe(9);
   });
 });
 

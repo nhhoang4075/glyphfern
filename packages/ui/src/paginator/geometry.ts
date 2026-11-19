@@ -49,6 +49,6 @@ export function clampPage(page: number, pages: number): number {
   return Math.max(0, Math.min(pages - 1, page));
 }
 
-export function progressRatio(page: number, pages: number): number {
-  return pages > 1 ? page / (pages - 1) : 0;
+export function chapterAnchorPage(chapterStartPage: number | undefined, offset: number): number {
+  return Math.max(0, (chapterStartPage ?? 0) + offset);
 }

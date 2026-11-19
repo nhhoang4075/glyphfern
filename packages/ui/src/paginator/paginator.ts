@@ -1,5 +1,6 @@
 import {
   type PageRange,
+  chapterAnchorPage,
   chapterPageOf,
   clampPage,
   endPageOf,
@@ -14,8 +15,15 @@ export interface SentenceRange extends PageRange {
   readonly id: string;
 }
 
+export interface ChapterAnchor {
+  readonly chapter: number;
+  readonly offset: number;
+}
+
+export type LayoutAnchor = string | ChapterAnchor;
+
 export interface Paginator {
-  layout(anchorSentenceId?: string): void;
+  layout(anchor?: LayoutAnchor): void;
   go(page: number): void;
   current(): number;
   pages(): number;
@@ -119,10 +127,17 @@ export function createPaginator({ flow, sheet }: PaginatorElements): Paginator {
     return measured;
   }
 
-  function layout(anchorSentenceId?: string): void {
+  function anchorPage(anchorId: LayoutAnchor | null): number {
+    if (anchorId !== null && typeof anchorId === "object") {
+      return chapterAnchorPage(chapterPages.get(anchorId.chapter), anchorId.offset);
+    }
+    return sentenceRanges.find((range) => range.id === anchorId)?.startPage ?? 0;
+  }
+
+  function layout(anchor?: LayoutAnchor): void {
     const width = sheet.clientWidth;
     if (!width) return;
-    const anchorId = anchorSentenceId ?? sentenceOnCurrentPage();
+    const anchorId = anchor ?? sentenceOnCurrentPage();
     const gap = gapFor(width);
     pageStep = step(width, gap);
     applyColumns(width, gap);
@@ -132,8 +147,7 @@ export function createPaginator({ flow, sheet }: PaginatorElements): Paginator {
     const flowLeft = flow.getBoundingClientRect().left;
     sentenceRanges = measureSentences(flowLeft);
     chapterPages = measureChapters(flow, flowLeft, pageStep);
-    const anchored = sentenceRanges.find((range) => range.id === anchorId);
-    currentPage = clampPage(anchored ? anchored.startPage : 0, pageTotal);
+    currentPage = clampPage(anchorPage(anchorId), pageTotal);
     flow.style.transform = `translateX(${-currentPage * pageStep}px)`;
     void flow.offsetWidth;
     flow.style.transition = "";

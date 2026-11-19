@@ -1,13 +1,19 @@
 export { createPaginator } from "./paginator";
-export type { Paginator, PaginatorElements, SentenceRange } from "./paginator";
+export type {
+  ChapterAnchor,
+  LayoutAnchor,
+  Paginator,
+  PaginatorElements,
+  SentenceRange,
+} from "./paginator";
 export {
+  chapterAnchorPage,
   chapterPageOf,
   clampPage,
   endPageOf,
   gapFor,
   pageCount,
   pageSentence,
-  progressRatio,
   sentenceAtPage,
   startPageOf,
   step,

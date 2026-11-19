@@ -1,12 +1,10 @@
-import { progressRatio } from "@glyphfern/ui";
 import type { Ref } from "react";
 import { IconButton } from "../ui";
 
 interface TopBarProps {
   aaRef: Ref<HTMLButtonElement>;
   shown: boolean;
-  page: number;
-  pages: number;
+  progress: number;
   bookmarked: boolean;
   fullscreen: boolean;
   onContents: () => void;
@@ -17,7 +15,7 @@ interface TopBarProps {
 }
 
 export function TopBar(props: TopBarProps) {
-  const fraction = progressRatio(props.page, props.pages);
+  const fraction = props.progress;
 
   return (
     <div className={props.shown ? "bar show" : "bar"} onPointerMove={props.onPointerMove}>

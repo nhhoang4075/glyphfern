@@ -1,4 +1,5 @@
 import type { Lang } from "@glyphfern/core";
+import { sentenceProgress } from "../reader/reading-progress";
 import type { StoredBook } from "../storage/repository";
 
 export type ArtKey = "m" | "w" | "s" | "d";
@@ -31,7 +32,7 @@ function titleHash(title: string): number {
   return hash;
 }
 
-export function userLibraryBook(stored: StoredBook): LibraryBook {
+export function userLibraryBook(stored: StoredBook, position?: number): LibraryBook {
   const colors = COVER_PALETTE[titleHash(stored.book.title) % COVER_PALETTE.length] ?? [
     "#2B5B45",
     "#6FA283",
@@ -41,7 +42,7 @@ export function userLibraryBook(stored: StoredBook): LibraryBook {
     title: stored.book.title,
     flag: stored.lang.toUpperCase(),
     colors,
-    progress: 0,
+    progress: position === undefined ? 0 : sentenceProgress(stored.book, position),
     art: "w",
     lang: stored.lang,
     removable: true,

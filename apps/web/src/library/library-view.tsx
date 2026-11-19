@@ -78,7 +78,12 @@ export function LibraryView() {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const books = orderBooks(state.userBooks.map(userLibraryBook), state.pins);
+  const books = orderBooks(
+    state.userBooks.map((stored) =>
+      userLibraryBook(stored, state.preferences.positions[stored.id]),
+    ),
+    state.pins,
+  );
 
   const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

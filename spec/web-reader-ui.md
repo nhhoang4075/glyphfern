@@ -22,7 +22,7 @@ Scope: `apps/web` (PWA). Visual direction is Glyphfern (D-001). All user-facing 
 
 Mobile drawer and its scrim are `position: fixed`, full viewport height, above the dock (z-index 45 and 44). The word panel is also above the dock.
 
-Reading sheet insets (inside the book): desktop 44/46/56/52px (top/right/bottom/left) in the original prototype base, the final design uses 46/50/42/50. In fullscreen: 58/62/62/66px; on mobile fullscreen 50/26/58/30px. The bottom inset leaves room for the prev/next buttons.
+Reading sheet insets (inside the book): desktop 44/46/56/52px (top/right/bottom/left) in the original prototype base, the final design uses 46/50/54/50. In fullscreen: 58/62/62/66px; on mobile fullscreen 50/26/58/30px. The bottom inset leaves room for the prev/next buttons.
 
 ## 3. Screens
 

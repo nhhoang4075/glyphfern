@@ -94,7 +94,7 @@
 
 .sheet {
   position: absolute;
-  inset: 46px 50px 42px 50px;
+  inset: 46px 50px 54px 50px;
   overflow: hidden;
   overflow: clip;
   overflow-clip-margin: 22px;
@@ -274,11 +274,32 @@ html[data-night] .w.sel {
 }
 
 .hit.l {
-  left: calc(50% - 48px);
+  left: calc(50% - 74px);
 }
 
 .hit.r {
-  left: calc(50% + 10px);
+  left: calc(50% + 36px);
+}
+
+.pgno {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 56px;
+  text-align: center;
+  line-height: 38px;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.rd.fs .pgno {
+  bottom: 10px;
 }
 
 .hit[disabled] {
@@ -828,6 +849,14 @@ html[data-night] .drawer {
   font-size: 1rem;
   letter-spacing: 0.01em;
   line-height: 1.2;
+}
+
+.ch .pn {
+  margin-left: auto;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
 }
 
 .ch .pr {

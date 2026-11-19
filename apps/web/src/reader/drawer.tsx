@@ -15,7 +15,7 @@ interface DrawerProps {
   chapters: readonly { title: string; row: ChapterRow }[];
   bookmarks: readonly Sentence[];
   sentences: readonly Sentence[];
-  onChapter: (startPage: number) => void;
+  onChapter: (chapterIndex: number) => void;
   onSentence: (sentenceId: number) => void;
   onRemoveBookmark: (sentenceId: number) => void;
 }
@@ -99,7 +99,7 @@ export function Drawer(props: DrawerProps) {
                 <ListRow
                   key={row.index}
                   className={row.current ? "ch cur" : "ch"}
-                  onClick={() => onChapter(row.startPage)}
+                  onClick={() => onChapter(row.index)}
                 >
                   <Fern className="mk" />
                   <span className="rm">
@@ -108,6 +108,7 @@ export function Drawer(props: DrawerProps) {
                       <i style={{ width: `${row.fraction * 100}%` }} />
                     </span>
                   </span>
+                  <span className="pn">{row.page}</span>
                 </ListRow>
               ))
             : null}

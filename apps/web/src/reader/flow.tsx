@@ -1,6 +1,7 @@
 import type { LanguagePack, Sentence } from "@glyphfern/core";
 import { Fragment, memo } from "react";
 import { Fern } from "../icons/icon";
+import type { ChapterWindow } from "./chapter-window";
 import { isRomanNumeral } from "./reader-logic";
 import { sentenceKey } from "./sentence-key";
 
@@ -34,12 +35,13 @@ function Tokens({ sentence, title }: { sentence: Sentence; title: boolean }) {
   );
 }
 
-function FlowContent({ pack }: { pack: LanguagePack }) {
+function FlowContent({ pack, span }: { pack: LanguagePack; span: ChapterWindow }) {
+  const visible = pack.book.chapters.slice(span.first, span.last + 1);
   return (
     <>
-      {pack.book.chapters.map((chapter, chapterIndex) => (
+      {visible.map((chapter, offset) => (
         <Fragment key={chapter.title.id}>
-          <h2 data-ch={chapterIndex}>
+          <h2 data-ch={span.first + offset}>
             <Fern className="hfern" />
             <Tokens sentence={chapter.title} title />
           </h2>

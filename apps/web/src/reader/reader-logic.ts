@@ -1,10 +1,5 @@
-import {
-  type Sentence,
-  type WordState,
-  chapterProgress,
-  nextChapterStartPage,
-  search,
-} from "@glyphfern/core";
+import { type Sentence, type WordState, search } from "@glyphfern/core";
+import { estimatedStartPage, wordsBefore } from "./reading-progress";
 
 export interface RevealState {
   translation: boolean;
@@ -49,23 +44,34 @@ export function popoverPlacement(
 
 export interface ChapterRow {
   index: number;
-  startPage: number;
   fraction: number;
   current: boolean;
+  page: number;
 }
 
-export function chapterRows(
-  startPages: readonly number[],
-  page: number,
-  totalPages: number,
-  currentChapter: number,
-): ChapterRow[] {
-  return startPages.map((startPage, index) => ({
-    index,
-    startPage,
-    fraction: chapterProgress(page, startPage, nextChapterStartPage(startPages, index, totalPages)),
-    current: index === currentChapter,
-  }));
+export interface ChapterRowsInput {
+  wordCounts: readonly number[];
+  currentChapter: number;
+  currentFraction: number;
+  currentPageOffset: number;
+  perPage: number;
+}
+
+export function chapterRows(input: ChapterRowsInput): ChapterRow[] {
+  const { wordCounts, currentChapter, currentFraction, currentPageOffset, perPage } = input;
+  return wordCounts.map((_, index) => {
+    const estimate = estimatedStartPage(wordsBefore(wordCounts, index), perPage);
+    const current = index === currentChapter;
+    let fraction = 0;
+    if (index < currentChapter) fraction = 1;
+    else if (current) fraction = currentFraction;
+    return {
+      index,
+      fraction,
+      current,
+      page: current ? estimate + currentPageOffset : estimate,
+    };
+  });
 }
 
 export interface SentenceSpan {

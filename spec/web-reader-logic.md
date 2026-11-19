@@ -63,7 +63,7 @@ Per lemma: `new` (no entry), `learning(level)` with level 1, 2 or 3 (3 is the ne
 - Bookmark toggle in the top bar stores the id of the first sentence on the current page. A page counts as bookmarked when any bookmarked sentence lies on it.
 - Bookmarks and cards are stored **per language**: switching language swaps the active lists.
 - Search is case-insensitive. A sentence matches when any token's lemma or lowercased surface equals the query or starts with it. Each result shows the sentence with matching tokens marked. Tapping a result closes the drawer and goes to the sentence page.
-- Contents show for each chapter the fraction of pages behind the current page: `clamp((page + 1 - chapter.startPage) / (nextChapter.startPage - chapter.startPage), 0, 1)`.
+- Contents show for each chapter the fraction of pages behind the current page: the rule of §2: 1 for chapters before the current one, 0 for later ones, and `clamp((page - chapter start page) / chapter pages, 0, 1)` for the current one.
 
 ## 7. Page-turn engine
 
