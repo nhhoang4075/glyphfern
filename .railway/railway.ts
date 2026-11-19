@@ -30,7 +30,7 @@ export default defineRailway(() => {
       restartPolicyType: "ON_FAILURE",
       restartPolicyMaxRetries: 10,
     },
-    variables: { TTS_PORT: String(TTS_PORT) },
+    variables: { PORT: String(TTS_PORT), TTS_PORT: String(TTS_PORT) },
     replicas: { [REGION]: 1 },
   });
 
