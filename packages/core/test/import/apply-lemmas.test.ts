@@ -43,4 +43,16 @@ describe("lemmas for a book", () => {
     expect(result.chapters[0]?.title.tokens[0]?.lemma).toBe("uno");
     expect(book.chapters[0]?.paragraphs[0]?.[0]?.tokens[0]?.lemma).toBe("miraba");
   });
+
+  test("inherited object keys and non-string values are ignored", () => {
+    const odd: Book = JSON.parse(JSON.stringify(book));
+    const tokens = odd.chapters[0]?.paragraphs[0]?.[0]?.tokens;
+    if (tokens?.[0]) tokens[0].surf = "constructor";
+    if (tokens?.[1]) tokens[1].surf = "toString";
+    const result = applyLemmas(odd, JSON.parse('{"tostring": 5}'));
+    expect(result.chapters[0]?.paragraphs[0]?.[0]?.tokens.map((t) => t.lemma)).toEqual([
+      "constructor",
+      "tostring",
+    ]);
+  });
 });

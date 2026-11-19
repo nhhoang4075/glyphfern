@@ -24,11 +24,11 @@ export async function resolveLemmas(
       pointers.set(key, row.lemma);
     }
   }
-  const result: Record<string, string> = {};
+  const entries: [string, string][] = [];
   for (const [word, lemma] of pointers) {
     if (!own.has(word) && lemma !== word) {
-      result[word] = lemma;
+      entries.push([word, lemma]);
     }
   }
-  return result;
+  return Object.fromEntries(entries);
 }

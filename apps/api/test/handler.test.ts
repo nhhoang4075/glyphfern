@@ -45,6 +45,7 @@ describe("api handler", () => {
     const response = await handle(
       new Request("http://api.test/lemmas", {
         method: "POST",
+        headers: { "content-length": "40" },
         body: JSON.stringify({ lang: "es", words: ["Miraba", "lobo"] }),
       }),
       deps,
@@ -52,9 +53,25 @@ describe("api handler", () => {
     expect(await response.json()).toEqual({ lemmas: { miraba: "mirar" } });
   });
 
+  test("a lemma request without a small declared size is refused", async () => {
+    const huge = new Request("http://api.test/lemmas", {
+      method: "POST",
+      headers: { "content-length": String(10 * 1024 * 1024) },
+      body: "{}",
+    });
+    expect((await handle(huge, deps)).status).toBe(413);
+  });
+
   test("bad lemma requests are rejected", async () => {
     const bad = (body: string) =>
-      handle(new Request("http://api.test/lemmas", { method: "POST", body }), deps);
+      handle(
+        new Request("http://api.test/lemmas", {
+          method: "POST",
+          headers: { "content-length": String(body.length) },
+          body,
+        }),
+        deps,
+      );
     expect((await bad("nope")).status).toBe(400);
     expect((await bad(JSON.stringify({ lang: "xx", words: [] }))).status).toBe(400);
     expect((await bad(JSON.stringify({ lang: "es", words: [1] }))).status).toBe(400);

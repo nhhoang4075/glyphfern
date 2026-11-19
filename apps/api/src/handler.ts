@@ -11,6 +11,7 @@ const MAX_WORD_LENGTH = 64;
 const WORD_PATTERN = /^[\p{L}\p{N}'’-]+$/u;
 const CACHE_SECONDS = 86400;
 const MAX_LEMMA_WORDS = 5000;
+export const MAX_BODY_BYTES = 512 * 1024;
 
 function json(body: unknown, status: number, deps: HandlerDeps, cache = false): Response {
   return new Response(JSON.stringify(body), {
@@ -36,6 +37,10 @@ export async function handle(request: Request, deps: HandlerDeps): Promise<Respo
     });
   }
   if (request.method === "POST" && url.pathname === "/lemmas") {
+    const declared = Number(request.headers.get("content-length") ?? Number.NaN);
+    if (!Number.isFinite(declared) || declared > MAX_BODY_BYTES) {
+      return json({ error: "payload_too_large" }, 413, deps);
+    }
     let body: { lang?: unknown; words?: unknown };
     try {
       body = (await request.json()) as { lang?: unknown; words?: unknown };
