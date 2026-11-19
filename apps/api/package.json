@@ -1,0 +1,12 @@
+{
+  "name": "@glyphfern/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "start": "bun src/server.ts",
+    "migrate": "bun src/migrate.ts",
+    "load-lexicon": "bun src/lexicon/load-kaikki.ts"
+  }
+}
