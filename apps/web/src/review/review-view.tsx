@@ -6,7 +6,8 @@ import { Fern, Icon } from "../icons/icon";
 import type { IconName } from "../icons/icon-data";
 import { toDictEntry } from "../lexicon/lexicon-client";
 import { useLookup } from "../lexicon/use-lookup";
-import { SENTENCE_RATE, speak } from "../speech/speak";
+import { SENTENCE_RATE } from "../speech/tts";
+import { useTts } from "../speech/use-tts";
 import { Button, Chip, IconButton } from "../ui";
 import { cardBack } from "./card-back";
 import {
@@ -58,6 +59,7 @@ function Cloze({
 
 export function ReviewView() {
   const { state, actions } = useApp();
+  const tts = useTts();
   const active = state.route === "review";
   const [session, setSession] = useState(EMPTY_SESSION);
   const [flipped, setFlipped] = useState(false);
@@ -111,7 +113,12 @@ export function ReviewView() {
       return;
     }
     setFlipped(true);
-    speak(sentenceText(sentence), state.pack.ttsLocale, SENTENCE_RATE);
+    tts.speak({
+      text: sentenceText(sentence),
+      lang: state.pack.lang,
+      locale: state.pack.ttsLocale,
+      rate: SENTENCE_RATE,
+    });
   };
 
   const rate = (rating: Rating) => {

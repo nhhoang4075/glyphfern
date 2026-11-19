@@ -7,7 +7,8 @@ import type { IconName } from "../icons/icon-data";
 import { toDictEntry } from "../lexicon/lexicon-client";
 import { useLookup } from "../lexicon/use-lookup";
 import { useTranslation } from "../lexicon/use-translation";
-import { SENTENCE_RATE, WORD_RATE, speak } from "../speech/speak";
+import { SENTENCE_RATE, WORD_RATE } from "../speech/tts";
+import { useTts } from "../speech/use-tts";
 import { Chip, IconButton, Section, Segmented, Sheet } from "../ui";
 import {
   type RevealState,
@@ -84,7 +85,8 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
   const lemmaShown = staticEntry ? lemma : (looked?.lemma ?? lemma);
   const current = stateOf(lemma);
   const hasCard = state.cards.some((card) => card.lemma === lemma);
-  const locale = state.pack.ttsLocale;
+  const tts = useTts();
+  const speech = { lang: state.pack.lang, locale: state.pack.ttsLocale };
   const extraOpen = isRevealOpen(reveal);
 
   const choose = (target: TapTarget) => {
@@ -109,7 +111,7 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
           variant="sm"
           icon="speaker"
           label="Phát âm từ"
-          onClick={() => speak(surface, locale, WORD_RATE)}
+          onClick={() => tts.speak({ ...speech, text: surface, rate: WORD_RATE })}
         />
       </div>
       <Section className="chips">
@@ -178,7 +180,10 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
             variant="sm"
             icon="speaker"
             label="Đọc câu"
-            onClick={() => sentence && speak(sentenceText(sentence), locale, SENTENCE_RATE)}
+            onClick={() =>
+              sentence &&
+              tts.speak({ ...speech, text: sentenceText(sentence), rate: SENTENCE_RATE })
+            }
           />
           <IconButton
             variant="sm"
