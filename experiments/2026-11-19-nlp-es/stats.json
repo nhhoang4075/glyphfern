@@ -1,0 +1,14 @@
+{
+ "lines": 814137,
+ "lemma_entries": 124625,
+ "formof_entries": 689512,
+ "distinct_lemma_words": 113588,
+ "distinct_forms": 1120415,
+ "pack_json_bytes": 40580291,
+ "pack_gzip_bytes": 6635655,
+ "lemmas_json_bytes": 8628195,
+ "lemmas_gzip_bytes": 2844017,
+ "forms_json_bytes": 31952076,
+ "forms_gzip_bytes": 3790647,
+ "seconds": 73.4
+}

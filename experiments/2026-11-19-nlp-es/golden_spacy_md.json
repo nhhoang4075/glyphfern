@@ -1,0 +1,246 @@
+{
+ "engine": "spacy_md",
+ "correct": 18,
+ "total": 26,
+ "load_seconds": 4.6,
+ "tokens_timed": 596,
+ "seconds_for_tokens": 0.03,
+ "tokens_per_second": 19507,
+ "peak_rss_mb": 609,
+ "rows": [
+  {
+   "sent": "Dámelo ahora.",
+   "target": "dámelo",
+   "expected": "dar",
+   "got": [
+    "Dámelo→dámelir"
+   ],
+   "ok": false
+  },
+  {
+   "sent": "Quiero decírselo mañana.",
+   "target": "decírselo",
+   "expected": "decir",
+   "got": [
+    "decírselo→decírselo"
+   ],
+   "ok": false
+  },
+  {
+   "sent": "Ella vivía en una casa pequeña.",
+   "target": "vivía",
+   "expected": "vivir",
+   "got": [
+    "vivía→vivir"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "El lobo le dijo que se fuera.",
+   "target": "dijo",
+   "expected": "decir",
+   "got": [
+    "dijo→decir"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Estaba corriendo por el camino.",
+   "target": "corriendo",
+   "expected": "correr",
+   "got": [
+    "corriendo→correr"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Estaba corriendo por el camino.",
+   "target": "estaba",
+   "expected": "estar",
+   "got": [
+    "Estaba→estar"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Si hubiéramos sabido, habríamos venido.",
+   "target": "hubiéramos",
+   "expected": "haber",
+   "got": [
+    "hubiéramos→haber"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Si hubiéramos sabido, habríamos venido.",
+   "target": "sabido",
+   "expected": "saber",
+   "got": [
+    "sabido→saber"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Si hubiéramos sabido, habríamos venido.",
+   "target": "habríamos",
+   "expected": "haber",
+   "got": [
+    "habríamos→haber"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Si hubiéramos sabido, habríamos venido.",
+   "target": "venido",
+   "expected": "venir",
+   "got": [
+    "venido→venir"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Los niños pequeños salían temprano.",
+   "target": "niños",
+   "expected": "niño",
+   "got": [
+    "niños→niño"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Los niños pequeños salían temprano.",
+   "target": "pequeños",
+   "expected": "pequeño",
+   "got": [
+    "pequeños→pequeño"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Los niños pequeños salían temprano.",
+   "target": "salían",
+   "expected": "salir",
+   "got": [
+    "salían→salir"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Voy a dártelo cuando llegues.",
+   "target": "dártelo",
+   "expected": "dar",
+   "got": [
+    "dártelo→dártelo"
+   ],
+   "ok": false
+  },
+  {
+   "sent": "Voy a dártelo cuando llegues.",
+   "target": "llegues",
+   "expected": "llegar",
+   "got": [
+    "llegues→lleguser"
+   ],
+   "ok": false
+  },
+  {
+   "sent": "Se lo dije ayer.",
+   "target": "dije",
+   "expected": "decir",
+   "got": [
+    "dije→decir"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Las mujeres quieren comprarlas.",
+   "target": "mujeres",
+   "expected": "mujer",
+   "got": [
+    "mujeres→mujer"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Las mujeres quieren comprarlas.",
+   "target": "quieren",
+   "expected": "querer",
+   "got": [
+    "quieren→querer"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Las mujeres quieren comprarlas.",
+   "target": "comprarlas",
+   "expected": "comprar",
+   "got": [
+    "comprarlas→comprar él"
+   ],
+   "ok": false
+  },
+  {
+   "sent": "Dile la verdad.",
+   "target": "dile",
+   "expected": "decir",
+   "got": [
+    "Dile→dile"
+   ],
+   "ok": false
+  },
+  {
+   "sent": "Pensaba llegar antes que ella.",
+   "target": "pensaba",
+   "expected": "pensar",
+   "got": [
+    "Pensaba→pensar"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "¿Adónde vas tan temprano?",
+   "target": "vas",
+   "expected": "ir",
+   "got": [
+    "vas→ir"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Están hablándonos.",
+   "target": "hablándonos",
+   "expected": "hablar",
+   "got": [
+    "hablándonos→hablando yo"
+   ],
+   "ok": false
+  },
+  {
+   "sent": "Me lo estaba diciendo.",
+   "target": "diciendo",
+   "expected": "decir",
+   "got": [
+    "diciendo→decir"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Nos fuimos corriendo por el camino más corto.",
+   "target": "fuimos",
+   "expected": "ir",
+   "got": [
+    "fuimos→ir"
+   ],
+   "ok": true
+  },
+  {
+   "sent": "Tráemelo cuando puedas.",
+   "target": "tráemelo",
+   "expected": "traer",
+   "got": [
+    "Tráemelo→tráemelir"
+   ],
+   "ok": false
+  }
+ ]
+}
