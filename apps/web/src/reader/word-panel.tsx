@@ -4,8 +4,9 @@ import type { TapTarget } from "../app/api";
 import { useApp } from "../app/use-app";
 import { Icon } from "../icons/icon";
 import type { IconName } from "../icons/icon-data";
-import { toDictEntry } from "../lexicon/lexicon-client";
+import { firstGloss, toDictEntry } from "../lexicon/lexicon-client";
 import { useLookup } from "../lexicon/use-lookup";
+import { useTranslation } from "../lexicon/use-translation";
 import { SENTENCE_RATE, WORD_RATE, speak } from "../speech/speak";
 import { Chip, IconButton, Section, Segmented, Sheet } from "../ui";
 import {
@@ -44,6 +45,12 @@ const STATE_BUTTONS: readonly StateButton[] = [
   { target: "known", className: "ok", icon: "check", label: "Đã biết" },
 ];
 
+function machineNote(status: string): string {
+  if (status === "loading") return "Đang dịch...";
+  if (status === "failed") return "Chưa dịch được. Hãy thử lại sau.";
+  return "";
+}
+
 function Note({ markup }: { markup: string }) {
   return (
     <>
@@ -67,6 +74,19 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
   const staticEntry = state.pack.dict[lemma];
   const looked = useLookup(state.lang, token?.surf ?? "", token !== undefined && !staticEntry);
   const entry = staticEntry ?? (looked ? toDictEntry(looked) : undefined);
+  const glossVi = useTranslation(
+    "en",
+    "vi",
+    looked && !staticEntry ? firstGloss(looked) : undefined,
+    looked !== null && !staticEntry,
+  );
+  const sentenceEn = sentence ? sentenceText(sentence) : undefined;
+  const machineSentence = useTranslation(
+    state.lang,
+    "vi",
+    sentenceEn,
+    reveal.translation && sentence !== null && !sentence.vi,
+  );
   const lemmaShown = staticEntry ? lemma : (looked?.lemma ?? lemma);
   const current = stateOf(lemma);
   const hasCard = state.cards.some((card) => card.lemma === lemma);
@@ -115,6 +135,12 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
         ))}
       </Section>
       <p className="mean">{entry?.meaning ?? ""}</p>
+      {glossVi.text ? (
+        <p className="mean mt">
+          {glossVi.text}
+          <small>Máy dịch</small>
+        </p>
+      ) : null}
       <div className="note" hidden={!entry?.note}>
         <Icon name="bulb" />
         <span>{entry?.note ?? ""}</span>
@@ -189,7 +215,12 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
       <div className={extraOpen ? "extra open" : "extra"}>
         <div className={reveal.translation ? "xw on" : "xw"}>
           <div className="xi">
-            <p className="tr">{sentence?.vi ?? ""}</p>
+            <p className="tr">
+              {sentence?.vi ?? machineSentence.text ?? machineNote(machineSentence.status)}
+            </p>
+            {!sentence?.vi && machineSentence.text ? (
+              <small className="mt">Bản dịch máy, có thể sai xưng hô và nghĩa</small>
+            ) : null}
           </div>
         </div>
         <div className={reveal.grammar ? "xw on" : "xw"}>

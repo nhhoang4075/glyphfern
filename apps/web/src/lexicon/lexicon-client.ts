@@ -22,6 +22,14 @@ export type FetchLike = (
 const LEMMA_CHUNK = 2000;
 
 const MAX_GLOSSES_SHOWN = 4;
+const MAX_FIRST_GLOSS_CHARS = 60;
+
+export function firstGloss(result: LookupResult): string | undefined {
+  const entry =
+    result.entries.find((candidate) => candidate.lemma === result.lemma) ?? result.entries[0];
+  const gloss = entry?.glosses[0]?.replace(/\s*\(.*$/, "").trim();
+  return gloss && gloss.length <= MAX_FIRST_GLOSS_CHARS ? gloss : undefined;
+}
 
 export function toDictEntry(result: LookupResult): DictEntry | undefined {
   const entry =
@@ -94,8 +102,47 @@ export function createLexiconClient(
     return result;
   }
 
+  const translations = new Map<string, Promise<string | null>>();
+
+  async function translateRequest(from: string, to: string, text: string): Promise<string | null> {
+    if (!baseUrl) {
+      return null;
+    }
+    try {
+      const response = await fetcher(`${baseUrl}/translate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ from, to, texts: [text] }),
+      });
+      if (!response.ok) {
+        return null;
+      }
+      const body = (await response.json()) as { translations?: string[] };
+      return body.translations?.[0] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  function translate(from: string, to: string, text: string): Promise<string | null> {
+    const key = `${from}:${to}:${text}`;
+    const cached = translations.get(key);
+    if (cached) {
+      return cached;
+    }
+    const pending = translateRequest(from, to, text).then((result) => {
+      if (result === null) {
+        translations.delete(key);
+      }
+      return result;
+    });
+    translations.set(key, pending);
+    return pending;
+  }
+
   return {
     lemmatize,
+    translate,
     lookup(lang: string, word: string): Promise<LookupResult | null> {
       const key = `${lang}:${word.toLowerCase()}`;
       const cached = cache.get(key);

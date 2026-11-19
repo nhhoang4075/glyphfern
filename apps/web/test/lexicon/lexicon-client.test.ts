@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   type LookupResult,
   createLexiconClient,
+  firstGloss,
   toDictEntry,
 } from "../../src/lexicon/lexicon-client";
 import { posLabel } from "../../src/lexicon/pos-label";
@@ -74,5 +75,44 @@ describe("lexicon client", () => {
     const lemmas = await client.lemmatize("es", words);
     expect(bodies.map((b) => b.length)).toEqual([2000, 2000, 500]);
     expect(Object.keys(lemmas)).toEqual(["w0", "w4000"]);
+  });
+});
+
+describe("machine translation", () => {
+  test("a text is translated once and a failure is not cached", async () => {
+    let calls = 0;
+    const client = createLexiconClient("http://api", async (_url, init) => {
+      calls += 1;
+      const body = JSON.parse(String(init?.body)) as { from: string; to: string; texts: string[] };
+      if (calls === 1) {
+        return { ok: false, status: 502, json: async () => ({}) };
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ translations: [`${body.to}:${body.texts[0]}`] }),
+      };
+    });
+    expect(await client.translate("es", "vi", "lobo")).toBeNull();
+    expect(await client.translate("es", "vi", "lobo")).toBe("vi:lobo");
+    expect(await client.translate("es", "vi", "lobo")).toBe("vi:lobo");
+    expect(calls).toBe(2);
+  });
+
+  test("the first gloss drops the parenthetical and long glosses are not translated", () => {
+    expect(
+      firstGloss({
+        surface: "lobo",
+        lemma: "lobo",
+        entries: [{ lemma: "lobo", pos: "noun", ipa: null, glosses: ["wolf (wild Canis lupus)"] }],
+      }),
+    ).toBe("wolf");
+    expect(
+      firstGloss({
+        surface: "x",
+        lemma: "x",
+        entries: [{ lemma: "x", pos: "noun", ipa: null, glosses: ["a".repeat(80)] }],
+      }),
+    ).toBeUndefined();
   });
 });
