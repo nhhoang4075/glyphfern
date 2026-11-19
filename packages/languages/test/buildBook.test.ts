@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildBook, parseToken, parseTokens } from "./buildBook";
+import { buildBook, parseToken, parseTokens } from "../src/buildBook";
 
 describe("parseToken", () => {
   test("splits surface, lemma and trailing punctuation", () => {

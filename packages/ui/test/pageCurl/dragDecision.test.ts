@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { decideRelease, exceedsTap } from "./dragDecision";
+import { decideRelease, exceedsTap } from "../../src/pageCurl/dragDecision";
 
 test("six pixels is still a tap, beyond is a drag", () => {
   expect(exceedsTap(3, 4)).toBe(false);

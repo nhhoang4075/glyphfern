@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { clipHalf, polygonCss } from "./domFold";
+import { clipHalf, polygonCss } from "../../src/pageCurl/domFold";
 
 const square: [number, number][] = [
   [0, 0],

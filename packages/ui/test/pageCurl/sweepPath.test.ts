@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { easeOut, yEase } from "./easing";
-import { idlePoint, sweepAt, sweepEnd, sweepPoint } from "./sweepPath";
+import { easeOut, yEase } from "../../src/pageCurl/easing";
+import { idlePoint, sweepAt, sweepEnd, sweepPoint } from "../../src/pageCurl/sweepPath";
 
 test("end points", () => {
   const right = sweepEnd("r", 800, 1000);

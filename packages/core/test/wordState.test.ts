@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { WordState } from "./types";
+import type { WordState } from "../src/types";
 import {
   highlightAlpha,
   onCardAdded,
@@ -8,7 +8,7 @@ import {
   tapKnown,
   tapLearning,
   tapNew,
-} from "./wordState";
+} from "../src/wordState";
 
 const NEW: WordState = { kind: "new" };
 const KNOWN: WordState = { kind: "known" };

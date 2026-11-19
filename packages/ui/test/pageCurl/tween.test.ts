@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type Clock, runTween } from "./tween";
+import { type Clock, runTween } from "../../src/pageCurl/tween";
 
 function fakeClock() {
   let time = 0;

@@ -10,7 +10,7 @@ import {
   sentenceAtPage,
   startPageOf,
   step,
-} from "./geometry";
+} from "../../src/paginator/geometry";
 
 describe("gapFor", () => {
   test("is 20 percent of the width", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseTokens } from "./tokenParse";
+import { parseTokens } from "../src/tokenParse";
 
 describe("token parsing", () => {
   test("an empty text produces no tokens", () => {

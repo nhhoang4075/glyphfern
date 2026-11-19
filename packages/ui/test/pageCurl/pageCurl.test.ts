@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { createPageCurl } from "./pageCurl";
-import type { Clock } from "./tween";
+import { createPageCurl } from "../../src/pageCurl/pageCurl";
+import type { Clock } from "../../src/pageCurl/tween";
 
 type Handler = (e: unknown) => void;
 

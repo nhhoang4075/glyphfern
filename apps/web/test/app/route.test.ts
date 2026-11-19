@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { hashFromRoute, routeFromHash } from "./route";
+import { hashFromRoute, routeFromHash } from "../../src/app/route";
 
 describe("hash routing", () => {
   test("the four views are routable and the default is read", () => {

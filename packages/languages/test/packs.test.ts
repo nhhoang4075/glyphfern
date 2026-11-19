@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { Sentence } from "@glyphfern/core";
-import { esPack, koPack, packs } from "./index";
+import { esPack, koPack, packs } from "../src/index";
 
 function allSentences(sentences: { chapters: { title: Sentence; paragraphs: Sentence[][] }[] }) {
   return sentences.chapters.flatMap((chapter) => [chapter.title, ...chapter.paragraphs.flat()]);

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cornerPoint, foldParams } from "./foldParams";
+import { cornerPoint, foldParams } from "../../src/pageCurl/foldParams";
 
 test("corner points", () => {
   expect(cornerPoint("r", 800, 1000)).toEqual([800, 1000]);

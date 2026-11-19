@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { chapterProgress, nextChapterStartPage } from "./chapterProgress";
+import { chapterProgress, nextChapterStartPage } from "../src/chapterProgress";
 
 describe("chapter progress", () => {
   test("is 0 before the chapter starts", () => {

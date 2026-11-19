@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { esPack } from "@glyphfern/languages";
-import { indexBook } from "../app/bookIndex";
+import { indexBook } from "../../src/app/bookIndex";
 import {
   CLOSED_REVEAL,
   bookmarksOnPage,
@@ -17,8 +17,8 @@ import {
   sentenceText,
   showsLemmaChip,
   toggleReveal,
-} from "./readerLogic";
-import { parseSentenceKey, sentenceKey } from "./sentenceKey";
+} from "../../src/reader/readerLogic";
+import { parseSentenceKey, sentenceKey } from "../../src/reader/sentenceKey";
 
 describe("reveal state", () => {
   test("starts closed and toggles each block independently", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { expandPos } from "./expandPos";
+import { expandPos } from "../../src/es/expandPos";
 
 describe("expandPos", () => {
   test.each([

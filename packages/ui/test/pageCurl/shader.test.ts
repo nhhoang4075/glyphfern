@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { FRAGMENT_SOURCE, VERTEX_SOURCE } from "./shader";
+import { FRAGMENT_SOURCE, VERTEX_SOURCE } from "../../src/pageCurl/shader";
 
 test("shader sources contain the specified constants", () => {
   expect(FRAGMENT_SOURCE).toContain("uPaper*0.985");

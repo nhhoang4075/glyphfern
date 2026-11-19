@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { solveA } from "./solveA";
+import { solveA } from "../../src/pageCurl/solveA";
 
 test("non-positive drag length gives zero arc", () => {
   expect(solveA(0)).toBe(0);

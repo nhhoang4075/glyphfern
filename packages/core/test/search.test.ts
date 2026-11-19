@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { search } from "./search";
-import type { Sentence, Token } from "./types";
+import { search } from "../src/search";
+import type { Sentence, Token } from "../src/types";
 
 function token(surf: string, lemma: string): Token {
   return { lead: "", surf, trail: "", lemma };

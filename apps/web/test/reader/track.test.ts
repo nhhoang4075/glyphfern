@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { seekPage, trackTicks } from "./track";
+import { seekPage, trackTicks } from "../../src/reader/track";
 
 describe("trackTicks", () => {
   test("omits the tick on page 0 and keeps later chapters at start / (pages - 1)", () => {

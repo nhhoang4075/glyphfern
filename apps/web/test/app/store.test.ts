@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { LIBRARY_BOOKS, orderBooks } from "../library/books";
-import { MemoryRepository } from "../storage/memoryRepository";
-import { openTestRepository } from "../testSupport";
-import { AppStore } from "./store";
+import { AppStore } from "../../src/app/store";
+import { LIBRARY_BOOKS, orderBooks } from "../../src/library/books";
+import { MemoryRepository } from "../../src/storage/memoryRepository";
+import { openTestRepository } from "../../src/testSupport";
 
 const options = { prefersReducedMotion: false, initialRoute: "read" as const };
 

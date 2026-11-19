@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { coverage } from "./coverage";
-import type { Sentence, Token, WordState } from "./types";
+import { coverage } from "../src/coverage";
+import type { Sentence, Token, WordState } from "../src/types";
 
 function token(lemma: string): Token {
   return { lead: "", surf: lemma, trail: "", lemma };

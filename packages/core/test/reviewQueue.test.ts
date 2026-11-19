@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { rateReviewCard, reviewProgress } from "./reviewQueue";
-import type { WordState } from "./types";
+import { rateReviewCard, reviewProgress } from "../src/reviewQueue";
+import type { WordState } from "../src/types";
 
 const LEARNING_3: WordState = { kind: "learning", level: 3 };
 const LEARNING_1: WordState = { kind: "learning", level: 1 };
