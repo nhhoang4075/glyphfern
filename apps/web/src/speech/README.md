@@ -33,6 +33,7 @@ The adapter hands the same `SpeechRequest` to the fallback exactly once, and the
 - no base URL is configured;
 - the request throws (network down, API unreachable);
 - the status is not 200;
+- the server does not answer within 7 seconds (a sleeping sidecar is still waking): the request is aborted and the fallback speaks at once, while the API keeps waking the sidecar and caches the result for the next tap;
 - `play()` rejects (for example the browser refuses playback outside a user gesture);
 - the element raises an error event during playback.
 

@@ -88,3 +88,7 @@ Each lemma entry carries `facts` (null when nothing applies), taken from the Wik
 ## Testing
 
 `bun test apps/api`. The speech tests use a fake `Synthesizer` and an in-memory cache. Auth tests sign tokens with a locally generated RSA key and a fake key fetcher. Sync tests run one shared contract against an in-memory store and the Postgres store, and route tests go through `handle` with two signed-in users. The Postgres tests (lexicon, `tts_audio`, sync) create and drop their own database on `localhost`; they are skipped when Postgres is unreachable.
+
+## Waking sidecar
+
+`createKokoroSynthesizer` retries a request that fails with 502, 503 or 504 or with a network error every 1.5 seconds for up to 35 seconds, so the `tts` service can sleep (Serverless) and wake on the first request. Other statuses are not retried. The server idle timeout is 60 seconds so a waiting request is not cut.

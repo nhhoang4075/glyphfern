@@ -69,6 +69,7 @@ function deferred(): Deferred {
 interface SetupOptions {
   respond?: TtsFetcher;
   baseUrl?: string | undefined;
+  waitMs?: number;
 }
 
 function setup(options: SetupOptions = {}) {
@@ -90,6 +91,7 @@ function setup(options: SetupOptions = {}) {
       return audio;
     },
     fallback,
+    ...(options.waitMs === undefined ? {} : { waitMs: options.waitMs }),
     objectUrls: {
       create: () => {
         const url = `blob:clip-${created.length + 1}`;
@@ -280,5 +282,17 @@ describe("server voice cancellation", () => {
     voice.cancel();
     await new Promise((resolve) => setTimeout(resolve, 5));
     expect(fallback.spoken).toEqual([]);
+  });
+
+  test("a server that takes too long hands the text to the fallback voice once", async () => {
+    const pending = deferred();
+    const { voice, fallback, calls } = setup({ respond: () => pending.promise, waitMs: 20 });
+    voice.speak(request);
+    await new Promise((done) => setTimeout(done, 60));
+    expect(fallback.spoken).toEqual([request]);
+    expect(calls[0]?.signal.aborted).toBe(true);
+    pending.resolve(okResponse("late"));
+    await new Promise((done) => setTimeout(done, 10));
+    expect(fallback.spoken).toEqual([request]);
   });
 });

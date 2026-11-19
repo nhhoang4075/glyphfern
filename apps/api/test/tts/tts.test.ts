@@ -140,9 +140,64 @@ describe("kokoro synthesizer", () => {
     expect(seen?.init?.signal).toBeInstanceOf(AbortSignal);
   });
 
+  test("a waking service is retried until it answers", async () => {
+    let calls = 0;
+    let clock = 0;
+    const synthesizer = createKokoroSynthesizer({
+      url: "http://tts.test",
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+      fetcher: (async () => {
+        calls += 1;
+        return calls < 3 ? new Response("", { status: 502 }) : new Response(AUDIO, { status: 200 });
+      }) as unknown as typeof fetch,
+    });
+    expect(await synthesizer.synthesize(input)).toEqual(AUDIO);
+    expect(calls).toBe(3);
+  });
+
+  test("a service that never wakes fails once the retry window is used", async () => {
+    let clock = 0;
+    let calls = 0;
+    const synthesizer = createKokoroSynthesizer({
+      url: "http://tts.test",
+      retryWindowMs: 10_000,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+      fetcher: (async () => {
+        calls += 1;
+        return new Response("", { status: 503 });
+      }) as unknown as typeof fetch,
+    });
+    await expect(synthesizer.synthesize(input)).rejects.toBeInstanceOf(SynthesizerError);
+    expect(calls).toBeGreaterThan(2);
+    expect(clock).toBeLessThanOrEqual(10_000);
+  });
+
+  test("a 400 or 500 reply is not retried", async () => {
+    let calls = 0;
+    const synthesizer = createKokoroSynthesizer({
+      url: "http://tts.test",
+      fetcher: (async () => {
+        calls += 1;
+        return new Response("{}", { status: 500 });
+      }) as unknown as typeof fetch,
+    });
+    await expect(synthesizer.synthesize(input)).rejects.toBeInstanceOf(SynthesizerError);
+    expect(calls).toBe(1);
+  });
+
   test("a non-200 reply, an empty body and a network failure are typed errors", async () => {
     const make = (fetcher: unknown) =>
-      createKokoroSynthesizer({ url: "http://tts.test", fetcher: fetcher as typeof fetch });
+      createKokoroSynthesizer({
+        url: "http://tts.test",
+        fetcher: fetcher as typeof fetch,
+        retryWindowMs: 0,
+      });
     await expect(
       make(async () => new Response("{}", { status: 500 })).synthesize(input),
     ).rejects.toBeInstanceOf(SynthesizerError);
@@ -163,6 +218,7 @@ describe("kokoro synthesizer", () => {
     const synthesizer = createKokoroSynthesizer({
       url: "http://tts.test",
       timeoutMs: 20,
+      retryWindowMs: 0,
       fetcher: ((_url: string, init?: RequestInit) =>
         new Promise((_resolve, reject) => {
           init?.signal?.addEventListener("abort", () => reject(new Error("aborted")));

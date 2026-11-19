@@ -26,9 +26,11 @@ export interface ServerVoiceDependencies {
   createAudio: () => AudioLike;
   fallback: Tts;
   objectUrls: ObjectUrls;
+  waitMs?: number;
 }
 
 const STATUS_OK = 200;
+const DEFAULT_WAIT_MS = 7000;
 
 export function ttsUrl(baseUrl: string, request: SpeechRequest): string {
   const lang = encodeURIComponent(request.lang);
@@ -38,6 +40,7 @@ export function ttsUrl(baseUrl: string, request: SpeechRequest): string {
 
 export function createServerVoice(dependencies: ServerVoiceDependencies): Tts {
   const { baseUrl, fetcher, createAudio, fallback, objectUrls } = dependencies;
+  const waitMs = dependencies.waitMs ?? DEFAULT_WAIT_MS;
   let audio: AudioLike | null = null;
   let inFlight: AbortController | null = null;
   let objectUrl: string | null = null;
@@ -74,8 +77,10 @@ export function createServerVoice(dependencies: ServerVoiceDependencies): Tts {
       releaseUrl();
       fallback.speak(request);
     };
+    const giveUp = setTimeout(failOver, waitMs);
     try {
       const response = await fetcher(url, { signal: controller.signal });
+      clearTimeout(giveUp);
       if (controller.signal.aborted) {
         return;
       }
@@ -93,6 +98,7 @@ export function createServerVoice(dependencies: ServerVoiceDependencies): Tts {
       element.src = objectUrl;
       await element.play();
     } catch {
+      clearTimeout(giveUp);
       failOver();
     }
   }

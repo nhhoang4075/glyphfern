@@ -62,8 +62,11 @@ function clientOf(request: Request, address: string | undefined): string {
   return address ?? "unknown";
 }
 
+const IDLE_TIMEOUT_SECONDS = 60;
+
 const server = Bun.serve({
   port: config.port,
+  idleTimeout: IDLE_TIMEOUT_SECONDS,
   maxRequestBodySize: MAX_BOOK_UPLOAD_BYTES,
   fetch: (request, bunServer) =>
     handle(
