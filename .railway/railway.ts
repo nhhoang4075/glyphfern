@@ -73,7 +73,6 @@ export default defineRailway(() => {
       restartPolicyType: "ON_FAILURE",
       restartPolicyMaxRetries: 10,
     },
-    domains: [{ domain: WEB_DOMAIN, port: WEB_PORT }],
     variables: {
       PORT: String(WEB_PORT),
       API_ORIGIN: `http://\${{api.RAILWAY_PRIVATE_DOMAIN}}:${API_PORT}`,
