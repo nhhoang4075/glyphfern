@@ -12,6 +12,7 @@ from validation import SynthesisRequest, ValidationError, parse_request
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8788
+DEFAULT_THREADS = 2
 MODELS_DIRECTORY = Path(__file__).resolve().parent / "models"
 DEFAULT_MODEL_FILE = "kokoro-v1.0.int8.onnx"
 DEFAULT_VOICES_FILE = "voices-v1.0.bin"
@@ -98,11 +99,17 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def load_synthesizer() -> Synthesizer:
+    import onnxruntime
     from kokoro_onnx import Kokoro
 
     model = os.environ.get("TTS_MODEL_PATH", str(MODELS_DIRECTORY / DEFAULT_MODEL_FILE))
     voices = os.environ.get("TTS_VOICES_PATH", str(MODELS_DIRECTORY / DEFAULT_VOICES_FILE))
-    return Synthesizer(Kokoro(model, voices))
+    options = onnxruntime.SessionOptions()
+    options.intra_op_num_threads = int(os.environ.get("TTS_THREADS", DEFAULT_THREADS))
+    session = onnxruntime.InferenceSession(
+        model, sess_options=options, providers=["CPUExecutionProvider"]
+    )
+    return Synthesizer(Kokoro.from_session(session, voices))
 
 
 def main() -> None:

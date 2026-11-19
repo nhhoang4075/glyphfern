@@ -35,6 +35,7 @@ A failure in synthesis or in ffmpeg answers 500 `{"error": "synthesis_failed"}` 
 | --- | --- | --- |
 | `TTS_HOST` | listen address | `127.0.0.1` |
 | `TTS_PORT` | listen port | `8788` |
+| `TTS_THREADS` | intra-op threads of onnxruntime; keep it at or below the CPU limit of the container, otherwise it competes with itself and synthesis becomes many times slower | `2` |
 | `TTS_MODEL_PATH` | ONNX model file | `models/kokoro-v1.0.int8.onnx` |
 | `TTS_VOICES_PATH` | voices file | `models/voices-v1.0.bin` |
 
