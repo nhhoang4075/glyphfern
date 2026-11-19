@@ -10,8 +10,12 @@ export const ICON_MARKUP = {
     '<rect x="4" y="7" width="12" height="13" rx="2.5"/><path d="M8 4h9.5A2.5 2.5 0 0 1 20 6.5V16"/>',
   toc: '<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r=".9" class="fill"/><circle cx="4.8" cy="12" r=".9" class="fill"/><circle cx="4.8" cy="17.5" r=".9" class="fill"/>',
   bookmark: '<path d="M7 4h10v16l-5-4-5 4z"/>',
+  bookmarkEmpty:
+    '<path d="M7 4h10v16l-5-4-5 4z" stroke-dasharray="2.5 2.5"/><path d="M12 8v4M10 10h4"/>',
   aa: '<path d="M3.5 18L8 6l4.5 12M5 14h6"/><path d="M14.5 18l3-7.5 3 7.5M15.6 15.8h3.8"/>',
   search: '<circle cx="10.5" cy="10.5" r="5.5"/><path d="M15 15l5 5"/>',
+  searchOff:
+    '<circle cx="10.5" cy="10.5" r="5.5"/><path d="M15 15l5 5"/><path d="M8.5 8.5l4 4M12.5 8.5l-4 4"/>',
   speaker:
     '<path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
   translate:

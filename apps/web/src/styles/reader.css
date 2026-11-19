@@ -1076,3 +1076,13 @@ button.topzone {
   background: none;
   padding: 0;
 }
+
+.st.on {
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  html[data-night] nav.dock {
+    background: var(--bg);
+  }
+}

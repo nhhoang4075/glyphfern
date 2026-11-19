@@ -58,7 +58,7 @@ function Search({
       </label>
       {query.trim() !== "" && hits.length === 0 ? (
         <div className="empty">
-          <Icon name="search" />
+          <Icon name="searchOff" />
         </div>
       ) : null}
       {hits.map((hit) => (
@@ -114,7 +114,7 @@ export function Drawer(props: DrawerProps) {
           {tab === "bookmarks" ? (
             bookmarks.length === 0 ? (
               <div className="empty">
-                <Icon name="bookmark" />
+                <Icon name="bookmarkEmpty" />
               </div>
             ) : (
               bookmarks.map((sentence) => (

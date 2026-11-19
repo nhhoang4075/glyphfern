@@ -88,6 +88,7 @@ main {
     -webkit-backdrop-filter: blur(18px);
     backdrop-filter: blur(18px);
     border: 1px solid var(--glass-line);
+    box-shadow: 0 16px 36px -24px rgba(24, 50, 38, 0.18);
   }
 
   html[data-night] nav.dock {

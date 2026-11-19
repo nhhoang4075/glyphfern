@@ -161,6 +161,19 @@ html[data-night] .pop {
   box-shadow: 0 18px 44px -22px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 
+html[data-night] .panel {
+  box-shadow: 0 -10px 40px -20px rgba(0, 0, 0, 0.7);
+}
+
+html[data-night] .ctx,
+html[data-night] .chip {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-night] .pop {
+  background: rgba(27, 36, 32, 0.96);
+}
+
 html[data-night] .st,
 html[data-night] .chip,
 html[data-night] .ctx {
