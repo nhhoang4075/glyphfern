@@ -24,13 +24,22 @@ export type IconSegment = {
   image: HTMLImageElement;
 };
 
+export type DotSegment = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fontSize: number;
+};
+
 export type Segments = {
+  dots: DotSegment[];
   texts: TextSegment[];
   boxes: BoxSegment[];
   icons: IconSegment[];
 };
 
-export const DEFAULT_BOX_SELECTOR = ".w.l1,.w.l2,.w.l3,.w.sel,.w.grp";
+export const DEFAULT_BOX_SELECTOR = ".w.l1,.w.l2,.w.l3,.w.nw,.w.sel,.w.grp";
 
 const iconCache = new Map<string, HTMLImageElement>();
 
@@ -86,7 +95,7 @@ export function collectSegments(
   boxSelector: string = DEFAULT_BOX_SELECTOR,
 ): Segments {
   const frame = flow.getBoundingClientRect();
-  const out: Segments = { texts: [], boxes: [], icons: [] };
+  const out: Segments = { texts: [], boxes: [], icons: [], dots: [] };
   const walker = document.createTreeWalker(flow, NodeFilter.SHOW_TEXT);
   const range = document.createRange();
   const measure = document.createElement("canvas").getContext("2d") as CanvasRenderingContext2D;
@@ -152,7 +161,20 @@ export function collectSegments(
   }
   for (const element of flow.querySelectorAll<HTMLElement>(boxSelector)) {
     const style = getComputedStyle(element);
-    if (style.backgroundImage !== "none") continue;
+    if (style.backgroundImage !== "none") {
+      if (element.classList.contains("nw") && !flow.classList.contains("nohl")) {
+        for (const rect of element.getClientRects()) {
+          out.dots.push({
+            x: rect.left - frame.left,
+            y: rect.top - frame.top,
+            w: rect.width,
+            h: rect.height,
+            fontSize: Number.parseFloat(style.fontSize) || 16,
+          });
+        }
+      }
+      continue;
+    }
     const color = style.backgroundColor;
     if (isTransparent(color)) continue;
     for (const rect of element.getClientRects()) {
@@ -214,6 +236,16 @@ export function drawPage(
     if (!visible(box.x, box.w)) continue;
     ctx.fillStyle = box.color;
     ctx.fillRect(box.x, box.y, box.w, box.h);
+  }
+  ctx.fillStyle = "rgba(109, 123, 115, 0.55)";
+  for (const dot of segments.dots) {
+    if (!visible(dot.x, dot.w)) continue;
+    const centerY = dot.y + dot.h - dot.fontSize * 0.06 - 1;
+    for (let offset = 1; offset < dot.w; offset += 4) {
+      ctx.beginPath();
+      ctx.arc(dot.x + offset, centerY, 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   for (const icon of segments.icons) {
     if (!visible(icon.x, icon.w)) continue;

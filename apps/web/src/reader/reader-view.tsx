@@ -281,8 +281,10 @@ export function ReaderView() {
     if (!flow || !pack) return;
     for (const element of flow.querySelectorAll<HTMLElement>(".w[data-l]")) {
       element.classList.remove("l1", "l2", "l3");
-      const name = highlightClass(state.wordStates[element.dataset.l ?? ""] ?? { kind: "new" });
+      const wordState = state.wordStates[element.dataset.l ?? ""] ?? { kind: "new" };
+      const name = highlightClass(wordState);
       if (name) element.classList.add(name);
+      element.classList.toggle("nw", wordState.kind === "new");
     }
   }, [state.wordStates, pack]);
 
