@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { LearningLevel } from "@glyphfern/core";
 import { packs } from "@glyphfern/languages";
 import { indexBook } from "../app/bookIndex";
 import { openTestRepository } from "../testSupport";
@@ -6,7 +7,7 @@ import { createRepository } from "./createRepository";
 import { ensureLanguage } from "./seed";
 
 const SPANISH_KNOWN_COUNT = 28;
-const SPANISH_LEARNING = {
+const SPANISH_LEARNING: Record<string, LearningLevel> = {
   leña: 3,
   borde: 2,
   roble: 2,
@@ -16,7 +17,13 @@ const SPANISH_LEARNING = {
   conocer: 1,
 };
 const KOREAN_KNOWN = ["한", "가다", "있다", "집", "어디", "날"];
-const KOREAN_LEARNING = { 늑대: 3, 줍다: 2, 지름길: 2, 꺾다: 1, 천천히: 1 };
+const KOREAN_LEARNING: Record<string, LearningLevel> = {
+  늑대: 3,
+  줍다: 2,
+  지름길: 2,
+  꺾다: 1,
+  천천히: 1,
+};
 
 function sentenceText(lang: "es" | "ko", sentenceId: number): string {
   const sentence = indexBook(packs[lang].book).byId.get(sentenceId);
