@@ -46,7 +46,7 @@ Elements: top bar, page (book), prev/next buttons, word panel, Aa popover, drawe
 - Radius 26px, 1px `--line` ring plus a soft shadow (45% of the original prototype shadow opacity). No spine or fake page edges. No idle dog-ear.
 - Chapter heading: fern glyph 44px, then the title in uppercase sans, weight 600, letter spacing .14em. Chapter titles are tappable words (D-007).
 - Text: serif, size `--fs` (17-28px, default 21; 19 on mobile), line height `--lh` (1.45/1.62/1.85).
-- Prev/next buttons: small round buttons centred at the bottom of the page, always visible, never hidden by the page turn style (D-005).
+- Prev/next buttons: small round buttons centred at the bottom of the page, always visible, never hidden by the page turn style (D-005). The text area reserves a bottom band at least as tall as the buttons plus 8px, so the buttons never overlap book text at any font size or line height.
 
 **Highlight styles** (Glyphfern):
 | State | Appearance |
