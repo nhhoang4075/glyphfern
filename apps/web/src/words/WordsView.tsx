@@ -10,7 +10,11 @@ export function WordsView() {
   const { state, stateOf, actions } = useApp();
   const [filter, setFilter] = useState<WordFilter>("learning");
   const { book, dict } = state.pack;
-  const summary = coverage(indexBook(book).sentences, stateOf, state.cards.length);
+  const summary = coverage(
+    indexBook(book).sentences.filter((sentence) => sentence.kind === "body"),
+    stateOf,
+    state.cards.length,
+  );
   const rows = buildWordRows(book, stateOf, filter);
 
   const openRow = (lemma: string, sentenceId: number) => {
