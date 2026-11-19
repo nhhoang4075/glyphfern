@@ -53,6 +53,18 @@ function iconImage(svg: SVGElement): HTMLImageElement {
   return image;
 }
 
+export const SOFT_HYPHEN = "\u00AD";
+
+export function glyphText(char: string, width: number, upper: boolean): string | null {
+  if (char === SOFT_HYPHEN) return width > 0 ? "-" : null;
+  return upper ? char.toUpperCase() : char;
+}
+
+export function wordText(word: string, upper: boolean): string {
+  const visible = word.split(SOFT_HYPHEN).join("");
+  return upper ? visible.toUpperCase() : visible;
+}
+
 function isTransparent(color: string): boolean {
   return color === "transparent" || /^rgba\(\s*[\d.]+,\s*[\d.]+,\s*[\d.]+,\s*0\s*\)$/.test(color);
 }
@@ -80,7 +92,7 @@ export function collectSegments(
       const first = rects[0];
       if (rects.length === 1 && first) {
         out.texts.push({
-          text: upper ? match[0].toUpperCase() : match[0],
+          text: wordText(match[0], upper),
           x: first.left - frame.left,
           y: first.top - frame.top,
           w: first.width,
@@ -95,9 +107,10 @@ export function collectSegments(
         range.setEnd(node, match.index + k + 1);
         const glyph = range.getClientRects()[0];
         const char = match[0][k] ?? "";
-        if (glyph) {
+        const text = glyph ? glyphText(char, glyph.width, upper) : null;
+        if (glyph && text !== null) {
           out.texts.push({
-            text: upper ? char.toUpperCase() : char,
+            text,
             x: glyph.left - frame.left,
             y: glyph.top - frame.top,
             w: glyph.width,
