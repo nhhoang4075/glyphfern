@@ -18,7 +18,7 @@ State (`AppState`), always describing the active language:
 - `bookmarks`: sentence ids of the active language.
 - `books`: every book of the active language (the sample book first, then imported ones); `userBooks`: all imported books as stored.
 - `pins`: book ids in pin order (all languages and placeholder books).
-- `preferences`: `size, lh, font, paper, turn, hl, lang, bookId, positions`. `positions` maps a book id (`pack.book.id` for the sample book, `StoredBook.id` for an imported one) to the sentence id the reader was on.
+- `preferences`: `size, lh, font, paper, turn, hl, voice, lang, bookId, positions`. `voice` is `"system"` (Web Speech API, default) or `"server"` (Kokoro voice from the API); preferences stored before it existed load as `"system"` through the defaults merge in `AppStore.open`; see `../speech`. `positions` maps a book id (`pack.book.id` for the sample book, `StoredBook.id` for an imported one) to the sentence id the reader was on.
 - `focusRequest`: pending `{ lemma, sentenceId }` set by the Words screen.
 - `persistence`: `indexeddb` or `memory` (session-only fallback).
 

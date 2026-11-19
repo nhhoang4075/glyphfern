@@ -11,6 +11,7 @@ export type FontKey = "serif" | "sans";
 export type TurnStyle = "slide" | "curl" | "still";
 export type LineHeight = 1.45 | 1.62 | 1.85;
 export type PaperColor = "#FCFBF9" | "#F1EDE4" | "#1B2420";
+export type VoiceKind = "system" | "server";
 
 export interface Preferences {
   size: number;
@@ -19,6 +20,7 @@ export interface Preferences {
   paper: PaperColor;
   turn: TurnStyle;
   hl: 0 | 1;
+  voice: VoiceKind;
   lang: Lang;
   bookId: string | null;
   positions: Record<string, number>;

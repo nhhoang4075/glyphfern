@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { FontKey, LineHeight, PaperColor, TurnStyle } from "../app/api";
+import type { FontKey, LineHeight, PaperColor, TurnStyle, VoiceKind } from "../app/api";
 import { MAX_SIZE, MIN_SIZE } from "../app/defaults";
 import { useApp } from "../app/use-app";
 import { Icon } from "../icons/icon";
@@ -37,6 +37,11 @@ const PAPERS: readonly { value: PaperColor; label: string }[] = [
   { value: "#FCFBF9", label: "Giấy trắng" },
   { value: "#F1EDE4", label: "Giấy kem" },
   { value: "#1B2420", label: "Đêm" },
+];
+
+const VOICES: readonly { value: VoiceKind; label: string }[] = [
+  { value: "system", label: "Giọng máy" },
+  { value: "server", label: "Giọng AI" },
 ];
 
 export function TypePopover({ open, placement }: TypePopoverProps) {
@@ -105,6 +110,16 @@ export function TypePopover({ open, placement }: TypePopoverProps) {
           value: item.value,
           label: item.label,
           content: <i className="sw" style={{ background: item.value }} />,
+        }))}
+      />
+      <Segmented
+        className="row seg"
+        value={preferences.voice}
+        onChange={(value) => actions.setPreference("voice", value)}
+        options={VOICES.map((item) => ({
+          value: item.value,
+          label: item.label,
+          content: <span className="vo">{item.label}</span>,
         }))}
       />
     </Popover>
