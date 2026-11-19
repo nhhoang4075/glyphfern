@@ -38,7 +38,7 @@ Elements: top bar, page (book), prev/next buttons, word panel, Aa popover, drawe
 
 **Top bar** (64px, 56px at width <= 760px, icons only, background = app background):
 - Contents (opens drawer), progress track, bookmark, Aa, fullscreen.
-- Track: a 2px line with 24px transparent side borders so the marker never touches the ends. The marker is a 32px circle filled with `--bg`, 2px ring in `--lamp`, containing the fern glyph. The line is 3px and tinted green `rgba(46,106,78,.16)`, with a 3px fill from `--wing` to `--lamp` showing reading progress (width animates .45s). The track is a read-only indicator: it has no chapter ticks and does not respond to taps or keys; jumping to a chapter is done from the contents drawer.
+- Track: a line with 24px transparent side borders. The line is 3px and tinted green `rgba(46,106,78,.16)`, with a 3px fill in `--wing` showing reading progress (width animates .45s). The track is a read-only indicator: it has no marker and no chapter ticks and does not respond to taps or keys; jumping to a chapter is done from the contents drawer.
 - There is exactly one progress indicator in the top bar. The coverage ring is shown only in the Words screen.
 - Bookmark icon is outline when the current page has no bookmark and filled when it has.
 

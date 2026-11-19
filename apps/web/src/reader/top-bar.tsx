@@ -1,6 +1,5 @@
 import { progressRatio } from "@glyphfern/ui";
 import type { Ref } from "react";
-import { Fern } from "../icons/icon";
 import { IconButton } from "../ui";
 
 interface TopBarProps {
@@ -26,9 +25,6 @@ export function TopBar(props: TopBarProps) {
       <div className="track" aria-hidden="true">
         <div className="ln" />
         <div className="fl" style={{ width: `${fraction * 100}%` }} />
-        <span className="mo" style={{ left: `${fraction * 100}%` }}>
-          <Fern />
-        </span>
       </div>
       <IconButton
         icon="bookmark"

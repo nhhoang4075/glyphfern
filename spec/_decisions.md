@@ -148,8 +148,8 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Now: when the book language is Spanish, blocks whose text is detected as English (function-word scoring, conservative) and blocks that are plain publishing front matter (copyright line, "All rights reserved", ISBN, publisher name lines) are dropped on import. Spanish blocks that contain a few English words are kept. A book with no detectable English is unchanged.
 - Reason: the reader treats every word as Spanish; English summaries, glossaries and legal text would be looked up and learned as Spanish words.
 
-## D-027 The top progress track is a read-only indicator without chapter ticks
+## D-027 The top progress track is a read-only line without ticks or marker
 - Date: 2026-11-20. Decided by: owner ("the top bar does not need to be interactive and needs no dots; with a thick book it looks bad").
 - Original choice: the track showed a tick per chapter start, ticks turned filled when passed, and tapping or pressing Home/End moved to a page.
-- Now: the track is a line, a progress fill and the fern marker only. No ticks, no tap, no keyboard handling. Chapter navigation stays in the contents drawer.
+- Now: the track is a line and a progress fill only. No fern marker circle, no ticks, no tap, no keyboard handling. Chapter navigation stays in the contents drawer.
 - Reason: a book with many chapters made the ticks crowd the line.
