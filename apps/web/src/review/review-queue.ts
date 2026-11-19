@@ -1,11 +1,8 @@
-import type { DictEntry, ReviewProgress, Sentence } from "@glyphfern/core";
+import type { ReviewProgress, Sentence } from "@glyphfern/core";
 import type { Card } from "../app/api";
 
-export function buildReviewQueue(
-  cards: readonly Card[],
-  dict: Readonly<Record<string, DictEntry>>,
-): string[] {
-  return cards.filter((card) => dict[card.lemma] !== undefined).map((card) => card.lemma);
+export function buildReviewQueue(cards: readonly Card[]): string[] {
+  return cards.map((card) => card.lemma);
 }
 
 export function sentenceText(sentence: Sentence): string {

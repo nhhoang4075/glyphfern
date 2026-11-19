@@ -91,6 +91,18 @@
   font-size: 1.6rem;
 }
 
+.card .mean.missing {
+  font-size: 1.1rem;
+  color: var(--ink-3);
+}
+
+.card .back small.note {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-3);
+  font-size: 11px;
+}
+
 .blank {
   display: inline-block;
   min-width: 3.4em;
