@@ -135,3 +135,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Original choice: every spine document became a chapter and every block of text became reading content.
 - Now: text before the `*** START OF THE PROJECT GUTENBERG` marker and from the `*** END OF` marker onward is dropped; runs of three or more Roman-numeral-only blocks (a contents list) are dropped; when a book has at least two Roman-numeral headings, chapters start at those headings (titled `I` or `I · Subtitle`) regardless of spine files. Without markers or numeral headings the previous behaviour applies. The book title and author come from the EPUB metadata.
 - Reason: the licence and contents are not the story, and its words must not be looked up as Spanish.
+
+## D-025 Owner-only Google sign-in and multi-device sync
+- Date: 2026-11-20. Decided by: owner ("do sync and accounts, I do not want data to live on one device and import again").
+- Sign-in is Google only (ID token verified by the API with the public client id), restricted to the emails in `ALLOWED_EMAILS` (owner only, no public sign-up).
+- Sync follows the architecture draft: client outbox, server `seq` cursor, last write wins for states, cards, bookmarks, pins, preferences and positions, append-only review log. Built book JSON (not the source EPUB) is stored in Postgres so sentence ids stay identical across devices. Sentence id ranges use random slots so offline imports on two devices do not collide. Full rules: `spec/sync.md`.
+- Reason: reading and review data must follow the owner across phone and computer without importing again.
