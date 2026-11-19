@@ -1,4 +1,4 @@
-import type { RawDictTuple } from "../buildBook";
+import type { RawDictTuple } from "../build-book";
 
 export const esRawDictionary: Record<string, RawDictTuple> = {
   haber: [

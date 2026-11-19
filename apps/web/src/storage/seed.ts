@@ -1,6 +1,6 @@
 import { type LanguagePack, type WordState, tapKnown } from "@glyphfern/core";
 import type { Card } from "../app/api";
-import { firstOccurrence } from "../app/bookIndex";
+import { firstOccurrence } from "../app/book-index";
 import type { LanguageSnapshot, Repository } from "./repository";
 
 export function buildStarterSnapshot(pack: LanguagePack): LanguageSnapshot {

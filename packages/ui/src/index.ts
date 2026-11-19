@@ -1,2 +1,2 @@
 export * from "./paginator";
-export * from "./pageCurl";
+export * from "./page-curl";

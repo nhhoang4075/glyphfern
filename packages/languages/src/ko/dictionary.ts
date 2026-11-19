@@ -1,4 +1,4 @@
-import type { RawDictTuple } from "../buildBook";
+import type { RawDictTuple } from "../build-book";
 
 export const koRawDictionary: Record<string, RawDictTuple> = {
   옛날: ["danh từ", "/yetnal/", "ngày xưa", ""],

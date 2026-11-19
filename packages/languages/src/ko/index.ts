@@ -1,5 +1,5 @@
 import type { LanguagePack } from "@glyphfern/core";
-import { buildBook, buildDictionary } from "../buildBook";
+import { buildBook, buildDictionary } from "../build-book";
 import { koRawChapters } from "./book";
 import { koRawDictionary } from "./dictionary";
 import { koNotes } from "./notes";

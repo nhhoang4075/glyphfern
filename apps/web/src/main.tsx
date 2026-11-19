@@ -1,9 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { AppStore } from "./app/store";
-import { AppProvider } from "./app/useApp";
-import { AppShell } from "./shell/AppShell";
-import { createRepository } from "./storage/createRepository";
+import { AppProvider } from "./app/use-app";
+import { AppShell } from "./shell/app-shell";
+import { createRepository } from "./storage/create-repository";
 
 async function start() {
   const container = document.getElementById("root");

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { LearningLevel } from "@glyphfern/core";
 import { packs } from "@glyphfern/languages";
-import { indexBook } from "../../src/app/bookIndex";
-import { createRepository } from "../../src/storage/createRepository";
+import { indexBook } from "../../src/app/book-index";
+import { createRepository } from "../../src/storage/create-repository";
 import { ensureLanguage } from "../../src/storage/seed";
-import { openTestRepository } from "../../src/testSupport";
+import { openTestRepository } from "../../src/test-support";
 
 const SPANISH_KNOWN_COUNT = 28;
 const SPANISH_LEARNING: Record<string, LearningLevel> = {

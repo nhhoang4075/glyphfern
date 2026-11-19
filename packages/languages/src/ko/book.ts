@@ -1,4 +1,4 @@
-import type { RawChapter } from "../buildBook";
+import type { RawChapter } from "../build-book";
 
 export const koRawChapters: RawChapter[] = [
   {

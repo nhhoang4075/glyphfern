@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Icon } from "../icons/Icon";
-import type { IconName } from "../icons/iconData";
+import { Icon } from "../icons/icon";
+import type { IconName } from "../icons/icon-data";
 import { Button, type ButtonProps } from "./button";
 import { cx } from "./cx";
 

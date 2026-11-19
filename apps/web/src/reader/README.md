@@ -17,7 +17,7 @@ The Reading screen (`ReaderView`). It is mounted for the whole session and hidde
 
 - Sentence ids are numbers in `@glyphfern/core` and strings in the DOM and the paginator. `sentenceKey` and `parseSentenceKey` are the only conversion points.
 - Bookmarks store the first sentence of the page. A page is bookmarked when any bookmarked sentence touches it; the bookmark button removes all of them or adds one.
-- `readerLogic.ts` holds the pure rules (reveal state, Esc rule: one press closes every open layer, fullscreen exits only when none was open, popover placement, drawer progress, bookmark lookup, search marks, group handling). `track.ts` holds the tick and seek maths.
+- `reader-logic.ts` holds the pure rules (reveal state, Esc rule: one press closes every open layer, fullscreen exits only when none was open, popover placement, drawer progress, bookmark lookup, search marks, group handling). `track.ts` holds the tick and seek maths.
 - Highlight strips are SVG data URIs whose fill is written as `rgba(...)` so that `collectSegments` can read the colour for the curl textures.
 - Chapter title words are tappable except roman numerals. A card made from a title word references the title sentence id.
 

@@ -1,8 +1,8 @@
 import type { LanguagePack } from "@glyphfern/core";
-import { buildBook, buildDictionary } from "../buildBook";
+import { buildBook, buildDictionary } from "../build-book";
 import { esRawChapters } from "./book";
 import { esRawDictionary } from "./dictionary";
-import { expandPos } from "./expandPos";
+import { expandPos } from "./expand-pos";
 import { esNotes } from "./notes";
 import { esKnownLemmas, esLearningLemmas } from "./starter";
 
