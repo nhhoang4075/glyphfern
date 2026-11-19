@@ -1,9 +1,7 @@
-import type { LanguagePack } from "@glyphfern/core";
-import { buildBook, buildDictionary } from "../build-book";
-import { esRawChapters } from "./book";
+import { EMPTY_BOOK, type LanguagePack } from "@glyphfern/core";
+import { buildDictionary } from "../build-dictionary";
 import { esRawDictionary } from "./dictionary";
 import { expandPos } from "./expand-pos";
-import { esNotes } from "./notes";
 
 export const esPack: LanguagePack = {
   lang: "es",
@@ -11,13 +9,7 @@ export const esPack: LanguagePack = {
   pronunciationKind: "ipa",
   wordBreak: "normal",
   hyphenate: true,
-  book: buildBook({
-    id: "la-nina-y-el-lobo",
-    title: "La niña y el lobo",
-    lang: "es",
-    chapters: esRawChapters,
-    notes: esNotes,
-  }),
+  book: EMPTY_BOOK,
   dict: buildDictionary(esRawDictionary, expandPos),
 };
 

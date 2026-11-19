@@ -75,7 +75,6 @@ export interface AppActions {
   toggleBookmark(sentenceId: number): void;
   togglePin(bookId: string): void;
   setPreference<K extends PreferenceKey>(key: K, value: Preferences[K]): void;
-  switchLanguage(lang: Lang): Promise<void>;
   importEpub(files: Readonly<Record<string, string>>): Promise<StoredBook>;
   openBook(bookId: string): Promise<void>;
   deleteBook(bookId: string): void;

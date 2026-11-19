@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { esPack } from "@glyphfern/languages";
 import { indexBook } from "../../src/app/book-index";
 import {
   CLOSED_REVEAL,
@@ -20,6 +19,7 @@ import {
   toggleReveal,
 } from "../../src/reader/reader-logic";
 import { parseSentenceKey, sentenceKey } from "../../src/reader/sentence-key";
+import { TINY_BOOK } from "../fixtures/tiny-book";
 
 describe("reveal state", () => {
   test("starts closed and toggles each block independently", () => {
@@ -106,7 +106,7 @@ describe("sentence keys", () => {
 });
 
 describe("searchHits", () => {
-  const { sentences } = indexBook(esPack.book);
+  const { sentences } = indexBook(TINY_BOOK);
 
   test("marks the matching tokens of each sentence", () => {
     const hits = searchHits(sentences, "lobo");
@@ -136,7 +136,7 @@ describe("searchHits", () => {
 });
 
 describe("group helpers", () => {
-  const se = esPack.book.chapters
+  const se = TINY_BOOK.chapters
     .flatMap((chapter) => chapter.paragraphs.flat())
     .find((sentence) => sentence.tokens.some((token) => token.group));
 
@@ -160,7 +160,7 @@ describe("group helpers", () => {
   });
 
   test("sentence text joins tokens with lead and trail by single spaces", () => {
-    const sentence = esPack.book.chapters[0]?.paragraphs[0]?.[0];
+    const sentence = TINY_BOOK.chapters[0]?.paragraphs[0]?.[0];
     expect(sentence && sentenceText(sentence).startsWith("Había una vez")).toBe(true);
     expect(sentence && sentenceText(sentence).endsWith("bosque.")).toBe(true);
   });

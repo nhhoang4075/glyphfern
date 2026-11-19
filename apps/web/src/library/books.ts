@@ -1,5 +1,4 @@
 import type { Lang } from "@glyphfern/core";
-import { packs } from "@glyphfern/languages";
 import type { StoredBook } from "../storage/repository";
 
 export type ArtKey = "m" | "w" | "s" | "d";
@@ -11,7 +10,7 @@ export interface LibraryBook {
   colors: readonly [string, string];
   progress: number;
   art: ArtKey;
-  lang: Lang | null;
+  lang: Lang;
   removable?: boolean;
 }
 
@@ -48,27 +47,6 @@ export function userLibraryBook(stored: StoredBook): LibraryBook {
     removable: true,
   };
 }
-
-export const LIBRARY_BOOKS: readonly LibraryBook[] = [
-  {
-    id: packs.es.book.id,
-    title: packs.es.book.title,
-    flag: "ES",
-    colors: ["#2B5B45", "#6FA283"],
-    progress: 0,
-    art: "m",
-    lang: "es",
-  },
-  {
-    id: packs.ko.book.id,
-    title: packs.ko.book.title,
-    flag: "KO",
-    colors: ["#C0533F", "#EFA27F"],
-    progress: 0,
-    art: "w",
-    lang: "ko",
-  },
-];
 
 export function orderBooks(books: readonly LibraryBook[], pins: readonly string[]): LibraryBook[] {
   const pinned = pins.flatMap((id) => books.filter((book) => book.id === id));

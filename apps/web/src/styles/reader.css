@@ -151,11 +151,6 @@ html[data-font="sans"] .flow {
   font-family: var(--sans);
 }
 
-html[data-lang="ko"] .flow {
-  word-break: keep-all;
-  hyphens: none;
-}
-
 .flow p {
   margin: 0 0 1.05em;
 }
@@ -1107,4 +1102,40 @@ button.topzone {
   html[data-night] nav.dock {
     background: var(--bg);
   }
+}
+
+.rd-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.rd-empty-fern {
+  width: 56px;
+  height: 56px;
+  color: var(--ink-3);
+}
+
+.rd-empty-text {
+  margin: 0;
+  color: var(--ink-2);
+  font-family: var(--sans);
+  font-size: 16px;
+}
+
+.rd-empty-add {
+  height: 44px;
+  padding: 0 22px;
+  border-radius: var(--r-md);
+  color: var(--wing);
+  background: var(--wing-soft);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.rd-empty-add:hover {
+  background: var(--paper-2);
 }

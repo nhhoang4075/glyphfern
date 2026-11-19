@@ -2,16 +2,16 @@
 
 ## Purpose
 
-The Reading screen (`ReaderView`). It is mounted for the whole session and hidden by the shell with `display: none` when another route is active, so the layout and the reading position survive route changes.
+The Reading screen (`ReaderView`). With no open book (`pack.book.chapters` is empty) it renders `EmptyReader`: a fern, the text "Chưa có sách" and a button that navigates to the library. The paginator, curl engine and page controls exist only while a book is open: `ReaderView` switches between `EmptyReader` and the book reader, so nothing in the book reader sees an empty book. It is mounted for the whole session and hidden by the shell with `display: none` when another route is active, so the layout and the reading position survive route changes.
 
 ## Flow
 
 1. `Flow` renders the active pack once (chapter headings `h2[data-ch]`, paragraphs, sentence spans `.s[data-s]`, word spans `.w` with `data-s`, `data-i`, `data-l` and `data-g`). It is memoised on the pack. Word state classes (`l1`..`l3`), selection (`sel`, `grp`) and animation classes (`pulse`, `hlin`) are applied imperatively in layout effects so React never rewrites them.
-2. `ReaderView` creates the paginator from `@glyphfern/ui` on the flow and sheet elements. A `ResizeObserver` on the sheet, the font set events, and changes of size, line height, font or pack call `relayout`. `relayout` waits one animation frame (so the document preference effects have applied), then calls `layout` with the anchor sentence. A pending anchor (language switch, focus request) wins over the sentence on the current page.
+2. `ReaderView` creates the paginator from `@glyphfern/ui` on the flow and sheet elements. A `ResizeObserver` on the sheet, the font set events, and changes of size, line height, font or pack call `relayout`. `relayout` waits one animation frame (so the document preference effects have applied), then calls `layout` with the anchor sentence. A pending anchor (focus request) wins over the sentence on the current page.
 3. Page state (`page`, `pages`, chapter start pages) is mirrored into React from the paginator by `sync`. The track, buttons and bookmark state read that mirror.
 4. Turning: `slide` and `still` call `go`; `curl` delegates to `createPageCurl`. The curl engine gets its textures from `collectSegments` and `drawPage`, and the DOM fold fallback copies the flow into the hidden under layer.
 5. A tap on a word sets the panel state. The panel reads the sentence and token from the pack, and every state change goes through `useApp().actions`.
-6. Reading position: the reader remembers the sentence returned by `sentenceOnCurrentPage` (the first sentence whose `endPage` is at or after the page) through `rememberPosition`, only after a user driven page change (turn, seek, chapter or bookmark jump, keyboard focus on a word, curl turn). Layout, re-anchoring after a resize and font loading never save. When the book changes (app start, `openBook`, language switch) the layout effect anchors on the remembered sentence if the book contains it (`openingSentenceId`), otherwise on the first chapter title. This path never opens the word panel and highlights nothing.
+6. Reading position: the reader remembers the sentence returned by `sentenceOnCurrentPage` (the first sentence whose `endPage` is at or after the page) through `rememberPosition`, only after a user driven page change (turn, seek, chapter or bookmark jump, keyboard focus on a word, curl turn). Layout, re-anchoring after a resize and font loading never save. When the book changes (app start, `openBook`) the layout effect anchors on the remembered sentence if the book contains it (`openingSentenceId`), otherwise on the first chapter title. This path never opens the word panel and highlights nothing.
 7. A focus request from the Words screen is consumed once: the paginator is anchored to the sentence and the word is opened.
 
 ## Contracts

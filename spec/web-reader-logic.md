@@ -14,9 +14,9 @@ Morpheme  { form: string, gloss: string }
 
 - A token is the tappable unit. `lead` and `trail` are non-letter characters around `surf` (quotes, punctuation) and are not part of the tappable word.
 - Tokens that share a `group` inside one sentence form a multi-token unit (for example Spanish *se fue*). Tapping any member selects the member and marks the others as group members; the panel shows the joined surface.
-- `morphemes` is present for languages whose tokens contain several morphemes (Korean). It drives the morpheme chips in the word panel.
+- `morphemes` is present for languages whose tokens contain several morphemes (none in the shipped Spanish pack). It drives the morpheme chips in the word panel.
 - Chapter titles are sentences with `kind: "title"`. Their words are tappable like body words. **Prototype**: the title pseudo-sentence is built on the fly and a card created from a title word points at the first body sentence of the chapter. **Target**: titles are stored sentences with ids, so cards and bookmarks can reference them.
-- Dictionary entry: `[partOfSpeech, pronunciation, meaning(vi), note?]`. Part of speech is stored spelled out in Vietnamese. **Prototype**: pronunciation is IPA for Spanish and romanization for Korean.
+- Dictionary entry: `[partOfSpeech, pronunciation, meaning(vi), note?]`. Part of speech is stored spelled out in Vietnamese. **Prototype**: pronunciation is IPA for Spanish.
 
 ## 2. Pagination and position
 
@@ -96,28 +96,19 @@ State keys: `size` 17..28 step 1 (default 21), `lh` in {1.45, 1.62, 1.85} (defau
 
 ## 9. Languages
 
-A language is a pack: tokenizer and lemmatizer output, dictionary, TTS locale, fonts, text rules, level scale.
+A language is a pack: tokenizer and lemmatizer output, dictionary, TTS locale, fonts, text rules, level scale. Only Spanish is shipped (D-023); the pack boundary stays so another language can be added later.
 
-| | Spanish (es) | Korean (ko) |
-| --- | --- | --- |
-| Token unit | word | eojeol (space-separated), with morpheme breakdown |
-| Pronunciation field | IPA | Revised Romanization |
-| TTS locale | `es-ES` | `ko-KR` |
-| Fonts | Literata, Lexend | Noto Serif KR, Noto Sans KR |
-| Text rules | hyphenation allowed | `word-break: keep-all`, no hyphenation |
-| Level scale | CEFR | TOPIK 1..6 |
-| Part-of-speech labels | spelled out in Vietnamese | spelled out in Vietnamese, plus particle, adverb, determiner |
+| | Spanish (es) |
+| --- | --- |
+| Token unit | word |
+| Pronunciation field | IPA |
+| TTS locale | `es-ES` |
+| Fonts | Literata, Lexend |
+| Text rules | hyphenation allowed |
+| Level scale | CEFR |
+| Part-of-speech labels | spelled out in Vietnamese |
 
-Switching language:
-1. Save the current bookmarks and cards under the current language.
-2. Load (once) the target language: parse its sentences and merge its dictionary.
-3. Restore that language's word states, bookmarks and cards (empty the first time).
-4. Set `data-lang` on the root element and `lang` on the flow, rebuild the flow, go to page 0.
-5. The active language is persisted and restored on startup.
-
-Korean morpheme analysis: a token carries `morphemes`, each a form and a Vietnamese gloss; particle and ending glosses are written in parentheses (for example `는 (chủ đề)`). The panel renders one chip per morpheme. Stem alternations are explained in the dictionary note of the lemma (for example ㅂ and ㄷ irregulars) and in sentence notes.
-
-**Target**: the analyzer (Kiwi, MeCab-ko or another) produces lemma and morphemes at import time on the server; the client only renders what the token contains. **Open**: analyzer choice is not made.
+The active language is `es`; `data-lang="es"` is set on the root element and `lang` on the flow.
 
 ## 10. Text to speech
 
@@ -157,6 +148,6 @@ Korean morpheme analysis: a token carries `morphemes`, each a form and a Vietnam
 
 - Pure functions (state transitions, coverage, search, chapter progress) are covered by unit tests in `packages/core`, independent of the DOM.
 - Pagination re-anchoring: after changing size, the sentence on screen before and after is the same.
-- Language switch round trip: es to ko to es restores bookmarks and cards.
+- First run: no book is shipped; the reading screen shows the empty state and the library offers only the add button.
 - Highlights off: selection still visible. Highlights on: wipe runs once, strips end at the final geometry.
 - Selection geometry: no clipping at left and right text edges, no overlap with adjacent glyphs, no size change across pulse.

@@ -1,4 +1,4 @@
-export type Lang = "es" | "ko";
+export type Lang = "es";
 
 export interface Morpheme {
   form: string;

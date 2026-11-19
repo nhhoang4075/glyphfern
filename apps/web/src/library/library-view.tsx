@@ -3,29 +3,24 @@ import { type ChangeEvent, useRef, useState } from "react";
 import { useApp } from "../app/use-app";
 import { EpubFileError, readEpubFile } from "../import/read-epub";
 import { Badge, Button, IconButton } from "../ui";
-import { LIBRARY_BOOKS, type LibraryBook, orderBooks, userLibraryBook } from "./books";
+import { type LibraryBook, orderBooks, userLibraryBook } from "./books";
 import { CoverArt } from "./cover-art";
 
 function BookCard({ book, pinned }: { book: LibraryBook; pinned: boolean }) {
   const { actions } = useApp();
-  const openable = book.lang !== null;
 
   const open = async () => {
-    if (book.lang === null) {
-      return;
-    }
     await actions.openBook(book.id);
     actions.navigate("read");
   };
 
   return (
-    <div className="bk" data-openable={openable}>
+    <div className="bk" data-openable>
       <div className="cvw">
         <Button
           className="cv"
           style={{ background: `linear-gradient(160deg, ${book.colors[0]}, ${book.colors[1]})` }}
           aria-label={book.title}
-          aria-disabled={!openable}
           onClick={open}
         >
           <CoverArt art={book.art} />
@@ -74,7 +69,7 @@ export function LibraryView() {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const books = orderBooks([...LIBRARY_BOOKS, ...state.userBooks.map(userLibraryBook)], state.pins);
+  const books = orderBooks(state.userBooks.map(userLibraryBook), state.pins);
 
   const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -116,6 +111,7 @@ export function LibraryView() {
         onClick={() => input.current?.click()}
       />
       {message ? <output className="shelf-note">{message}</output> : null}
+      {books.length === 0 ? <p className="shelf-note">Chưa có sách nào</p> : null}
       {books.map((book) => (
         <BookCard key={book.id} book={book} pinned={state.pins.includes(book.id)} />
       ))}

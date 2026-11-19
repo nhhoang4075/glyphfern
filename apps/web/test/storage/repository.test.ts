@@ -6,6 +6,7 @@ import { openTestRepository } from "../../src/test-support";
 
 const NOON = new Date(2026, 5, 10, 12, 0, 0).getTime();
 const HOUR = 3_600_000;
+const OTHER_LANG = "ko" as unknown as Lang;
 
 function firstReview(lemma: string, reviewedAt: number): ReviewLogEntry {
   return {
@@ -85,12 +86,12 @@ for (const [name, create] of FACTORIES) {
       expect(lemmas).toEqual(["a", "b"]);
     });
 
-    test("the log of each language is separate", async () => {
+    test("the log of each stored language key is separate", async () => {
       const repository = await create();
       await repository.appendReview("es", firstReview("leña", NOON));
-      await repository.appendReview("ko", firstReview("늑대", NOON));
+      await repository.appendReview(OTHER_LANG, firstReview("늑대", NOON));
       const es = await repository.loadReviewLog("es");
-      const ko = await repository.loadReviewLog("ko");
+      const ko = await repository.loadReviewLog(OTHER_LANG);
       expect(es.map((entry) => entry.lemma)).toEqual(["leña"]);
       expect(ko.map((entry) => entry.lemma)).toEqual(["늑대"]);
     });
@@ -135,12 +136,12 @@ for (const [name, create] of FACTORIES) {
 
     test("countNewReviewsSince counts only the asked language", async () => {
       const repository = await create();
-      const languages: Lang[] = ["es", "ko", "es"];
+      const languages: Lang[] = ["es", OTHER_LANG, "es"];
       for (const [index, lang] of languages.entries()) {
         await repository.appendReview(lang, firstReview(`w${index}`, NOON + index));
       }
       expect(await repository.countNewReviewsSince("es", NOON)).toBe(2);
-      expect(await repository.countNewReviewsSince("ko", NOON)).toBe(1);
+      expect(await repository.countNewReviewsSince(OTHER_LANG, NOON)).toBe(1);
     });
   });
 }

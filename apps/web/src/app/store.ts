@@ -1,5 +1,6 @@
 import {
   type Book,
+  EMPTY_BOOK,
   type Lang,
   type LanguagePack,
   type Rating,
@@ -50,8 +51,8 @@ function booksView(
   const ofLang = userBooks.filter((stored) => stored.lang === base.lang);
   const active = ofLang.find((stored) => stored.id === bookId);
   return {
-    pack: active ? { ...base, book: active.book } : base,
-    books: [base.book, ...ofLang.map((stored) => stored.book)],
+    pack: { ...base, book: active ? active.book : EMPTY_BOOK },
+    books: ofLang.map((stored) => stored.book),
   };
 }
 
@@ -69,10 +70,8 @@ type Listener = () => void;
 
 export class AppStore {
   private readonly listeners = new Set<Listener>();
-  private readonly loaded = new Map<Lang, LanguageSnapshot>();
   private api: AppApi;
   private readonly pending = new Set<Promise<void>>();
-  private switchToken = 0;
   private relemmatizing: Promise<void> | null = null;
 
   private constructor(
@@ -121,7 +120,6 @@ export class AppStore {
       options.lemmatizer,
       options.now ?? Date.now,
     );
-    store.loaded.set(lang, snapshot);
     store.persist(store.relemmatizePending());
     return store;
   }
@@ -200,8 +198,6 @@ export class AppStore {
       this.persistPreferences(preferences);
     },
 
-    switchLanguage: (lang) => this.activate(lang, null),
-
     importEpub: async (files) => {
       const seq = this.current.userBooks.reduce((max, stored) => Math.max(max, stored.seq), 0) + 1;
       const id = `user-${seq}-${Date.now().toString(36)}`;
@@ -235,14 +231,7 @@ export class AppStore {
     openBook: async (bookId) => {
       const stored = this.current.userBooks.find((candidate) => candidate.id === bookId);
       if (stored) {
-        await this.activate(stored.lang, stored.id);
-        return;
-      }
-      const sampleLang = (Object.keys(this.packs) as Lang[]).find(
-        (lang) => this.packs[lang].book.id === bookId,
-      );
-      if (sampleLang) {
-        await this.activate(sampleLang, null);
+        this.activate(stored.id);
       }
     },
 
@@ -346,7 +335,6 @@ export class AppStore {
     if (lemmas === null) {
       return;
     }
-    const loadedSnapshot = await this.snapshotOf(before.lang);
     const stored = this.current.userBooks.find((candidate) => candidate.id === bookId);
     if (!stored) {
       return;
@@ -363,13 +351,8 @@ export class AppStore {
     );
     this.persist(this.repository.saveBook(updated));
     this.patch({ userBooks, books: view.books, pack: view.pack });
-    const isActive = stored.lang === this.current.lang;
-    const inactiveBase = this.loaded.get(stored.lang) ?? loadedSnapshot;
-    const progress = isActive
-      ? { states: this.current.wordStates, cards: this.current.cards }
-      : inactiveBase;
     const migration = migrateProgress(
-      progress,
+      { states: this.current.wordStates, cards: this.current.cards },
       lemmaChanges(stored.book, book),
       (sentenceId) => Math.floor(sentenceId / SENTENCE_ID_SPAN) === stored.seq,
     );
@@ -382,58 +365,16 @@ export class AppStore {
     for (const { lemma, state } of migration.copiedStates) {
       this.persist(this.repository.saveWordState(stored.lang, lemma, state));
     }
-    if (isActive) {
-      this.patch({ wordStates: migration.states, cards: migration.cards });
-    } else {
-      this.loaded.set(stored.lang, {
-        ...inactiveBase,
-        states: migration.states,
-        cards: migration.cards,
-      });
-    }
+    this.patch({ wordStates: migration.states, cards: migration.cards });
   }
 
-  private async snapshotOf(lang: Lang): Promise<LanguageSnapshot> {
-    const known = this.loaded.get(lang);
-    if (known) {
-      return known;
-    }
-    const snapshot = await this.repository.loadLanguage(lang);
-    this.loaded.set(lang, snapshot);
-    return snapshot;
-  }
-
-  private async activate(lang: Lang, bookId: string | null): Promise<void> {
-    if (lang === this.current.lang && bookId === this.current.preferences.bookId) {
+  private activate(bookId: string | null) {
+    if (bookId === this.current.preferences.bookId) {
       return;
     }
-    this.switchToken += 1;
-    const token = this.switchToken;
-    const base = this.packs[lang];
-    const sameLang = lang === this.current.lang;
-    const snapshot = sameLang
-      ? undefined
-      : (this.loaded.get(lang) ?? (await this.repository.loadLanguage(lang)));
-    if (token !== this.switchToken) {
-      return;
-    }
-    const view = booksView(base, this.current.userBooks, bookId);
-    const preferences: Preferences = { ...this.current.preferences, lang, bookId };
-    if (snapshot) {
-      this.loaded.set(this.current.lang, this.currentSnapshot());
-      this.loaded.set(lang, snapshot);
-      this.patch({
-        lang,
-        pack: view.pack,
-        books: view.books,
-        wordStates: snapshot.states,
-        cards: snapshot.cards,
-        bookmarks: snapshot.bookmarks,
-        preferences,
-      });
-    } else {
-      this.patch({ pack: view.pack, books: view.books, preferences });
-    }
+    const view = booksView(this.packs[this.current.lang], this.current.userBooks, bookId);
+    const preferences: Preferences = { ...this.current.preferences, bookId };
+    this.patch({ pack: view.pack, books: view.books, preferences });
     this.persistPreferences(preferences);
   }
 
@@ -490,14 +431,6 @@ export class AppStore {
     }
     this.patch({ wordStates });
     this.persist(this.repository.saveWordState(this.current.lang, lemma, next));
-  }
-
-  private currentSnapshot(): LanguageSnapshot {
-    return {
-      states: { ...this.current.wordStates },
-      cards: [...this.current.cards],
-      bookmarks: [...this.current.bookmarks],
-    };
   }
 
   private setRoute(route: Route) {

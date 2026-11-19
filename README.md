@@ -1,6 +1,6 @@
 # Glyphfern
 
-Language-learning book reader (PWA). Spanish and Korean first.
+Language-learning book reader (PWA). Spanish first. The app ships no book; the reader imports EPUB files.
 
 - `spec/` is the source of truth for behaviour and design.
 - `apps/web` is the reader app, `packages/core` holds pure logic, `packages/ui` holds the paginator and page-turn engine, `packages/languages` holds language packs.

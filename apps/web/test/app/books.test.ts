@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { EMPTY_BOOK } from "@glyphfern/core";
+import { defaultPreferences } from "../../src/app/defaults";
 import { AppStore } from "../../src/app/store";
 import { MemoryRepository } from "../../src/storage/memory-repository";
 import { openTestRepository } from "../../src/test-support";
@@ -16,6 +18,63 @@ function epubFiles(title: string): Record<string, string> {
   };
 }
 
+describe("the app ships no book", () => {
+  test("a fresh store has no books and the active book is the empty book", async () => {
+    const state = (await AppStore.open(new MemoryRepository(), options)).getApi().state;
+    expect(state.books).toEqual([]);
+    expect(state.userBooks).toEqual([]);
+    expect(state.preferences.bookId).toBeNull();
+    expect(state.pack.book).toBe(EMPTY_BOOK);
+    expect(state.pack.book.chapters).toEqual([]);
+    expect(state.pack.book.id).toBe("");
+    expect(state.pack.book.title).toBe("");
+  });
+
+  test("opening an imported book makes it the active book", async () => {
+    const store = await AppStore.open(new MemoryRepository(), options);
+    const stored = await store.actions.importEpub(epubFiles("El lobo"));
+    await store.actions.openBook(stored.id);
+    const state = store.getApi().state;
+    expect(state.pack.book).toBe(stored.book);
+    expect(state.preferences.bookId).toBe(stored.id);
+    expect(state.pack.book.chapters.length).toBeGreaterThan(0);
+  });
+
+  test("opening an unknown book id changes nothing", async () => {
+    const store = await AppStore.open(new MemoryRepository(), options);
+    await store.actions.openBook("la-nina-y-el-lobo");
+    expect(store.getApi().state.pack.book).toBe(EMPTY_BOOK);
+    expect(store.getApi().state.preferences.bookId).toBeNull();
+  });
+
+  test("preferences stored with a removed sample book id and lang ko load and fall back", async () => {
+    const repository = new MemoryRepository();
+    await repository.savePreferences({
+      ...defaultPreferences(false),
+      lang: "ko" as never,
+      bookId: "ppalgan-moja",
+      positions: { "ppalgan-moja": 3, "la-nina-y-el-lobo": 5 },
+      size: 25,
+    });
+    const store = await AppStore.open(repository, options);
+    const state = store.getApi().state;
+    expect(state.lang).toBe("es");
+    expect(state.preferences.lang).toBe("es");
+    expect(state.preferences.bookId).toBeNull();
+    expect(state.pack.book).toBe(EMPTY_BOOK);
+    expect(state.preferences.size).toBe(25);
+    expect(state.preferences.positions).toEqual({ "ppalgan-moja": 3, "la-nina-y-el-lobo": 5 });
+  });
+
+  test("a stored book id that no longer exists falls back to the empty book", async () => {
+    const repository = new MemoryRepository();
+    await repository.savePreferences({ ...defaultPreferences(false), bookId: "user-9-gone" });
+    const state = (await AppStore.open(repository, options)).getApi().state;
+    expect(state.preferences.bookId).toBeNull();
+    expect(state.pack.book).toBe(EMPTY_BOOK);
+  });
+});
+
 describe("importing and opening books", () => {
   test("an imported book is stored, listed and gets ids in its own range", async () => {
     const repository = new MemoryRepository();
@@ -25,7 +84,7 @@ describe("importing and opening books", () => {
     expect(stored.seq).toBe(1);
     expect(stored.book.chapters[0]?.title.id).toBe(1_000_000);
     expect(store.getApi().state.userBooks).toHaveLength(1);
-    expect(store.getApi().state.books).toHaveLength(2);
+    expect(store.getApi().state.books).toEqual([stored.book]);
     expect((await repository.loadBooks()).map((book) => book.id)).toEqual([stored.id]);
   });
 
@@ -48,16 +107,7 @@ describe("importing and opening books", () => {
     expect(reopened.getApi().state.pack.book.id).toBe(stored.id);
   });
 
-  test("opening a sample book returns to its language pack", async () => {
-    const store = await AppStore.open(new MemoryRepository(), options);
-    const stored = await store.actions.importEpub(epubFiles("El lobo"));
-    await store.actions.openBook(stored.id);
-    const sample = store.getApi().state.books[0];
-    await store.actions.openBook(sample?.id ?? "");
-    expect(store.getApi().state.pack.book.id).toBe(sample?.id);
-  });
-
-  test("deleting a book removes its cards and bookmarks and falls back to the sample", async () => {
+  test("deleting a book removes its cards and bookmarks and falls back to the empty book", async () => {
     const repository = new MemoryRepository();
     const store = await AppStore.open(repository, options);
     const stored = await store.actions.importEpub(epubFiles("El lobo"));
@@ -70,7 +120,8 @@ describe("importing and opening books", () => {
     expect(state.userBooks).toHaveLength(0);
     expect(state.bookmarks).not.toContain(sentenceId);
     expect(state.cards.some((card) => card.lemma === "niña")).toBe(false);
-    expect(state.pack.book.id).not.toBe(stored.id);
+    expect(state.pack.book).toBe(EMPTY_BOOK);
+    expect(state.preferences.bookId).toBeNull();
     await store.settled();
     expect(await repository.loadBooks()).toEqual([]);
   });

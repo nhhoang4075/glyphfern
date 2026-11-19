@@ -25,6 +25,7 @@ import { indexBook } from "../app/book-index";
 import { useApp } from "../app/use-app";
 import { Button, IconButton } from "../ui";
 import { Drawer, type DrawerTab } from "./drawer";
+import { EmptyReader } from "./empty-reader";
 import { Flow } from "./flow";
 import {
   CLOSED_REVEAL,
@@ -84,7 +85,7 @@ function isEditable(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
 }
 
-export function ReaderView() {
+function BookReader() {
   const { state, actions } = useApp();
   const { pack, preferences, route } = state;
   const visible = route === "read";
@@ -767,4 +768,10 @@ export function ReaderView() {
       />
     </div>
   );
+}
+
+export function ReaderView() {
+  const { state } = useApp();
+  if (state.pack.book.chapters.length === 0) return <EmptyReader />;
+  return <BookReader />;
 }

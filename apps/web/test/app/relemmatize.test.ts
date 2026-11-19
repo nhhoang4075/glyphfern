@@ -255,31 +255,4 @@ describe("progress follows the new lemma", () => {
     await store.relemmatizePending();
     expect(store.getApi().stateOf("mirar")).toEqual({ kind: "learning", level: 3 });
   });
-
-  test("progress is migrated when another language is active", async () => {
-    const { control, repository, store, stored } = await openWithImport();
-    const sentenceId = firstSentenceId(stored.book);
-    store.actions.addCard("miraba", sentenceId);
-    store.actions.setWordState("miraban", "known");
-    await store.actions.switchLanguage("ko");
-    const koreanCards = store.getApi().state.cards;
-    control.answer = MIRAR;
-    await store.relemmatizePending();
-    expect(store.getApi().state.lang).toBe("ko");
-    expect(store.getApi().state.cards).toEqual(koreanCards);
-    expect(store.getApi().state.userBooks[0]?.lemmatized).toBe(true);
-    await store.settled();
-    const saved = await repository.loadLanguage("es");
-    expect(saved.cards.find((card) => card.lemma === "mirar")).toEqual({
-      lemma: "mirar",
-      sentenceId,
-    });
-    expect(saved.cards.some((card) => card.lemma === "miraba")).toBe(false);
-    expect(saved.states.mirar).toEqual({ kind: "known" });
-    await store.actions.switchLanguage("es");
-    const state = store.getApi().state;
-    expect(state.cards.find((card) => card.lemma === "mirar")?.sentenceId).toBe(sentenceId);
-    expect(state.cards.some((card) => card.lemma === "miraba")).toBe(false);
-    expect(state.wordStates.mirar).toEqual({ kind: "known" });
-  });
 });

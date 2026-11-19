@@ -34,14 +34,14 @@ describe("remembered reading positions", () => {
   test("a remembered position is stored per book and survives a reload", async () => {
     const { name, repository } = await openTestRepository();
     const store = await AppStore.open(repository, options);
-    store.actions.rememberPosition("la-nina-y-el-lobo", 7);
-    store.actions.rememberPosition("platero-y-yo", 3);
-    store.actions.rememberPosition("la-nina-y-el-lobo", 9);
+    store.actions.rememberPosition("book-a", 7);
+    store.actions.rememberPosition("book-b", 3);
+    store.actions.rememberPosition("book-a", 9);
     await store.settled();
     const reopened = await AppStore.open((await openTestRepository(name)).repository, options);
     expect(reopened.getApi().state.preferences.positions).toEqual({
-      "la-nina-y-el-lobo": 9,
-      "platero-y-yo": 3,
+      "book-a": 9,
+      "book-b": 3,
     });
   });
 
@@ -52,38 +52,39 @@ describe("remembered reading positions", () => {
     store.subscribe(() => {
       notified += 1;
     });
-    store.actions.rememberPosition("la-nina-y-el-lobo", 7);
+    store.actions.rememberPosition("book-a", 7);
     expect(notified).toBe(0);
     expect(store.getApi()).toBe(before);
-    expect(store.getApi().state.preferences.positions["la-nina-y-el-lobo"]).toBe(7);
+    expect(store.getApi().state.preferences.positions["book-a"]).toBe(7);
   });
 
   test("later preference changes and book switches save the latest positions", async () => {
     const repository = new MemoryRepository();
     const store = await AppStore.open(repository, options);
-    store.actions.rememberPosition("la-nina-y-el-lobo", 7);
+    store.actions.rememberPosition("book-a", 7);
     store.actions.setPreference("size", 24);
     await store.settled();
-    expect((await repository.loadPreferences())?.positions).toEqual({ "la-nina-y-el-lobo": 7 });
+    expect((await repository.loadPreferences())?.positions).toEqual({ "book-a": 7 });
 
-    store.actions.rememberPosition("la-nina-y-el-lobo", 11);
-    await store.actions.switchLanguage("ko");
+    store.actions.rememberPosition("book-a", 11);
+    const stored = await store.actions.importEpub(epubFiles("El lobo"));
+    await store.actions.openBook(stored.id);
     await store.settled();
-    expect((await repository.loadPreferences())?.positions).toEqual({ "la-nina-y-el-lobo": 11 });
+    expect((await repository.loadPreferences())?.positions).toEqual({ "book-a": 11 });
 
-    store.actions.rememberPosition("ko-book", 2);
+    store.actions.rememberPosition("other-book", 2);
     store.actions.setPreference("lh", 1.85);
     await store.settled();
     expect((await repository.loadPreferences())?.positions).toEqual({
-      "la-nina-y-el-lobo": 11,
-      "ko-book": 2,
+      "book-a": 11,
+      "other-book": 2,
     });
   });
 
   test("saving the same position twice writes nothing new", async () => {
     const repository = new MemoryRepository();
     const store = await AppStore.open(repository, options);
-    store.actions.rememberPosition("la-nina-y-el-lobo", 7);
+    store.actions.rememberPosition("book-a", 7);
     await store.settled();
     let writes = 0;
     const save = repository.savePreferences.bind(repository);
@@ -91,7 +92,7 @@ describe("remembered reading positions", () => {
       writes += 1;
       await save(preferences);
     };
-    store.actions.rememberPosition("la-nina-y-el-lobo", 7);
+    store.actions.rememberPosition("book-a", 7);
     await store.settled();
     expect(writes).toBe(0);
   });
@@ -101,11 +102,11 @@ describe("remembered reading positions", () => {
     const store = await AppStore.open(repository, options);
     const stored = await store.actions.importEpub(epubFiles("El lobo"));
     store.actions.rememberPosition(stored.id, 1_000_001);
-    store.actions.rememberPosition("la-nina-y-el-lobo", 4);
+    store.actions.rememberPosition("book-a", 4);
     store.actions.deleteBook(stored.id);
     await store.settled();
-    expect(store.getApi().state.preferences.positions).toEqual({ "la-nina-y-el-lobo": 4 });
-    expect((await repository.loadPreferences())?.positions).toEqual({ "la-nina-y-el-lobo": 4 });
+    expect(store.getApi().state.preferences.positions).toEqual({ "book-a": 4 });
+    expect((await repository.loadPreferences())?.positions).toEqual({ "book-a": 4 });
   });
 
   test("positions of an opened imported book are keyed by its stored id", async () => {

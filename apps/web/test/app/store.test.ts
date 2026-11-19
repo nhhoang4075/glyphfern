@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { AppStore } from "../../src/app/store";
-import { LIBRARY_BOOKS, orderBooks } from "../../src/library/books";
+import { type LibraryBook, orderBooks } from "../../src/library/books";
 import { MemoryRepository } from "../../src/storage/memory-repository";
 import { openTestRepository } from "../../src/test-support";
 
@@ -85,7 +85,7 @@ describe("persistence through Dexie", () => {
     store.actions.setWordState("lobo", "learning");
     store.actions.addCard("lobo", 12);
     store.actions.toggleBookmark(5);
-    store.actions.togglePin("ppalgan-moja");
+    store.actions.togglePin("gamma");
     store.actions.setPreference("size", 24);
     store.actions.setPreference("paper", "#1B2420");
     await store.settled();
@@ -95,7 +95,7 @@ describe("persistence through Dexie", () => {
     expect(state.wordStates.lobo).toEqual({ kind: "learning", level: 3 });
     expect(state.cards.at(-1)).toEqual({ lemma: "lobo", sentenceId: 12 });
     expect(state.bookmarks).toEqual([5]);
-    expect(state.pins).toEqual(["ppalgan-moja"]);
+    expect(state.pins).toEqual(["gamma"]);
     expect(state.preferences.size).toBe(24);
     expect(state.preferences.paper).toBe("#1B2420");
   });
@@ -118,101 +118,37 @@ describe("persistence through Dexie", () => {
   });
 });
 
-describe("language switching", () => {
-  test("es to ko to es restores bookmarks and cards of each language", async () => {
-    const { repository } = await openTestRepository();
-    await repository.saveCard("es", { lemma: "leña", sentenceId: 2 });
-    await repository.saveCard("es", { lemma: "borde", sentenceId: 3 });
-    for (const [sentenceId, lemma] of ["늑대", "줍다", "지름길", "꺾다", "천천히"].entries()) {
-      await repository.saveCard("ko", { lemma, sentenceId });
-    }
-    const store = await AppStore.open(repository, options);
-    store.actions.toggleBookmark(3);
-    store.actions.toggleBookmark(8);
-    store.actions.addCard("lobo", 12);
-    const spanishCards = store.getApi().state.cards.map((card) => card.lemma);
-    expect(spanishCards).toEqual(["leña", "borde", "lobo"]);
-
-    await store.actions.switchLanguage("ko");
-    let state = store.getApi().state;
-    expect(state.lang).toBe("ko");
-    expect(state.pack.ttsLocale).toBe("ko-KR");
-    expect(state.bookmarks).toEqual([]);
-    expect(state.cards.map((card) => card.lemma)).toEqual([
-      "늑대",
-      "줍다",
-      "지름길",
-      "꺾다",
-      "천천히",
-    ]);
-    store.actions.toggleBookmark(4);
-    store.actions.removeCard("꺾다");
-
-    await store.actions.switchLanguage("es");
-    state = store.getApi().state;
-    expect(state.lang).toBe("es");
-    expect(state.bookmarks).toEqual([3, 8]);
-    expect(state.cards.map((card) => card.lemma)).toEqual(spanishCards);
-
-    await store.actions.switchLanguage("ko");
-    state = store.getApi().state;
-    expect(state.bookmarks).toEqual([4]);
-    expect(state.cards.map((card) => card.lemma)).toEqual(["늑대", "줍다", "지름길", "천천히"]);
-  });
-
-  test("the round trip also holds after a reload from IndexedDB", async () => {
-    const { name, repository } = await openTestRepository();
-    const store = await AppStore.open(repository, options);
-    store.actions.toggleBookmark(3);
-    await store.actions.switchLanguage("ko");
-    store.actions.toggleBookmark(4);
-    await store.settled();
-
-    const reopened = await AppStore.open((await openTestRepository(name)).repository, options);
-    expect(reopened.getApi().state.lang).toBe("ko");
-    expect(reopened.getApi().state.bookmarks).toEqual([4]);
-    await reopened.actions.switchLanguage("es");
-    expect(reopened.getApi().state.bookmarks).toEqual([3]);
-  });
-
-  test("word states of the two languages are independent", async () => {
-    const repository = new MemoryRepository();
-    await repository.saveWordState("ko", "늑대", { kind: "learning", level: 3 });
-    const store = await AppStore.open(repository, options);
-    store.actions.setWordState("lobo", "known");
-    await store.actions.switchLanguage("ko");
-    expect(store.getApi().stateOf("lobo")).toEqual({ kind: "new" });
-    expect(store.getApi().stateOf("늑대")).toEqual({ kind: "learning", level: 3 });
-    await store.actions.switchLanguage("es");
-    expect(store.getApi().stateOf("lobo")).toEqual({ kind: "known" });
-  });
-});
-
 describe("pins", () => {
-  const ids = LIBRARY_BOOKS.map((book) => book.id);
+  const shelf: LibraryBook[] = ["alpha", "beta", "gamma"].map((id) => ({
+    id,
+    title: id,
+    flag: "ES",
+    colors: ["#2B5B45", "#6FA283"],
+    progress: 0,
+    art: "w",
+    lang: "es",
+  }));
+  const ids = shelf.map((book) => book.id);
 
   test("pinned books sort first in pin order, the rest keep their order", () => {
-    const ordered = orderBooks(LIBRARY_BOOKS, ["ppalgan-moja", "la-nina-y-el-lobo"]).map(
-      (b) => b.id,
-    );
-    expect(ordered).toEqual(["ppalgan-moja", "la-nina-y-el-lobo"]);
+    const ordered = orderBooks(shelf, ["gamma", "alpha"]).map((b) => b.id);
+    expect(ordered).toEqual(["gamma", "alpha", "beta"]);
   });
 
-  test("without pins the library keeps the sample order", () => {
-    expect(orderBooks(LIBRARY_BOOKS, []).map((b) => b.id)).toEqual(ids);
-    expect(ids).toEqual(["la-nina-y-el-lobo", "ppalgan-moja"]);
+  test("without pins the library keeps its order", () => {
+    expect(orderBooks(shelf, []).map((b) => b.id)).toEqual(ids);
   });
 
   test("unpinning restores the original position and pin order persists", async () => {
     const { name, repository } = await openTestRepository();
     const store = await AppStore.open(repository, options);
-    store.actions.togglePin("la-nina-y-el-lobo");
-    store.actions.togglePin("ppalgan-moja");
-    store.actions.togglePin("la-nina-y-el-lobo");
+    store.actions.togglePin("alpha");
+    store.actions.togglePin("gamma");
+    store.actions.togglePin("alpha");
     await store.settled();
     const reopened = await AppStore.open((await openTestRepository(name)).repository, options);
-    expect(reopened.getApi().state.pins).toEqual(["ppalgan-moja"]);
-    expect(orderBooks(LIBRARY_BOOKS, reopened.getApi().state.pins)[0]?.id).toBe("ppalgan-moja");
+    expect(reopened.getApi().state.pins).toEqual(["gamma"]);
+    expect(orderBooks(shelf, reopened.getApi().state.pins)[0]?.id).toBe("gamma");
   });
 });
 

@@ -10,15 +10,15 @@ Purpose: the single source of app state for `apps/web`. Screens read it through 
 const { state, actions, stateOf } = useApp();
 ```
 
-State (`AppState`), always describing the active language:
+State (`AppState`), always describing the one language (`es`):
 - `route`: `library | read | words | review`. Default `read`. Mirrors `location.hash`.
-- `lang`, `pack`: active language and its `LanguagePack` (book, dictionary, `ttsLocale`, ...).
+- `lang`, `pack`: the language and its `LanguagePack` (dictionary, `ttsLocale`, ...). `pack.book` is the open book, or `EMPTY_BOOK` from `@glyphfern/core` (no chapters, id `""`) when none is open. The app ships no book.
 - `wordStates`: `lemma -> WordState`. A missing lemma is `new`; use `stateOf(lemma)`.
 - `cards`: `{ lemma, sentenceId, schedule? }[]` in the order they were added. `schedule` is the FSRS `CardSchedule` (epoch milliseconds); a card without one has never been reviewed and counts as a new card due now.
-- `bookmarks`: sentence ids of the active language.
-- `books`: every book of the active language (the sample book first, then imported ones); `userBooks`: all imported books as stored.
+- `bookmarks`: sentence ids of the language.
+- `books`: the imported books of the language (empty on a first run); `userBooks`: all imported books as stored.
 - `pins`: book ids in pin order.
-- `preferences`: `size, lh, font, paper, turn, hl, voice, lang, bookId, positions`. `voice` is `"system"` (Web Speech API, default) or `"server"` (Kokoro voice from the API); preferences stored before it existed load as `"system"` through the defaults merge in `AppStore.open`; see `../speech`. `positions` maps a book id (`pack.book.id` for the sample book, `StoredBook.id` for an imported one) to the sentence id the reader was on.
+- `preferences`: `size, lh, font, paper, turn, hl, voice, lang, bookId, positions`. `voice` is `"system"` (Web Speech API, default) or `"server"` (Kokoro voice from the API); preferences stored before it existed load as `"system"` through the defaults merge in `AppStore.open`; see `../speech`. `bookId` is `null` or the id of an imported book; any other stored value (an id that no longer exists) loads as `null`, and a stored `lang` without a pack loads as `es`. `positions` maps a `StoredBook.id` to the sentence id the reader was on; entries of ids that no longer exist stay in the map and are never read.
 - `focusRequest`: pending `{ lemma, sentenceId }` set by the Words screen.
 - `persistence`: `indexeddb` or `memory` (session-only fallback).
 
@@ -29,9 +29,8 @@ Actions (`AppActions`, stable identities):
 - `removeCard(lemma)`: applies `onCardRemoved` (state unchanged). The review log keeps every entry of the removed card; `deleteBook` removes cards the same way and keeps the log too.
 - `toggleBookmark(sentenceId)`, `togglePin(bookId)`.
 - `setPreference(key, value)` for every preference except `lang`, `bookId` and `positions`.
-- `switchLanguage(lang)`: async, see below; it also returns to the sample book of that language.
 - `importEpub(files)`: builds a `Book` from an unpacked EPUB (`@glyphfern/core` import), asks the lemmatizer for the lemma of every word, stores the book and returns it. Sentence ids start at `seq * 1_000_000` so bookmarks and cards stay unique across books. The stored book has `lemmatized: true` only when the lemmatizer answered with a map; when it returns `null` (API unreachable, any chunk failed) or none is configured, the book is imported with lowercase surface forms as lemmas and `lemmatized: false`.
-- `openBook(bookId)`: makes a sample or imported book the active one (`state.pack.book`) and remembers it in `preferences.bookId`.
+- `openBook(bookId)`: makes an imported book the active one (`state.pack.book`) and remembers it in `preferences.bookId`.
 - `deleteBook(bookId)`: removes an imported book with its cards, bookmarks, pin and reading position; word states stay.
 - `rememberPosition(bookId, sentenceId)`: stores the reading position of a book. It never publishes a new state, so a page turn does not re-render the app; see Reading positions.
 - `startReview()`: async. Builds the queue of a new review session: the cards due now plus new cards up to 10 per local day. It waits for pending writes, counts the first reviews logged since local midnight of `now()` (`countNewReviewsSince`) and returns `buildDueQueue(cards, now(), countedToday)`. A card without a schedule is a new card.
@@ -50,25 +49,19 @@ Flow, one book at a time for every user book whose `lemmatized` is not `true` (a
 3. Build `lemmaChanges(before, after)`: old lemma to new lemma for every token whose lemma changed, then `migrateProgress` (`lemma-migration.ts`, pure) computes the new progress of the book's language:
    - a card whose `sentenceId` lies in this book and whose lemma changed moves to the new lemma with the same `sentenceId`; if a card for the new lemma already exists (including one moved earlier in the same run) the old card is deleted instead; cards of other books are never touched;
    - a word state of the old lemma is copied to the new lemma when the new lemma has none; the old entry stays because other books may still use it.
-4. The changes are written through the repository. When the book's language is the active one they also patch `wordStates` and `cards` in the state; otherwise the snapshot in `loaded` (or the repository) is updated so a later language switch shows the migrated progress.
+4. The changes are written through the repository and patch `wordStates` and `cards` in the state.
 
 ## Reading positions
 
-A position is a sentence id, never a page. `preferences.positions` is one object shared by every `Preferences` value the store creates. `rememberPosition` writes into that object in place and saves the preferences, so `setPreference`, `openBook`, `switchLanguage` and `deleteBook` always save the latest positions. Saves go through one private helper that hands the repository a copy of the map. Remembering the position that is already stored writes nothing. Preferences stored before `positions` existed load with an empty map through the defaults merge in `AppStore.open`.
+A position is a sentence id, never a page. `preferences.positions` is one object shared by every `Preferences` value the store creates. `rememberPosition` writes into that object in place and saves the preferences, so `setPreference`, `openBook` and `deleteBook` always save the latest positions. Saves go through one private helper that hands the repository a copy of the map. Remembering the position that is already stored writes nothing. Preferences stored before `positions` existed load with an empty map through the defaults merge in `AppStore.open`.
 
 ## Document effects
 
 `AppProvider` applies preferences to the root element: `data-night` when `paper` is the night paper, class `calm` when `turn` is `still`, `data-font`, `--lh`, `--fs` (the property is removed at the default size so the mobile CSS default applies) and `data-lang`. `prefers-color-scheme` is never read. `prefers-reduced-motion` only chooses the default `turn` on a first run.
 
-## Language switching (logic spec section 9)
+## Active book
 
-1. Every change is written to the repository as it happens, so the current bookmarks and cards are already saved under the current language.
-2. The target language is loaded once from the repository: word states, cards and bookmarks as stored; a first run has none.
-3. Its bookmarks and cards replace the active ones.
-4. `preferences.lang` changes and the provider sets `data-lang`.
-5. `preferences.lang` is persisted and restored by `AppStore.open`.
-
-A newer `switchLanguage` call supersedes an older one that is still loading.
+`AppStore.open` loads the preferences, the imported books and the one language snapshot. `preferences.bookId` is kept only when an imported book has that id; otherwise it becomes `null` and `pack.book` is `EMPTY_BOOK`. `openBook` with an unknown id changes nothing. Importing a book stores it and lists it in `books` but does not open it; the library opens it with `openBook`. Deleting the open book returns to `EMPTY_BOOK`.
 
 ## Storage
 
@@ -76,4 +69,4 @@ See `../storage`. IndexedDB (Dexie) tables: `wordStates` and `cards` keyed by `s
 
 ## Testing
 
-`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. `review.test.ts` covers rating, the review log and `startReview` with an injected clock (`StoreOptions.now`, default `Date.now`, used for all scheduling). `books.test.ts` covers import and `relemmatize.test.ts` covers the lemmatized flag, retries and progress migration. Expected values come from the state table and review rules of the logic spec.
+`apps/web/test/app/store.test.ts` runs the store on the memory repository and on Dexie with `fake-indexeddb`. `review.test.ts` covers rating, the review log and `startReview` with an injected clock (`StoreOptions.now`, default `Date.now`, used for all scheduling). `books.test.ts` covers the empty first run, the fallback of old stored preferences, import and `relemmatize.test.ts` covers the lemmatized flag, retries and progress migration. Expected values come from the state table and review rules of the logic spec.

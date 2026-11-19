@@ -1,4 +1,5 @@
 export * from "./types";
+export * from "./empty-book";
 export * from "./state-key";
 export * from "./word-state";
 export * from "./coverage";
