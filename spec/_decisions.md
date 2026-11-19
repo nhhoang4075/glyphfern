@@ -153,3 +153,8 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Original choice: the track showed a tick per chapter start, ticks turned filled when passed, and tapping or pressing Home/End moved to a page.
 - Now: the track is a line and a progress fill only. No fern marker circle, no ticks, no tap, no keyboard handling. Chapter navigation stays in the contents drawer.
 - Reason: a book with many chapters made the ticks crowd the line.
+
+## D-028 Learner books import only their story chapters
+- Date: 2026-11-20. Decided by: owner (chose "keep only the stories" for a learner book with appendices and quizzes).
+- Now: when a Spanish book has paragraph-style chapter headings of the form `Capítulo N` (optionally followed by a title) or `N. Title`, chapters are built from those headings with readable titles (`1 · El detective`). Spine documents whose first line is an appendix, glossary, quiz or answer heading (`Anexo`, `Resumen`, `Vocabulario`, `Preguntas`, `Soluciones`, `Respuestas`) are dropped. A book without such headings is unchanged.
+- Reason: the quiz and glossary sections are not reading text and carry English glosses that the reader would treat as Spanish words.
