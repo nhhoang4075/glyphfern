@@ -20,6 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { indexBook } from "../app/book-index";
 import { useApp } from "../app/use-app";
 import { Button, IconButton } from "../ui";
@@ -388,9 +389,11 @@ export function ReaderView() {
       onTurn: (direction) => {
         const current = paginatorRef.current;
         if (!current) return;
-        setPanel((previous) => (previous.open ? { ...previous, open: false } : previous));
         current.go(current.current() + direction);
-        sync();
+        flushSync(() => {
+          setPanel((previous) => (previous.open ? { ...previous, open: false } : previous));
+          sync();
+        });
       },
       canTurn: (direction) => {
         const current = paginatorRef.current;
