@@ -51,10 +51,10 @@
 }
 
 .scrim {
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: var(--scrim);
-  z-index: 9;
+  z-index: 44;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
@@ -153,10 +153,5 @@ html[data-night] .seg button:hover {
 @media (max-width: 760px) {
   .pop {
     width: min(290px, calc(100% - 16px));
-  }
-
-  .scrim {
-    position: fixed;
-    z-index: 44;
   }
 }
