@@ -5,8 +5,9 @@ import { useApp } from "../app/use-app";
 import { Icon } from "../icons/icon";
 import type { IconName } from "../icons/icon-data";
 import { toDictEntry } from "../lexicon/lexicon-client";
-import { useLookup } from "../lexicon/use-lookup";
+import { useLookupState } from "../lexicon/use-lookup";
 import { useTranslation } from "../lexicon/use-translation";
+import { MEANING_UNAVAILABLE } from "../review/card-back";
 import { SENTENCE_RATE, WORD_RATE } from "../speech/tts";
 import { useTts } from "../speech/use-tts";
 import { Chip, IconButton, Section, Segmented, Sheet } from "../ui";
@@ -73,7 +74,11 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
   const members = sentence && word ? groupMembers(sentence, word.tokenIndex) : [];
   const surface = sentence && word ? groupSurface(sentence, word.tokenIndex) : "";
   const staticEntry = state.pack.dict[lemma];
-  const looked = useLookup(state.lang, token?.surf ?? "", token !== undefined && !staticEntry);
+  const { value: looked, settled: lookupSettled } = useLookupState(
+    state.lang,
+    token?.surf ?? "",
+    token !== undefined && !staticEntry,
+  );
   const entry = staticEntry ?? (looked ? toDictEntry(looked) : undefined);
   const sentenceEn = sentence ? sentenceText(sentence) : undefined;
   const machineSentence = useTranslation(
@@ -130,7 +135,7 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
           </Chip>
         ))}
       </Section>
-      <p className="mean">{entry?.meaning ?? ""}</p>
+      <p className="mean">{entry?.meaning ?? (lookupSettled ? MEANING_UNAVAILABLE : "")}</p>
       <div className="note" hidden={!entry?.note}>
         <Icon name="bulb" />
         <span>{entry?.note ?? ""}</span>

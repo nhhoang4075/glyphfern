@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { type LookupResult, lexicon } from "./lexicon-client";
 
-export function useLookup(lang: string, word: string, enabled: boolean): LookupResult | null {
+export interface LookupState {
+  value: LookupResult | null;
+  settled: boolean;
+}
+
+export function useLookupState(lang: string, word: string, enabled: boolean): LookupState {
   const [result, setResult] = useState<{ key: string; value: LookupResult | null } | null>(null);
   const key = `${lang}:${word}`;
 
@@ -20,5 +25,10 @@ export function useLookup(lang: string, word: string, enabled: boolean): LookupR
     };
   }, [enabled, lang, word, key]);
 
-  return enabled && result?.key === key ? result.value : null;
+  const settled = enabled && result?.key === key;
+  return { value: settled ? (result?.value ?? null) : null, settled };
+}
+
+export function useLookup(lang: string, word: string, enabled: boolean): LookupResult | null {
+  return useLookupState(lang, word, enabled).value;
 }
