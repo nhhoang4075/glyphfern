@@ -52,12 +52,12 @@ Bun.serve({
   port,
   async fetch(request) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith(API_PREFIX)) {
+      return forwardToApi(request, url);
+    }
     const pathname = decodeURIComponent(url.pathname);
     if (pathname === "/health") {
       return new Response("ok");
-    }
-    if (pathname.startsWith(API_PREFIX)) {
-      return forwardToApi(request, url);
     }
     const candidate = join(DIST, pathname);
     const file = insideDist(candidate) ? Bun.file(candidate) : Bun.file(INDEX);
