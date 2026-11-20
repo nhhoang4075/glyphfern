@@ -183,3 +183,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Original choice: every token had a state; a word with no meaning still showed the new-word highlight and all state and card buttons.
 - Now: tokens with no entry in the lexicon forms or the static dictionary are `unmatched` (`spec/web-reader-logic.md` §3): no highlight, excluded from the counts, and the panel hides the state and card buttons. Default taken for the counts: excluded.
 - Reason: names and typos cannot be studied, and the highlight and buttons suggested otherwise.
+
+## D-033 Grammar analysis of a sentence through Vercel AI Gateway
+- Date: 2026-11-20. Decided by: owner (chose to give the sparkle button a real function and named the model).
+- Original choice: the analysis button showed `sentence.notes`, which exist only for the removed sample books, so it was empty for imported books.
+- Now: `POST /grammar` calls the OpenAI-compatible Vercel AI Gateway (`https://ai-gateway.vercel.sh/v1/chat/completions`) with the model `deepseek/deepseek-v4.1-flash-1017` (env `GRAMMAR_MODEL`), key in env `AI_GATEWAY_API_KEY`. Details in `spec/web-reader-logic.md` §5.
+- Reason: a short grammar note for the tapped word in its sentence is useful for a learner; one sentence, no personal data, cached per sentence.

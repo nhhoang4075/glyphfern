@@ -57,7 +57,7 @@ Per lemma: `new` (no entry), `learning(level)` with level 1, 2 or 3 (3 is the ne
 2. Look up the dictionary by lemma. Show chips: part of speech, pronunciation, lemma chip if `lemma != lowercase(surface group)`, morpheme chips if the token has morphemes.
 3. Fill meaning and note, build the context sentence with the selected tokens marked.
 4. Reset both reveal toggles, sync the state buttons and card button to stored state, open the panel.
-5. Translate toggle shows `sentence.vi`; analysis toggle shows `sentence.notes`. Both blocks exist in the DOM at all times and animate open and closed (UI spec 3.3).
+5. Translate toggle shows `sentence.vi`; analysis toggle shows `sentence.notes`. When the sentence has no `notes` (every imported book), the analysis toggle asks the API for them (`POST /grammar`, D-033): the request carries only the Spanish sentence text, the tapped surface form and its lemma; the answer is at most 4 short Vietnamese notes, cached on the server by `(model, lang, lemma, sentence)`. While waiting the block shows a spinner icon only; on failure or when the API has no model configured the toggle shows "Chưa phân tích được" in place of the notes. Nothing else about the reader, the user, the book or the learning state is sent. Both blocks exist in the DOM at all times and animate open and closed (UI spec 3.3).
 6. Closing the panel clears the selection. Turning a page, opening the drawer or Aa, or tapping outside the page closes it. The Esc key closes the panel, the drawer and the popover together; if none was open and fullscreen is on, it exits fullscreen.
 
 ## 6. Bookmarks, search, contents
