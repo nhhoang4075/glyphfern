@@ -189,6 +189,10 @@ html[data-night] .pin.on {
   font-size: 14px;
 }
 
+.account-google {
+  color-scheme: light;
+}
+
 .account-google:not([data-ready="true"]) {
   display: none;
 }

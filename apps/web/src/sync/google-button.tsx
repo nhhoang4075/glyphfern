@@ -6,11 +6,27 @@ export interface GoogleButtonProps {
   onCredential: (credential: string) => void;
 }
 
+function useNightMode(): boolean {
+  const [night, setNight] = useState(() => document.documentElement.hasAttribute("data-night"));
+  useEffect(() => {
+    const observer = new MutationObserver(() =>
+      setNight(document.documentElement.hasAttribute("data-night")),
+    );
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-night"],
+    });
+    return () => observer.disconnect();
+  }, []);
+  return night;
+}
+
 export function GoogleButton({ clientId, onCredential }: GoogleButtonProps) {
   const host = useRef<HTMLDivElement>(null);
   const handler = useRef(onCredential);
   handler.current = onCredential;
   const [ready, setReady] = useState(false);
+  const night = useNightMode();
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +45,7 @@ export function GoogleButton({ clientId, onCredential }: GoogleButtonProps) {
       });
       google.accounts.id.renderButton(host.current, {
         type: "standard",
-        theme: "outline",
+        theme: night ? "filled_black" : "outline",
         size: "medium",
         text: "signin_with",
         shape: "pill",
@@ -39,7 +55,7 @@ export function GoogleButton({ clientId, onCredential }: GoogleButtonProps) {
     return () => {
       cancelled = true;
     };
-  }, [clientId]);
+  }, [clientId, night]);
 
   return <div ref={host} className="account-google" data-ready={ready} hidden={!ready} />;
 }
