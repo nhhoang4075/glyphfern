@@ -177,3 +177,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Original choice (D-025): local-first, signed out the app behaves as before and sign-in only adds sync.
 - Now: `spec/sync.md` §6.1. Without a session the app shows a sign-in gate only; with a stored session it opens at once, offline included.
 - Reason: the owner wants every device tied to the account so data is never only local. The gate is a client rule: it does not protect the open lexicon and TTS endpoints.
+
+## D-032 Words with no dictionary entry carry no word state
+- Date: 2026-11-20. Decided by: owner ("do not show the new-word highlight for words with no meaning, and hide the four buttons").
+- Original choice: every token had a state; a word with no meaning still showed the new-word highlight and all state and card buttons.
+- Now: tokens with no entry in the lexicon forms or the static dictionary are `unmatched` (`spec/web-reader-logic.md` §3): no highlight, excluded from the counts, and the panel hides the state and card buttons. Default taken for the counts: excluded.
+- Reason: names and typos cannot be studied, and the highlight and buttons suggested otherwise.

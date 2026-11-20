@@ -8,7 +8,7 @@ Scope: client-side behaviour of `apps/web`. Server, sync and NLP are specified e
 Book      { id, title, lang, chapters: Chapter[] }
 Chapter   { title: Sentence(kind "title"), paragraphs: Sentence[][] }
 Sentence  { id, chapter, kind: "title" | "body", tokens: Token[], vi?: string, notes?: string[] }
-Token     { lead, surf, trail, lemma, group?: string, morphemes?: Morpheme[] }
+Token     { lead, surf, trail, lemma, unmatched?: true, group?: string, morphemes?: Morpheme[] }
 Morpheme  { form: string, gloss: string }
 ```
 
@@ -31,6 +31,8 @@ Morpheme  { form: string, gloss: string }
 ## 3. Word states
 
 Per lemma: `new` (no entry), `learning(level)` with level 1, 2 or 3 (3 is the newest), `known`.
+
+**Unmatched tokens (D-032)**: a token is `unmatched` when neither the lexicon forms table nor the static dictionary has an entry for its lowercase surface (names such as "Morgan", typos, foreign words). It is set at import from the `/lemmas` response (`unknown` list) and is stored in the book. An unmatched token has no word state: it never shows the `new` highlight (nor any other), it is not counted in coverage, the new-lemma count, the learning count or the search by state, and the word panel shows no state buttons and no card button for it (UI spec 3.3). Books imported before D-032 have no flag and behave as before.
 
 | Action | Result |
 | --- | --- |

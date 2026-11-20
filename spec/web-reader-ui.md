@@ -68,6 +68,8 @@ The selection MUST NOT cover neighbouring glyphs or glyphs on the next line.
 **Highlight switch**: turning highlights on adds a wipe, strips grow left to right in .7s (`cubic-bezier(.25,.6,.3,1)`), transitions disabled during the wipe; turning off removes strips instantly. The selection stays visible while highlights are off.
 
 ### 3.3 Word panel
+
+For an `unmatched` token (logic spec §3) the panel shows the word, the speaker button and the sentence block, then "Chưa tra được nghĩa". The three state buttons and the card button are not rendered.
 Top to bottom:
 1. Word (serif 2.15rem) and a speaker button (pronounce the word, rate 0.88).
 2. Chips, in this order: part of speech (spelled out: never "dt", "đg"), lemma chip with a sprout icon only when the lemma differs from the tapped surface, pronunciation of the lemma (IPA), and for languages with morphology one chip per morpheme: bold form and gloss.
