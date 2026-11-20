@@ -26,6 +26,14 @@ export interface LemmaAnswer {
   unknown: string[];
 }
 
+export interface GrammarRequest {
+  lang: string;
+  sentenceId: number;
+  sentence: string;
+  word: string;
+  lemma: string;
+}
+
 const LEMMA_CHUNK = 2000;
 
 const MAX_GLOSSES_SHOWN = 4;
@@ -149,9 +157,56 @@ export function createLexiconClient(
     return pending;
   }
 
+  const analyses = new Map<string, Promise<string[] | null>>();
+
+  async function grammarRequest(request: GrammarRequest): Promise<string[] | null> {
+    if (!baseUrl) {
+      return null;
+    }
+    try {
+      const response = await fetcher(`${baseUrl}/grammar`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          lang: request.lang,
+          sentence: request.sentence,
+          word: request.word,
+          lemma: request.lemma,
+        }),
+      });
+      if (!response.ok) {
+        return null;
+      }
+      const body = (await response.json()) as { notes?: unknown };
+      const notes = Array.isArray(body.notes)
+        ? body.notes.filter((note): note is string => typeof note === "string" && note.length > 0)
+        : [];
+      return notes.length > 0 ? notes : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function grammar(request: GrammarRequest): Promise<string[] | null> {
+    const key = `${request.lang}:${request.sentenceId}:${request.lemma}:${request.sentence}`;
+    const cached = analyses.get(key);
+    if (cached) {
+      return cached;
+    }
+    const pending = grammarRequest(request).then((result) => {
+      if (result === null) {
+        analyses.delete(key);
+      }
+      return result;
+    });
+    analyses.set(key, pending);
+    return pending;
+  }
+
   return {
     lemmatize,
     translate,
+    grammar,
     lookup(lang: string, word: string): Promise<LookupResult | null> {
       const key = `${lang}:${word.toLowerCase()}`;
       const cached = cache.get(key);

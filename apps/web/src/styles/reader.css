@@ -1135,3 +1135,18 @@ button.topzone {
 .rd-empty-add:hover {
   background: var(--paper-2);
 }
+
+.notes .wait {
+  list-style: none;
+  margin-left: -18px;
+}
+
+.ic.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

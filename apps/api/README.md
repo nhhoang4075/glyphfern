@@ -8,6 +8,7 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 - `GET /lookup?lang=es&word=...`: entries (lemma, part of speech, IPA, English glosses, `facts`). Proper nouns are listed last.
 - `POST /lemmas` `{ lang, words }`: `{ lemmas, unknown }`. `lemmas` maps inflected form to lemma; words that have their own dictionary entry are not remapped, and words whose lemma is themselves are absent. `unknown` lists the lowercase words with no row in the forms table (a row of any kind counts as known). Body at most 512 KB, 5000 words.
 - `POST /translate` `{ from, to, texts }`: pairs `es:vi`, `es:en`, `en:vi`; at most 20 texts of 500 characters. Answers 503 when no translator is configured, 429 when the daily character budget is used up, 502 when the provider fails.
+- `POST /grammar` `{ lang, sentence, word, lemma }`: `{ notes }`, 2 to 4 short Vietnamese notes (at most 160 characters each) on the grammar of the tapped word in its sentence. `lang` must be `es` (400 `unsupported_language`); `sentence` 1 to 500 characters and `word`, `lemma` 1 to 60 characters (400 `invalid_request`). Answers 503 `grammar_not_configured` when `AI_GATEWAY_API_KEY` is unset, 429 `rate_limited` / `budget_exceeded`, 502 `grammar_failed` when the gateway fails or its output is not a valid note list.
 - `GET /tts?lang=es&text=...&speed=0.78`: MP3 audio (`audio/mpeg`, mono, 48 kbit/s) of the text read by the Kokoro voice of that language. `lang` must be `es` (400 `unsupported_language`); `text` is trimmed and 1 to 500 characters (400 `invalid_text`); `speed` is a number from 0.5 to 1.5, default 1 (400 `invalid_speed`). Answers 503 `tts_not_configured` when `TTS_URL` is unset, 429 `rate_limited` for the client limits, 429 `budget_exceeded` when the daily character budget is used up, 502 `tts_failed` when the sidecar fails. Success carries `cache-control: public, max-age=604800` and the CORS header.
 
 - `GET /auth/config`: `{ googleClientId }`, `null` when sign-in is not configured.
@@ -35,6 +36,14 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 
 The sidecar is internal: it has no authentication and must only be reachable from this service.
 
+## Grammar flow
+
+1. `/grammar` answers 503 when no key is configured, validates the body, then checks the client (the same limiter instance as `/translate` and `/tts`) with `sentence.length` characters.
+2. The cache key is the SHA-256 hex of `${model}|${lang}|${lemma}|${sentence}`. A hit in the `grammar_note` table (`hash` primary key, `notes` JSON text, `created_at`) is returned without calling the gateway and without touching the budget.
+3. A miss consumes `sentence.length` from the global daily budget (the same instance as `/translate`), then calls the `GrammarClient`, then stores the notes.
+4. The client in `src/grammar/gateway-client.ts` posts `{ model, messages, temperature: 0.2, max_tokens: 400 }` to `https://ai-gateway.vercel.sh/v1/chat/completions` with `Authorization: Bearer <AI_GATEWAY_API_KEY>` and a 20 second timeout. The system prompt (`src/grammar/grammar-prompt.ts`) asks for a JSON array of 2 to 4 Vietnamese notes; the user message carries only `lang`, `sentence`, `word` and `lemma`.
+5. `src/grammar/parse-notes.ts` strips code fences and accepts only a non-empty array of non-empty strings, trimmed and cut to 4. Anything else, a network error, a timeout or a non-2xx status is a `GrammarClientError` (502).
+
 ## Account and sync flow
 
 1. The browser sends a Google ID token to `POST /auth/google`. `src/auth/google-verifier.ts` verifies the RS256 signature against Google's published keys (fetched from `https://www.googleapis.com/oauth2/v3/certs` and cached for the response's `max-age`), the issuer (`https://accounts.google.com` or `accounts.google.com`), the audience (`GOOGLE_CLIENT_ID`), the expiry and `email_verified`. The key source is a `KeyFetcher`, so tests inject their own keys. Tokens are never logged.
@@ -53,9 +62,11 @@ The sidecar is internal: it has no authentication and must only be reachable fro
 | `PORT` | HTTP port | `8787` |
 | `ALLOWED_ORIGIN` | CORS origin of the web app | `http://localhost:5183` |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | enable the Cloudflare Workers AI translator (`@cf/meta/m2m100-1.2b`) | unset (translation disabled) |
-| `TRANSLATE_DAILY_CHAR_LIMIT` | global backstop: characters of provider calls per day | `100000` |
-| `CLIENT_DAILY_CHAR_LIMIT` | characters one client may send to `/translate` and `/tts` together per day | `20000` |
-| `CLIENT_REQUESTS_PER_MINUTE` | `/translate` and `/tts` requests one client may make per minute | `30` |
+| `TRANSLATE_DAILY_CHAR_LIMIT` | global backstop: characters of provider calls per day, shared by `/translate` and `/grammar` | `100000` |
+| `CLIENT_DAILY_CHAR_LIMIT` | characters one client may send to `/translate`, `/grammar` and `/tts` together per day | `20000` |
+| `CLIENT_REQUESTS_PER_MINUTE` | `/translate`, `/grammar` and `/tts` requests one client may make per minute | `30` |
+| `AI_GATEWAY_API_KEY` | key of the Vercel AI Gateway; enables `/grammar` | unset (`/grammar` answers 503) |
+| `GRAMMAR_MODEL` | gateway model used for grammar notes | `deepseek/deepseek-v4.1-flash-1017` |
 | `TTS_URL` | base URL of the Kokoro sidecar, for example `http://127.0.0.1:8788` | unset (`/tts` answers 503) |
 | `TTS_VOICE_ES` | Kokoro voice used for `lang=es` | `em_alex` |
 | `TTS_DAILY_CHAR_LIMIT` | global backstop: characters sent to the sidecar per day (cache hits are free) | `50000` |
@@ -87,7 +98,7 @@ Each lemma entry carries `facts` (null when nothing applies), taken from the Wik
 
 ## Testing
 
-`bun test apps/api`. The speech tests use a fake `Synthesizer` and an in-memory cache. Auth tests sign tokens with a locally generated RSA key and a fake key fetcher. Sync tests run one shared contract against an in-memory store and the Postgres store, and route tests go through `handle` with two signed-in users. The Postgres tests (lexicon, `tts_audio`, sync) create and drop their own database on `localhost`; they are skipped when Postgres is unreachable.
+`bun test apps/api`. The grammar tests use a fake `GrammarClient`, a fake `fetch` for the gateway client and an in-memory cache. The speech tests use a fake `Synthesizer` and an in-memory cache. Auth tests sign tokens with a locally generated RSA key and a fake key fetcher. Sync tests run one shared contract against an in-memory store and the Postgres store, and route tests go through `handle` with two signed-in users. The Postgres tests (lexicon, `tts_audio`, sync) create and drop their own database on `localhost`; they are skipped when Postgres is unreachable.
 
 ## Waking sidecar
 

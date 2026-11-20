@@ -5,6 +5,7 @@ import { useApp } from "../app/use-app";
 import { Icon } from "../icons/icon";
 import type { IconName } from "../icons/icon-data";
 import { toDictEntry } from "../lexicon/lexicon-client";
+import { GRAMMAR_UNAVAILABLE, type GrammarView, useGrammar } from "../lexicon/use-grammar";
 import { useLookupState } from "../lexicon/use-lookup";
 import { useTranslation } from "../lexicon/use-translation";
 import { MEANING_UNAVAILABLE } from "../review/card-back";
@@ -66,6 +67,26 @@ function Note({ markup }: { markup: string }) {
   );
 }
 
+function MachineNotes({ view }: { view: GrammarView }) {
+  if (view.status === "loading") {
+    return (
+      <li className="wait">
+        <Icon name="spinner" className="spin" />
+      </li>
+    );
+  }
+  if (view.status === "failed") {
+    return <li>{GRAMMAR_UNAVAILABLE}</li>;
+  }
+  return (
+    <>
+      {(view.notes ?? []).map((note, index) => (
+        <li key={`${index}-${note}`}>{note}</li>
+      ))}
+    </>
+  );
+}
+
 export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordPanelProps) {
   const { state, stateOf, actions } = useApp();
   const sentence = word?.sentence ?? null;
@@ -87,6 +108,16 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
     "vi",
     sentenceEn,
     reveal.translation && sentence !== null && !sentence.vi,
+  );
+  const machineNotes = useGrammar(
+    {
+      lang: state.lang,
+      sentenceId: sentence?.id ?? -1,
+      sentence: sentenceEn ?? "",
+      word: token?.surf ?? "",
+      lemma,
+    },
+    reveal.grammar && sentence !== null && token !== undefined && !sentence.notes,
   );
   const lemmaShown = staticEntry ? lemma : (looked?.lemma ?? lemma);
   const current = stateOf(lemma);
@@ -228,11 +259,15 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
         <div className={reveal.grammar ? "xw on" : "xw"}>
           <div className="xi">
             <ul className="notes">
-              {(sentence?.notes ?? []).map((note, index) => (
-                <li key={`${index}-${note}`}>
-                  <Note markup={note} />
-                </li>
-              ))}
+              {sentence?.notes ? (
+                sentence.notes.map((note, index) => (
+                  <li key={`${index}-${note}`}>
+                    <Note markup={note} />
+                  </li>
+                ))
+              ) : (
+                <MachineNotes view={machineNotes} />
+              )}
             </ul>
           </div>
         </div>

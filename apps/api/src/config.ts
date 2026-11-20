@@ -11,6 +11,8 @@ export interface Config {
   ttsUrl: string | undefined;
   ttsVoiceEs: string;
   ttsDailyCharLimit: number;
+  aiGatewayApiKey: string | undefined;
+  grammarModel: string;
   googleClientId: string | undefined;
   allowedEmails: string[];
 }
@@ -23,6 +25,7 @@ const DEFAULT_CLIENT_DAILY_CHARS = 20_000;
 const DEFAULT_CLIENT_RPM = 30;
 const DEFAULT_TTS_VOICE_ES = "em_alex";
 const DEFAULT_TTS_DAILY_CHARS = 50_000;
+const DEFAULT_GRAMMAR_MODEL = "deepseek/deepseek-v4.1-flash-1017";
 
 export function readConfig(env: Record<string, string | undefined> = process.env): Config {
   const port = Number(env.PORT ?? DEFAULT_PORT);
@@ -39,6 +42,8 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     ttsUrl: env.TTS_URL || undefined,
     ttsVoiceEs: env.TTS_VOICE_ES || DEFAULT_TTS_VOICE_ES,
     ttsDailyCharLimit: Number(env.TTS_DAILY_CHAR_LIMIT ?? DEFAULT_TTS_DAILY_CHARS),
+    aiGatewayApiKey: env.AI_GATEWAY_API_KEY || undefined,
+    grammarModel: env.GRAMMAR_MODEL || DEFAULT_GRAMMAR_MODEL,
     googleClientId: env.GOOGLE_CLIENT_ID || undefined,
     allowedEmails: (env.ALLOWED_EMAILS ?? "")
       .split(",")

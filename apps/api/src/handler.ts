@@ -1,4 +1,6 @@
 import { type AuthDeps, authRoute } from "./auth/auth-routes";
+import { GrammarClientError } from "./grammar/grammar-client";
+import type { GrammarService } from "./grammar/grammar-service";
 import { json } from "./http";
 import { type LemmaStore, resolveLemmas } from "./lexicon/lemmas";
 import { type LexiconStore, lookupWord } from "./lexicon/lookup";
@@ -16,6 +18,7 @@ export interface HandlerDeps {
   allowedOrigin: string;
   translate?: TranslateService;
   tts?: TtsService;
+  grammar?: GrammarService;
   limiter?: ClientLimiter;
   auth?: AuthDeps;
   sync?: SyncStore;
@@ -28,6 +31,8 @@ const MAX_LEMMA_WORDS = 5000;
 const MAX_TRANSLATE_TEXTS = 20;
 const MAX_TRANSLATE_CHARS = 500;
 const TRANSLATE_PAIRS = new Set(["es:vi", "es:en", "en:vi"]);
+const MAX_GRAMMAR_SENTENCE_CHARS = 500;
+const MAX_GRAMMAR_WORD_CHARS = 60;
 const MAX_TTS_CHARS = 500;
 const MIN_TTS_SPEED = 0.5;
 const MAX_TTS_SPEED = 1.5;
@@ -64,6 +69,9 @@ export async function handle(
   }
   if (request.method === "POST" && url.pathname === "/translate") {
     return translateRoute(request, deps, client);
+  }
+  if (request.method === "POST" && url.pathname === "/grammar") {
+    return grammarRoute(request, deps, client);
   }
   if (request.method === "POST" && url.pathname === "/lemmas") {
     const declared = Number(request.headers.get("content-length") ?? Number.NaN);
@@ -171,6 +179,59 @@ async function translateRoute(
     }
     if (error instanceof TranslatorError) {
       return json({ error: "translator_failed" }, 502, deps);
+    }
+    throw error;
+  }
+}
+
+function boundedText(value: unknown, max: number): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const text = value.trim();
+  return text.length > 0 && text.length <= max ? text : undefined;
+}
+
+async function grammarRoute(
+  request: Request,
+  deps: HandlerDeps,
+  client: string,
+): Promise<Response> {
+  if (!deps.grammar) {
+    return json({ error: "grammar_not_configured" }, 503, deps);
+  }
+  const declared = Number(request.headers.get("content-length") ?? Number.NaN);
+  if (!Number.isFinite(declared) || declared > MAX_BODY_BYTES) {
+    return json({ error: "payload_too_large" }, 413, deps);
+  }
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return json({ error: "invalid_body" }, 400, deps);
+  }
+  const sentence = boundedText(body?.sentence, MAX_GRAMMAR_SENTENCE_CHARS);
+  const word = boundedText(body?.word, MAX_GRAMMAR_WORD_CHARS);
+  const lemma = boundedText(body?.lemma, MAX_GRAMMAR_WORD_CHARS);
+  const lang = body?.lang;
+  if (typeof lang !== "string" || !SUPPORTED_LANGS.has(lang)) {
+    return json({ error: "unsupported_language" }, 400, deps);
+  }
+  if (sentence === undefined || word === undefined || lemma === undefined) {
+    return json({ error: "invalid_request" }, 400, deps);
+  }
+  if (deps.limiter && !deps.limiter.allow(client, sentence.length)) {
+    return json({ error: "rate_limited" }, 429, deps);
+  }
+  try {
+    const result = await deps.grammar.analyze({ lang, sentence, word, lemma });
+    return json({ notes: result.notes }, 200, deps);
+  } catch (error) {
+    if (error instanceof BudgetExceededError) {
+      return json({ error: "budget_exceeded" }, 429, deps);
+    }
+    if (error instanceof GrammarClientError) {
+      return json({ error: "grammar_failed" }, 502, deps);
     }
     throw error;
   }

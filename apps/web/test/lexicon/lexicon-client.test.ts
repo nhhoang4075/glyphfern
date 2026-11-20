@@ -5,6 +5,7 @@ import {
   toDictEntry,
 } from "../../src/lexicon/lexicon-client";
 import { posLabel } from "../../src/lexicon/pos-label";
+import { resolveGrammarView } from "../../src/lexicon/use-grammar";
 
 const MIRAR: LookupResult = {
   surface: "miraba",
@@ -155,5 +156,53 @@ describe("machine translation", () => {
     expect(await client.translate("es", "vi", "lobo")).toBe("vi:lobo");
     expect(await client.translate("es", "vi", "lobo")).toBe("vi:lobo");
     expect(calls).toBe(2);
+  });
+});
+
+describe("grammar requests", () => {
+  const request = {
+    lang: "es",
+    sentenceId: 4,
+    sentence: "Ella miraba.",
+    word: "miraba",
+    lemma: "mirar",
+  };
+
+  test("only sentence, word, lemma and lang are sent, and the result is fetched once", async () => {
+    const bodies: unknown[] = [];
+    const client = createLexiconClient("http://api", async (url, init) => {
+      expect(url).toBe("http://api/grammar");
+      bodies.push(JSON.parse(String(init?.body)));
+      return { ok: true, status: 200, json: async () => ({ notes: ["một", "hai"] }) };
+    });
+    expect(await client.grammar(request)).toEqual(["một", "hai"]);
+    expect(await client.grammar(request)).toEqual(["một", "hai"]);
+    expect(bodies).toEqual([
+      { lang: "es", sentence: "Ella miraba.", word: "miraba", lemma: "mirar" },
+    ]);
+  });
+
+  test("a failure gives null and is retried on the next request", async () => {
+    let calls = 0;
+    const client = createLexiconClient("http://api", async () => {
+      calls += 1;
+      return { ok: false, status: 503, json: async () => ({}) };
+    });
+    expect(await client.grammar(request)).toBeNull();
+    expect(await client.grammar(request)).toBeNull();
+    expect(calls).toBe(2);
+  });
+});
+
+describe("grammar view", () => {
+  test("loading, failed and done follow the stored result for the same key", () => {
+    expect(resolveGrammarView(false, "k", null)).toEqual({ notes: null, status: "idle" });
+    expect(resolveGrammarView(true, "k", null)).toEqual({ notes: null, status: "loading" });
+    expect(resolveGrammarView(true, "k", { key: "other", value: ["a"] }).status).toBe("loading");
+    expect(resolveGrammarView(true, "k", { key: "k", value: null }).status).toBe("failed");
+    expect(resolveGrammarView(true, "k", { key: "k", value: ["a"] })).toEqual({
+      notes: ["a"],
+      status: "done",
+    });
   });
 });

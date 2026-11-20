@@ -2,6 +2,9 @@ import { createSqlAuthStore } from "./auth/auth-store";
 import { createCachedKeyFetcher, createGoogleVerifier } from "./auth/google-verifier";
 import { readConfig } from "./config";
 import { connect } from "./db";
+import { createGatewayGrammarClient } from "./grammar/gateway-client";
+import { createGrammarService } from "./grammar/grammar-service";
+import { createGrammarSqlCache } from "./grammar/sql-cache";
 import { handle } from "./handler";
 import { createSqlStore } from "./lexicon/sql-store";
 import { MAX_BOOK_UPLOAD_BYTES } from "./sync/book-routes";
@@ -17,6 +20,7 @@ import { createTtsService } from "./tts/tts-service";
 const config = readConfig();
 const sql = connect(config.databaseUrl);
 const store = createSqlStore(sql);
+const translateBudget = createDailyBudget(config.translateDailyCharLimit);
 const translate =
   config.cloudflareAccountId && config.cloudflareApiToken
     ? createTranslateService(
@@ -25,9 +29,17 @@ const translate =
           apiToken: config.cloudflareApiToken,
         }),
         createSqlCache(sql),
-        createDailyBudget(config.translateDailyCharLimit),
+        translateBudget,
       )
     : undefined;
+
+const grammar = config.aiGatewayApiKey
+  ? createGrammarService(
+      createGatewayGrammarClient({ apiKey: config.aiGatewayApiKey, model: config.grammarModel }),
+      createGrammarSqlCache(sql),
+      translateBudget,
+    )
+  : undefined;
 
 const tts = config.ttsUrl
   ? createTtsService(
@@ -77,6 +89,7 @@ const server = Bun.serve({
         limiter,
         ...(translate ? { translate } : {}),
         ...(tts ? { tts } : {}),
+        ...(grammar ? { grammar } : {}),
         ...(auth ? { auth, sync: createSqlSyncStore(sql) } : {}),
       },
       clientOf(request, bunServer.requestIP(request)?.address),

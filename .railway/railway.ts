@@ -56,6 +56,8 @@ export default defineRailway(() => {
       TTS_URL: `http://\${{tts.RAILWAY_PRIVATE_DOMAIN}}:${TTS_PORT}`,
       CLOUDFLARE_ACCOUNT_ID: preserve(),
       CLOUDFLARE_API_TOKEN: preserve(),
+      AI_GATEWAY_API_KEY: preserve(),
+      GRAMMAR_MODEL: preserve(),
       GOOGLE_CLIENT_ID: preserve(),
       ALLOWED_EMAILS: preserve(),
     },

@@ -45,6 +45,7 @@ export const ICON_MARKUP = {
   curl: '<path d="M5 5h10l4 4v10H5z"/><path d="M15 5v4h4"/>',
   sparkle:
     '<path d="M11 4l1.9 5.1L18 11l-5.1 1.9L11 18l-1.9-5.1L4 11l5.1-1.9z"/><path d="M18.5 15.5v4M16.5 17.5h4"/>',
+  spinner: '<path d="M12 4a8 8 0 1 0 8 8"/>',
   circle: '<circle cx="12" cy="12" r="6"/>',
   cardplus:
     '<rect x="4" y="7" width="12" height="13" rx="2.5"/><path d="M8 4h9.5A2.5 2.5 0 0 1 20 6.5V16M10 10.5v6M7 13.5h6"/>',

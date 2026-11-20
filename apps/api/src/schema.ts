@@ -25,6 +25,11 @@ CREATE TABLE IF NOT EXISTS tts_audio (
   audio BYTEA NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS grammar_note (
+  hash TEXT PRIMARY KEY,
+  notes TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS app_user (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   google_sub TEXT NOT NULL UNIQUE,
