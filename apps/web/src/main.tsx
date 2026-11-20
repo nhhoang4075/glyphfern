@@ -6,6 +6,7 @@ import { lexicon } from "./lexicon/lexicon-client";
 import { AppShell } from "./shell/app-shell";
 import { createRepository } from "./storage/create-repository";
 import { AccountController, browserTriggers } from "./sync/account";
+import { AccountGate } from "./sync/account-gate";
 import { SyncProvider } from "./sync/sync-provider";
 
 async function start() {
@@ -27,7 +28,9 @@ async function start() {
     <StrictMode>
       <AppProvider store={store}>
         <SyncProvider controller={account}>
-          <AppShell />
+          <AccountGate>
+            <AppShell />
+          </AccountGate>
         </SyncProvider>
       </AppProvider>
     </StrictMode>,

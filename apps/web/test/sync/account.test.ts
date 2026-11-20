@@ -103,12 +103,19 @@ describe("account controller", () => {
     expect(account.getSnapshot()).toMatchObject({ googleClientId: null, session: null });
   });
 
-  test("an unreachable config leaves the button hidden", async () => {
+  test("an unreachable config is reported as failed and retrying recovers", async () => {
+    let online = false;
     const { account } = controller(() => {
-      throw new Error("offline");
+      if (!online) {
+        throw new Error("offline");
+      }
+      return json({ googleClientId: "cid" });
     }, memoryStorage());
     await account.start();
-    expect(account.getSnapshot().googleClientId).toBeNull();
+    expect(account.getSnapshot()).toMatchObject({ googleClientId: undefined, configFailed: true });
+    online = true;
+    await account.retryConfig();
+    expect(account.getSnapshot()).toMatchObject({ googleClientId: "cid", configFailed: false });
   });
 
   test("signing in stores the session and starts a sync with the bearer token", async () => {

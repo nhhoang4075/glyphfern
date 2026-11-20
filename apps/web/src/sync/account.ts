@@ -15,6 +15,7 @@ export type SignInError = "not_allowed" | "invalid_credential" | "unavailable";
 
 export interface AccountState {
   googleClientId: string | null | undefined;
+  configFailed: boolean;
   session: Session | null;
   status: SyncStatus;
   signInError: SignInError | null;
@@ -69,6 +70,7 @@ export class AccountController {
     this.fetcher = options.fetcher ?? ((url, init) => fetch(url, init));
     this.state = {
       googleClientId: options.baseUrl ? undefined : null,
+      configFailed: false,
       session: options.baseUrl ? readSession(this.storage()) : null,
       status: "idle",
       signInError: null,
@@ -165,10 +167,16 @@ export class AccountController {
       this.configLoaded = true;
       this.set({
         googleClientId: typeof body.googleClientId === "string" ? body.googleClientId : null,
+        configFailed: false,
       });
     } catch {
-      this.set({ googleClientId: null });
+      this.set({ configFailed: true });
     }
+  }
+
+  async retryConfig(): Promise<void> {
+    this.set({ configFailed: false });
+    await this.loadConfig();
   }
 
   private async validateSession(): Promise<void> {

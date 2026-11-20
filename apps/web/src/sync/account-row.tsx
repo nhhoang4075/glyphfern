@@ -1,6 +1,5 @@
 import { Button } from "../ui";
 import type { SignInError } from "./account";
-import { GoogleButton } from "./google-button";
 import type { SyncStatus } from "./runner";
 import { useAccount } from "./sync-provider";
 
@@ -19,7 +18,7 @@ export const SIGN_IN_ERROR_TEXT: Record<SignInError, string> = {
 
 export function AccountRow() {
   const { state, controller } = useAccount();
-  const { session, googleClientId, status, signInError } = state;
+  const { session, status } = state;
 
   if (session) {
     return (
@@ -43,16 +42,5 @@ export function AccountRow() {
     );
   }
 
-  if (!googleClientId) {
-    return null;
-  }
-
-  return (
-    <div className="account">
-      <GoogleButton clientId={googleClientId} onCredential={(c) => void controller.signIn(c)} />
-      {signInError ? (
-        <output className="account-status">{SIGN_IN_ERROR_TEXT[signInError]}</output>
-      ) : null}
-    </div>
-  );
+  return null;
 }

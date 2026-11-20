@@ -1,18 +1,32 @@
 # Sync
 
-Purpose: optional Google sign-in and multi-device sync (`spec/sync.md`). Signed out, the app is purely local; this folder only adds upload and download. Storage always writes the outbox, signed in or not.
+Purpose: required Google sign-in and multi-device sync (`spec/sync.md`). The app is gated behind sign-in when the server has auth; this folder adds the gate, upload and download. Storage always writes the outbox, signed in or not.
 
 ## Flow
 
 `AccountController` (`account.ts`) is the single entry point, created in `main.tsx` and exposed to React through `SyncProvider` and `useAccount()`.
 
-1. `start()` fetches `GET /auth/config` from `VITE_API_URL` (no base url: sign-in is unavailable and nothing is fetched). `googleClientId` stays `null` when the config is missing or unreachable, and the account row renders nothing.
+1. `start()` fetches `GET /auth/config` from `VITE_API_URL` (no base url: `googleClientId` is `null`, nothing is fetched, the gate is skipped). `{googleClientId: null}` from the server also skips the gate. An unreachable config sets `configFailed`; `retryConfig()` and the `online` / visible triggers fetch it again.
 2. A session in `localStorage` (`glyphfern.session`, `session.ts`, every access wrapped in try/catch) is validated with `GET /auth/me`. 401 clears it; a network failure keeps it.
-3. `google-identity.ts` loads `https://accounts.google.com/gsi/client` only when the account row shows the sign-in button. If the script fails to load the button stays hidden. The credential goes to `POST /auth/google`.
+3. `google-identity.ts` loads `https://accounts.google.com/gsi/client` only when the gate shows the sign-in button. If the script fails to load the button stays hidden. The credential goes to `POST /auth/google`.
 4. With a session, `beginSession` creates a `SyncRunner` and subscribes to the repository outbox. Triggers: sign-in, app start, 2 s after the last outbox write (debounced), tab becoming visible, `online`.
 5. `SyncRunner` (`runner.ts`) runs one `syncOnce` at a time; triggers during a run coalesce into exactly one more run. Status is `syncing`, `synced` or `failed`; a 401 clears the session; after a run that changed local data it calls `store.actions.reload()`.
 6. `syncOnce` (`engine.ts`): enqueue the snapshot once per signed-in email, push the outbox, upload or delete books, pull until `more` is false storing the cursor, then download new books and delete locally the ones with a tombstone.
-7. Sign-out calls `POST /auth/logout` and clears the session; local data stays.
+7. Sign-out calls `POST /auth/logout` and clears the session, which returns the user to the gate; local data stays.
+
+## Sign-in gate
+
+`AccountGate` (`account-gate.tsx`) wraps `AppShell` in `main.tsx`. The session is read from `localStorage` synchronously in the `AccountController` constructor, so a user with a stored session never sees the gate, offline included. `decideGate` (`gate.ts`) maps the state to a view:
+
+| stored session | config | view |
+| --- | --- | --- |
+| yes | any | `app` |
+| no | pending | `loading` (empty screen) |
+| no | `googleClientId: null` | `app` |
+| no | client id | `gate` (fern mark, one line, Google button, error text) |
+| no | request failed | `gate-offline` (needs a connection, retry button) |
+
+Only a 401 from `GET /auth/me` or from a sync request clears the session and returns to the gate; a network error never does. While the gate shows, no library, reader, review, word list or dock is mounted. `gate.css` follows `html[data-night]` through the shared tokens. The account row on the library screen shows only the signed-in state.
 
 ## Contracts
 
@@ -30,8 +44,8 @@ Purpose: optional Google sign-in and multi-device sync (`spec/sync.md`). Signed 
 - Any network or server error sets status `failed` ("Chưa đồng bộ được") and leaves the outbox untouched; the next trigger retries. A book upload failure does not stop records from being pulled.
 - A push answered with 400 is retried record by record; a record the server still rejects is dropped from the outbox so it cannot block later pushes.
 - A book whose download fails or is not valid gzip JSON is skipped and retried on the next run.
-- The sign-in button shows a Vietnamese message for 403 (email not allowed), 401 (bad credential) and unreachable server; no native dialog is ever opened.
+- The gate shows a Vietnamese message for 403 (email not allowed), 401 (bad credential) and unreachable server; no native dialog is ever opened.
 
 ## Testing
 
-`apps/web/test/sync/pure.test.ts` covers merge, outbox records, snapshot, batching and the book plan. `convergence.test.ts` runs two offline devices against the fake server on both storage adapters. `account.test.ts` covers sign-in, session validation, sign-out, debounced runs and the runner. Real Google sign-in and the real server are not covered by tests.
+`apps/web/test/sync/pure.test.ts` covers merge, outbox records, snapshot, batching and the book plan. `convergence.test.ts` runs two offline devices against the fake server on both storage adapters. `gate.test.ts` covers the gate decision table. `account.test.ts` covers sign-in, session validation, sign-out, debounced runs and the runner. Real Google sign-in and the real server are not covered by tests.

@@ -1,0 +1,47 @@
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 16px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: center;
+}
+
+.gate-mark {
+  width: 72px;
+  height: 72px;
+  color: var(--wing);
+}
+
+.gate-title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.gate-text {
+  margin: 0;
+  max-width: 320px;
+  color: var(--ink-2);
+  font-size: 15px;
+}
+
+.gate-error {
+  color: var(--bad);
+  font-size: 14px;
+}
+
+.gate-retry {
+  padding: 8px 18px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-tile);
+  font: inherit;
+}
