@@ -57,7 +57,7 @@ The sidecar is internal: it has no authentication and must only be reachable fro
 | `CLIENT_DAILY_CHAR_LIMIT` | characters one client may send to `/translate` and `/tts` together per day | `20000` |
 | `CLIENT_REQUESTS_PER_MINUTE` | `/translate` and `/tts` requests one client may make per minute | `30` |
 | `TTS_URL` | base URL of the Kokoro sidecar, for example `http://127.0.0.1:8788` | unset (`/tts` answers 503) |
-| `TTS_VOICE_ES` | Kokoro voice used for `lang=es` | `ef_dora` |
+| `TTS_VOICE_ES` | Kokoro voice used for `lang=es` | `em_alex` |
 | `TTS_DAILY_CHAR_LIMIT` | global backstop: characters sent to the sidecar per day (cache hits are free) | `50000` |
 | `GOOGLE_CLIENT_ID` | public OAuth client id of the Google sign-in; enables the auth and sync routes | unset (routes answer 503) |
 | `ALLOWED_EMAILS` | comma separated emails that may sign in (case is ignored) | empty (nobody can sign in) |

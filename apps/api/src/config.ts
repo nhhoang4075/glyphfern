@@ -21,7 +21,7 @@ const DEFAULT_ORIGIN = "http://localhost:5183";
 const DEFAULT_DAILY_CHAR_LIMIT = 100_000;
 const DEFAULT_CLIENT_DAILY_CHARS = 20_000;
 const DEFAULT_CLIENT_RPM = 30;
-const DEFAULT_TTS_VOICE_ES = "ef_dora";
+const DEFAULT_TTS_VOICE_ES = "em_alex";
 const DEFAULT_TTS_DAILY_CHARS = 50_000;
 
 export function readConfig(env: Record<string, string | undefined> = process.env): Config {

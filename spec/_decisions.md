@@ -110,7 +110,7 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Date: 2026-11-19. Decided by: owner ("Kokoro, run on the server").
 - Original choice: Web Speech API only, with a `Tts` port planned for local neural and cloud voices.
 - Now: a second adapter `server`. A small Python service (`apps/tts`, kokoro-onnx with the int8 model and espeak-ng for Spanish phonemes) synthesizes speech; the Bun API exposes `GET /tts`, caches the audio in Postgres and applies the same client limits as translation. System voice stays the default; the reading voice is a preference.
-- Spanish voice: `ef_dora` by default, set by `TTS_VOICE_ES`.
+- Spanish voice: `em_alex` by default (owner changed it from `ef_dora` on 2026-11-20), set by `TTS_VOICE_ES`.
 - Reason: free, no per-character bill, Spanish voices of acceptable quality, and no 120 MB download on every device. `kokoro-js` was not usable because it ships English voices and an English-only phonemizer.
 - Rejected: Piper (per-voice licences, one model per voice), Cloudflare Aura-2 (paid per character), Gemini TTS (prepaid credit), Google Cloud TTS (billing), local neural voice in the browser (about 120 MB per device).
 - Korean has no Kokoro voice; Korean keeps the system voice until a Korean source is chosen.
