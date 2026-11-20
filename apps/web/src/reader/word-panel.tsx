@@ -76,7 +76,7 @@ function MachineNotes({ view }: { view: GrammarView }) {
     );
   }
   if (view.status === "failed") {
-    return <li>{GRAMMAR_UNAVAILABLE}</li>;
+    return <li className="wait">{GRAMMAR_UNAVAILABLE}</li>;
   }
   return (
     <>
@@ -269,6 +269,9 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
                 <MachineNotes view={machineNotes} />
               )}
             </ul>
+            {!sentence?.notes && machineNotes.status === "done" ? (
+              <small className="ai-label">Nội dung được tạo bởi AI</small>
+            ) : null}
           </div>
         </div>
       </div>

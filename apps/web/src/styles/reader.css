@@ -1136,6 +1136,14 @@ button.topzone {
   background: var(--paper-2);
 }
 
+.ai-label {
+  display: block;
+  margin-top: 6px;
+  padding-left: 4px;
+  font-size: 12px;
+  color: var(--ink-3, #7a8a82);
+}
+
 .notes .wait {
   list-style: none;
   margin-left: -18px;
