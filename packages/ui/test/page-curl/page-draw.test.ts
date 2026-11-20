@@ -3,6 +3,7 @@ import {
   SOFT_HYPHEN,
   chooseGlyphRect,
   glyphText,
+  stripsForRects,
   withoutPreviousHyphen,
   wordText,
 } from "../../src/page-curl/page-draw";
@@ -60,5 +61,19 @@ describe("withoutPreviousHyphen", () => {
     const rects = [{ left: 10, top: 5 }];
     expect(withoutPreviousHyphen(rects, { left: 10, top: 5 })).toEqual(rects);
     expect(withoutPreviousHyphen(rects, undefined)).toEqual(rects);
+  });
+});
+
+describe("stripsForRects", () => {
+  test("gives a word wrapped over two lines one strip per line", () => {
+    const rects = [
+      { left: 300, bottom: 120, width: 80 },
+      { left: 100, bottom: 160, width: 40 },
+    ];
+    const strips = stripsForRects(rects, { left: 100, top: 20 }, 20, 0.6);
+    expect(strips).toEqual([
+      { x: 200, y: 120 - 20 - 1.4 - 8.4 + 0, w: 80, h: 8.4, alpha: 0.6 },
+      { x: 0, y: 160 - 20 - 1.4 - 8.4, w: 40, h: 8.4, alpha: 0.6 },
+    ]);
   });
 });

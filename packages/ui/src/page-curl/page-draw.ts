@@ -119,6 +119,22 @@ export function withoutPreviousHyphen<T extends RectPosition>(
   return same ? rects.slice(1) : rects;
 }
 
+export function stripsForRects(
+  rects: readonly { left: number; bottom: number; width: number }[],
+  frame: { left: number; top: number },
+  fontSize: number,
+  alpha: number,
+) {
+  const height = fontSize * 0.42;
+  return rects.map((rect) => ({
+    x: rect.left - frame.left,
+    y: rect.bottom - frame.top - fontSize * 0.07 - height,
+    w: rect.width,
+    h: height,
+    alpha,
+  }));
+}
+
 export function pageSpan(
   pages: readonly number[],
   pageStep: number,
@@ -238,17 +254,16 @@ export function collectSegments(
       if (style.backgroundImage !== "none") {
         const level = ["l1", "l2", "l3"].find((name) => element.classList.contains(name));
         const rects = element.getClientRects();
-        if (level && rects.length === 1 && !flow.classList.contains("nohl")) {
-          const rect = rects[0] as DOMRect;
+        if (level && !flow.classList.contains("nohl")) {
           const fontSize = Number.parseFloat(style.fontSize) || 16;
-          const height = fontSize * 0.42;
-          out.strips.push({
-            x: rect.left - frame.left,
-            y: rect.bottom - frame.top - fontSize * 0.07 - height,
-            w: rect.width,
-            h: height,
-            alpha: STRIP_ALPHA[level] as number,
-          });
+          out.strips.push(
+            ...stripsForRects(
+              [...rects],
+              { left: frame.left, top: frame.top },
+              fontSize,
+              STRIP_ALPHA[level] as number,
+            ),
+          );
         }
         if (element.classList.contains("nw") && !flow.classList.contains("nohl")) {
           for (const rect of element.getClientRects()) {
