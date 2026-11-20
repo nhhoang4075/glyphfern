@@ -27,7 +27,7 @@ const DEFAULT_CLIENT_DAILY_CHARS = 20_000;
 const DEFAULT_CLIENT_RPM = 30;
 const DEFAULT_TTS_VOICE_ES = "em_alex";
 const DEFAULT_TTS_DAILY_CHARS = 50_000;
-const DEFAULT_GRAMMAR_MODEL = "deepseek/deepseek-v4.1-flash-1017";
+const DEFAULT_GRAMMAR_MODEL = "anthropic/claude-haiku-5.5";
 
 export function readConfig(env: Record<string, string | undefined> = process.env): Config {
   const port = Number(env.PORT ?? DEFAULT_PORT);

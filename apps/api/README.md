@@ -41,8 +41,8 @@ The sidecar is internal: it has no authentication and must only be reachable fro
 1. `/grammar` answers 503 when no key is configured and 503 `auth_not_configured` when sign-in is not configured, then requires a valid session (`Authorization: Bearer`, 401 otherwise), validates the body, then checks the client (the same limiter instance as `/translate` and `/tts`) with `sentence.length` characters.
 2. The cache key is the SHA-256 hex of `${model}|${lang}|${lemma}|${sentence}`. A hit in the `grammar_note` table (`hash` primary key, `notes` JSON text, `created_at`) is returned without calling the gateway and without touching the budget.
 3. A miss consumes `sentence.length` from the global daily budget (the same instance as `/translate`), then calls the `GrammarClient`, then stores the notes.
-4. The client in `src/grammar/gateway-client.ts` posts `{ model, messages, temperature: 0.2, max_tokens: 1500 }` to `https://ai-gateway.vercel.sh/v1/chat/completions` with `Authorization: Bearer <AI_GATEWAY_API_KEY>` and a 20 second timeout. The system prompt (`src/grammar/grammar-prompt.ts`) asks for a JSON array of 2 to 4 Vietnamese notes; the user message carries only `lang`, `sentence`, `word` and `lemma`.
-5. `src/grammar/parse-notes.ts` strips code fences and accepts only a non-empty array of non-empty strings, trimmed and cut to 4. Anything else, a network error, a timeout or a non-2xx status is a `GrammarClientError` (502).
+4. The client in `src/grammar/gateway-client.ts` posts `{ model, messages, response_format, temperature: 0.2, max_tokens: 1500 }` (`response_format` is the JSON schema `{ notes: string[] }`, strict) to `https://ai-gateway.vercel.sh/v1/chat/completions` with `Authorization: Bearer <AI_GATEWAY_API_KEY>` and a 20 second timeout. The system prompt (`src/grammar/grammar-prompt.ts`) asks for a JSON array of 2 to 4 Vietnamese notes; the user message carries only `lang`, `sentence`, `word` and `lemma`.
+5. `src/grammar/parse-notes.ts` strips code fences and accepts the object `{ notes }` (or a bare array) holding a non-empty array of non-empty strings, trimmed and cut to 4. The system prompt carries a fixed Vietnamese terminology table (`TERMINOLOGY` in `grammar-prompt.ts`). Anything else, a network error, a timeout or a non-2xx status is a `GrammarClientError` (502).
 
 ## Account and sync flow
 
@@ -67,7 +67,7 @@ The sidecar is internal: it has no authentication and must only be reachable fro
 | `CLIENT_DAILY_CHAR_LIMIT` | characters one client may send to `/translate`, `/grammar` and `/tts` together per day | `20000` |
 | `CLIENT_REQUESTS_PER_MINUTE` | `/translate`, `/grammar` and `/tts` requests one client may make per minute | `30` |
 | `AI_GATEWAY_API_KEY` | key of the Vercel AI Gateway; enables `/grammar` | unset (`/grammar` answers 503) |
-| `GRAMMAR_MODEL` | gateway model used for grammar notes | `deepseek/deepseek-v4.1-flash-1017` |
+| `GRAMMAR_MODEL` | gateway model used for grammar notes | `anthropic/claude-haiku-5.5` |
 | `TTS_URL` | base URL of the Kokoro sidecar, for example `http://127.0.0.1:8788` | unset (`/tts` answers 503) |
 | `TTS_VOICE_ES` | Kokoro voice used for `lang=es` | `em_alex` |
 | `TTS_DAILY_CHAR_LIMIT` | global backstop: characters sent to the sidecar per day (cache hits are free) | `50000` |

@@ -11,11 +11,15 @@ export function parseNotes(raw: string): string[] | undefined {
   } catch {
     return undefined;
   }
-  if (!Array.isArray(parsed)) {
+  const items =
+    typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as { notes?: unknown }).notes
+      : parsed;
+  if (!Array.isArray(items)) {
     return undefined;
   }
   const notes: string[] = [];
-  for (const item of parsed) {
+  for (const item of items) {
     if (typeof item !== "string" || item.trim().length === 0) {
       return undefined;
     }

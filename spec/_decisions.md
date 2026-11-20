@@ -187,5 +187,5 @@ Each entry: id, date, who decided, what, why, what it replaces.
 ## D-033 Grammar analysis of a sentence through Vercel AI Gateway
 - Date: 2026-11-20. Decided by: owner (chose to give the sparkle button a real function and named the model).
 - Original choice: the analysis button showed `sentence.notes`, which exist only for the removed sample books, so it was empty for imported books.
-- Now: `POST /grammar` calls the OpenAI-compatible Vercel AI Gateway (`https://ai-gateway.vercel.sh/v1/chat/completions`) with the model `deepseek/deepseek-v4.1-flash-1017` (env `GRAMMAR_MODEL`), key in env `AI_GATEWAY_API_KEY`. Details in `spec/web-reader-logic.md` §5.
+- Now: `POST /grammar` calls the OpenAI-compatible Vercel AI Gateway (`https://ai-gateway.vercel.sh/v1/chat/completions`) with the model `anthropic/claude-haiku-5.5` (env `GRAMMAR_MODEL`; changed from `deepseek/deepseek-v4.1-flash-1017` on 2026-11-20 after a comparison on real sentences, reasoning left off), asking for a JSON schema `{ notes: string[] }`, with a fixed Vietnamese terminology table in the system prompt, key in env `AI_GATEWAY_API_KEY`. Details in `spec/web-reader-logic.md` §5.
 - Reason: a short grammar note for the tapped word in its sentence is useful for a learner; one sentence, no personal data, cached per sentence.

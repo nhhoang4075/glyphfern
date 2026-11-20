@@ -1,9 +1,13 @@
 import { type GrammarClient, GrammarClientError, type GrammarRequest } from "./grammar-client";
-import { GRAMMAR_SYSTEM_PROMPT, grammarUserPrompt } from "./grammar-prompt";
+import {
+  GRAMMAR_RESPONSE_FORMAT,
+  GRAMMAR_SYSTEM_PROMPT,
+  grammarUserPrompt,
+} from "./grammar-prompt";
 import { parseNotes } from "./parse-notes";
 
 export const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1/chat/completions";
-export const DEFAULT_GRAMMAR_MODEL = "deepseek/deepseek-v4.1-flash-1017";
+export const DEFAULT_GRAMMAR_MODEL = "anthropic/claude-haiku-5.5";
 
 const TEMPERATURE = 0.2;
 const MAX_TOKENS = 1500;
@@ -40,6 +44,7 @@ export function createGatewayGrammarClient(options: GatewayOptions): GrammarClie
               { role: "system", content: GRAMMAR_SYSTEM_PROMPT },
               { role: "user", content: grammarUserPrompt(request) },
             ],
+            response_format: GRAMMAR_RESPONSE_FORMAT,
             temperature: TEMPERATURE,
             max_tokens: MAX_TOKENS,
           }),

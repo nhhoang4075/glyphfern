@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { hashToken } from "../../src/auth/session";
 import { createGatewayGrammarClient } from "../../src/grammar/gateway-client";
 import { type GrammarClient, GrammarClientError } from "../../src/grammar/grammar-client";
+import { GRAMMAR_RESPONSE_FORMAT } from "../../src/grammar/grammar-prompt";
 import {
   type GrammarCache,
   createGrammarService,
@@ -101,6 +102,10 @@ describe("grammar notes parser", () => {
     expect(parseNotes('[" a ", "b"]')).toEqual(["a", "b"]);
   });
 
+  test("an object with a notes array is accepted", () => {
+    expect(parseNotes('{"notes":[" a ","b"]}')).toEqual(["a", "b"]);
+  });
+
   test("code fences are stripped", () => {
     expect(parseNotes('```json\n["a", "b"]\n```')).toEqual(["a", "b"]);
   });
@@ -111,7 +116,8 @@ describe("grammar notes parser", () => {
 
   test("anything that is not an array of non-empty strings is rejected", () => {
     expect(parseNotes("not json")).toBeUndefined();
-    expect(parseNotes('{"notes":["a"]}')).toBeUndefined();
+    expect(parseNotes('{"other":["a"]}')).toBeUndefined();
+    expect(parseNotes('{"notes":"a"}')).toBeUndefined();
     expect(parseNotes('["a", 3]')).toBeUndefined();
     expect(parseNotes('["a", "  "]')).toBeUndefined();
     expect(parseNotes("[]")).toBeUndefined();
@@ -240,6 +246,7 @@ describe("gateway grammar client", () => {
     expect(body.model).toBe("m/x");
     expect(body.temperature).toBe(0.2);
     expect(body.max_tokens).toBe(1500);
+    expect(body.response_format).toEqual(GRAMMAR_RESPONSE_FORMAT);
     expect(body.messages).toHaveLength(2);
     const sent = JSON.parse(body.messages[1].content);
     expect(sent).toEqual(REQUEST);
