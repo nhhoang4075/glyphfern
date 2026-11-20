@@ -62,3 +62,21 @@ test("an empty book has zero coverage and no lemmas", () => {
     cards: 0,
   });
 });
+
+test("unmatched tokens are excluded from percent, new and learning counts", () => {
+  const unmatchedToken = (lemma: string): Token => ({ ...token(lemma), unmatched: true });
+  const sentences: Sentence[] = [
+    {
+      id: 1,
+      chapter: 0,
+      kind: "body",
+      tokens: [token("casa"), token("luna"), unmatchedToken("morgan"), unmatchedToken("gato")],
+    },
+  ];
+  expect(coverage(sentences, stateOf, 0)).toEqual({
+    percent: 50,
+    newLemmas: 1,
+    learningLemmas: 0,
+    cards: 0,
+  });
+});

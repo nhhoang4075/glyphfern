@@ -23,6 +23,7 @@ function Tokens({ sentence, title }: { sentence: Sentence; title: boolean }) {
               data-s={key}
               data-i={index}
               data-l={token.lemma}
+              {...(token.unmatched ? { "data-u": "" } : {})}
               {...(token.group === undefined ? {} : { "data-g": token.group })}
             >
               {token.surf}

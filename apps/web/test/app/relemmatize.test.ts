@@ -6,7 +6,10 @@ import { openTestRepository } from "../../src/test-support";
 
 const options = { prefersReducedMotion: false, initialRoute: "read" as const };
 
-const MIRAR = { miraba: "mirar", miraban: "mirar", miré: "mirar" };
+const MIRAR = {
+  lemmas: { miraba: "mirar", miraban: "mirar", miré: "mirar" },
+  unknown: [] as string[],
+};
 
 function epubFiles(title: string): Record<string, string> {
   return {
@@ -28,7 +31,10 @@ function firstSentenceId(book: Book): number {
 }
 
 function controlledLemmatizer() {
-  const control: { answer: Record<string, string> | null; calls: number } = {
+  const control: {
+    answer: { lemmas: Record<string, string>; unknown: string[] } | null;
+    calls: number;
+  } = {
     answer: null,
     calls: 0,
   };

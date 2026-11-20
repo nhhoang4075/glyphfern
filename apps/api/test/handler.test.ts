@@ -50,7 +50,7 @@ describe("api handler", () => {
       }),
       deps,
     );
-    expect(await response.json()).toEqual({ lemmas: { miraba: "mirar" } });
+    expect(await response.json()).toEqual({ lemmas: { miraba: "mirar" }, unknown: ["lobo"] });
   });
 
   test("a lemma request without a small declared size is refused", async () => {

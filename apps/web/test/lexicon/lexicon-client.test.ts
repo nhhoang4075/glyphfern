@@ -68,9 +68,31 @@ describe("lexicon client", () => {
       return { ok: true, status: 200, json: async () => ({ lemmas: { [words[0] ?? ""]: "x" } }) };
     });
     const words = Array.from({ length: 4500 }, (_, i) => `w${i}`);
-    const lemmas = await client.lemmatize("es", words);
+    const answer = await client.lemmatize("es", words);
     expect(bodies.map((b) => b.length)).toEqual([2000, 2000, 500]);
-    expect(Object.keys(lemmas ?? {})).toEqual(["w0", "w2000", "w4000"]);
+    expect(Object.keys(answer?.lemmas ?? {})).toEqual(["w0", "w2000", "w4000"]);
+  });
+
+  test("the unknown lists of every chunk are merged", async () => {
+    const client = createLexiconClient("http://api", async (_url, init) => {
+      const words = (JSON.parse(String(init?.body)) as { words: string[] }).words;
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ lemmas: {}, unknown: [words[0] ?? ""] }),
+      };
+    });
+    const words = Array.from({ length: 2500 }, (_, i) => `w${i}`);
+    expect((await client.lemmatize("es", words))?.unknown).toEqual(["w0", "w2000"]);
+  });
+
+  test("a body without an unknown list gives an empty one", async () => {
+    const client = createLexiconClient("http://api", async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ lemmas: { a: "b" } }),
+    }));
+    expect(await client.lemmatize("es", ["a"])).toEqual({ lemmas: { a: "b" }, unknown: [] });
   });
 
   test("lemmatize returns null without a base URL", async () => {

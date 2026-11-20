@@ -10,6 +10,7 @@ export interface Token {
   surf: string;
   trail: string;
   lemma: string;
+  unmatched?: true;
   group?: string;
   morphemes?: Morpheme[];
 }

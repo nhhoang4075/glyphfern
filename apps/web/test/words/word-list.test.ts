@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { EMPTY_BOOK, coverage } from "@glyphfern/core";
+import { type Book, EMPTY_BOOK, coverage } from "@glyphfern/core";
 import { indexBook } from "../../src/app/book-index";
 import { buildWordRows } from "../../src/words/word-list";
 
@@ -19,5 +19,34 @@ describe("the empty book on the Words screen", () => {
       learningLemmas: 0,
       cards: 0,
     });
+  });
+});
+
+describe("unmatched tokens on the Words screen", () => {
+  const book: Book = {
+    ...EMPTY_BOOK,
+    chapters: [
+      {
+        title: { id: 1, chapter: 0, kind: "title", tokens: [] },
+        paragraphs: [
+          [
+            {
+              id: 2,
+              chapter: 0,
+              kind: "body",
+              tokens: [
+                { lead: "", surf: "casa", trail: "", lemma: "casa" },
+                { lead: "", surf: "Morgan", trail: "", lemma: "morgan", unmatched: true },
+              ],
+            },
+          ],
+        ],
+      },
+    ],
+  };
+  const learning = () => ({ kind: "learning" as const, level: 2 as const });
+
+  test("are not listed even when a state exists for their lemma", () => {
+    expect(buildWordRows(book, learning, "learning").map((row) => row.lemma)).toEqual(["casa"]);
   });
 });

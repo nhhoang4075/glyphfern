@@ -12,7 +12,12 @@ export function bookWords(book: Book): string[] {
   return [...words];
 }
 
-export function applyLemmas(book: Book, lemmas: Readonly<Record<string, string>>): Book {
+export function applyLemmas(
+  book: Book,
+  lemmas: Readonly<Record<string, string>>,
+  unknown: readonly string[] = [],
+): Book {
+  const unmatched = new Set(unknown);
   const lemmaOf = (surface: string): string => {
     const key = surface.toLowerCase();
     const value = Object.hasOwn(lemmas, key) ? lemmas[key] : undefined;
@@ -20,7 +25,14 @@ export function applyLemmas(book: Book, lemmas: Readonly<Record<string, string>>
   };
   const mapSentence = <T extends Book["chapters"][number]["title"]>(sentence: T): T => ({
     ...sentence,
-    tokens: sentence.tokens.map((token) => ({ ...token, lemma: lemmaOf(token.surf) })),
+    tokens: sentence.tokens.map((token) => {
+      const { unmatched: _previous, ...rest } = token;
+      return {
+        ...rest,
+        lemma: lemmaOf(token.surf),
+        ...(unmatched.has(token.surf.toLowerCase()) ? { unmatched: true as const } : {}),
+      };
+    }),
   });
   return {
     ...book,

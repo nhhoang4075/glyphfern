@@ -454,6 +454,10 @@ function BookReader() {
     if (!flow || !pack || windowKey === "") return;
     for (const element of flow.querySelectorAll<HTMLElement>(".w[data-l]")) {
       element.classList.remove("l1", "l2", "l3");
+      if (element.dataset.u !== undefined) {
+        element.classList.remove("nw");
+        continue;
+      }
       const wordState = state.wordStates[element.dataset.l ?? ""] ?? { kind: "new" };
       const name = highlightClass(wordState);
       if (name) element.classList.add(name);

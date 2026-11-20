@@ -21,6 +21,11 @@ export type FetchLike = (
   init?: RequestInit,
 ) => Promise<Pick<Response, "ok" | "status" | "json">>;
 
+export interface LemmaAnswer {
+  lemmas: Record<string, string>;
+  unknown: string[];
+}
+
 const LEMMA_CHUNK = 2000;
 
 const MAX_GLOSSES_SHOWN = 4;
@@ -66,10 +71,7 @@ export function createLexiconClient(
     }
   }
 
-  async function lemmaChunk(
-    lang: string,
-    words: readonly string[],
-  ): Promise<Record<string, string> | null> {
+  async function lemmaChunk(lang: string, words: readonly string[]): Promise<LemmaAnswer | null> {
     try {
       const response = await fetcher(`${baseUrl}/lemmas`, {
         method: "POST",
@@ -79,31 +81,32 @@ export function createLexiconClient(
       if (!response.ok) {
         return null;
       }
-      const body = (await response.json()) as { lemmas?: unknown } | null;
+      const body = (await response.json()) as { lemmas?: unknown; unknown?: unknown } | null;
       const lemmas = body?.lemmas;
       if (typeof lemmas !== "object" || lemmas === null || Array.isArray(lemmas)) {
         return null;
       }
-      return lemmas as Record<string, string>;
+      const unknown = Array.isArray(body?.unknown)
+        ? (body.unknown as unknown[]).filter((word): word is string => typeof word === "string")
+        : [];
+      return { lemmas: lemmas as Record<string, string>, unknown };
     } catch {
       return null;
     }
   }
 
-  async function lemmatize(
-    lang: string,
-    words: readonly string[],
-  ): Promise<Record<string, string> | null> {
+  async function lemmatize(lang: string, words: readonly string[]): Promise<LemmaAnswer | null> {
     if (!baseUrl) {
       return null;
     }
-    const result: Record<string, string> = {};
+    const result: LemmaAnswer = { lemmas: {}, unknown: [] };
     for (let start = 0; start < words.length; start += LEMMA_CHUNK) {
       const chunk = await lemmaChunk(lang, words.slice(start, start + LEMMA_CHUNK));
       if (chunk === null) {
         return null;
       }
-      Object.assign(result, chunk);
+      Object.assign(result.lemmas, chunk.lemmas);
+      result.unknown.push(...chunk.unknown);
     }
     return result;
   }

@@ -18,7 +18,7 @@ export function buildWordRows(
   const rows: WordRow[] = [];
   for (const sentence of indexBook(book).sentences) {
     for (const token of sentence.tokens) {
-      if (seen.has(token.lemma)) {
+      if (token.unmatched || seen.has(token.lemma)) {
         continue;
       }
       const state = stateOf(token.lemma);

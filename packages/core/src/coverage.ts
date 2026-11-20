@@ -19,6 +19,9 @@ export function coverage(
 
   for (const sentence of sentences) {
     for (const token of sentence.tokens) {
+      if (token.unmatched) {
+        continue;
+      }
       totalTokens += 1;
       const state = stateOf(token.lemma);
       if (state.kind === "known") {

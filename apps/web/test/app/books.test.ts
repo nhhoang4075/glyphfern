@@ -164,10 +164,31 @@ describe("lemmas on import", () => {
   test("the lemmatizer result is written into the stored book", async () => {
     const store = await AppStore.open(new MemoryRepository(), {
       ...options,
-      lemmatizer: async () => ({ había: "haber" }),
+      lemmatizer: async () => ({ lemmas: { había: "haber" }, unknown: [] }),
     });
     const stored = await store.actions.importEpub(epubFiles("El lobo"));
     const lemmas = stored.book.chapters[0]?.paragraphs[0]?.[0]?.tokens.map((t) => t.lemma);
     expect(lemmas?.[0]).toBe("haber");
+  });
+
+  test("unknown words are flagged unmatched unless the static dictionary has them", async () => {
+    const store = await AppStore.open(new MemoryRepository(), {
+      ...options,
+      lemmatizer: async () => ({ lemmas: {}, unknown: ["cerca", "bosque"] }),
+    });
+    const stored = await store.actions.importEpub(epubFiles("El lobo"));
+    const tokens = stored.book.chapters[0]?.paragraphs[0]?.[0]?.tokens ?? [];
+    const flagged = tokens.filter((token) => token.unmatched === true).map((token) => token.surf);
+    expect([...new Set(flagged)]).toEqual(["cerca"]);
+  });
+
+  test("a failed lemmatizer marks nothing unmatched", async () => {
+    const store = await AppStore.open(new MemoryRepository(), {
+      ...options,
+      lemmatizer: async () => null,
+    });
+    const stored = await store.actions.importEpub(epubFiles("El lobo"));
+    const tokens = stored.book.chapters[0]?.paragraphs[0]?.[0]?.tokens ?? [];
+    expect(tokens.some((token) => token.unmatched)).toBe(false);
   });
 });

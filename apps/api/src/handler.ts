@@ -87,11 +87,7 @@ export async function handle(
     if (!valid) {
       return json({ error: "invalid_words" }, 400, deps);
     }
-    return json(
-      { lemmas: await resolveLemmas(deps.store, body.lang, words as string[]) },
-      200,
-      deps,
-    );
+    return json(await resolveLemmas(deps.store, body.lang, words as string[]), 200, deps);
   }
   if (url.pathname.startsWith("/auth/")) {
     return authRoute(request, url, deps);

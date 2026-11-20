@@ -21,6 +21,7 @@ import {
   wordStateFromSchedule,
 } from "@glyphfern/core";
 import { packs as defaultPacks } from "@glyphfern/languages";
+import type { LemmaAnswer } from "../lexicon/lexicon-client";
 import { startOfLocalDay } from "../review/review-queue";
 import type { LanguageSnapshot, Repository, StoredBook } from "../storage/repository";
 import type {
@@ -68,7 +69,7 @@ export interface StoreOptions {
   random?: () => number;
 }
 
-export type Lemmatizer = (lang: Lang, words: string[]) => Promise<Record<string, string> | null>;
+export type Lemmatizer = (lang: Lang, words: string[]) => Promise<LemmaAnswer | null>;
 
 type Listener = () => void;
 
@@ -251,14 +252,14 @@ export class AppStore {
         locale: IMPORT_LOCALE,
         firstSentenceId: seq * SENTENCE_ID_SPAN,
       });
-      const lemmas = this.lemmatizer ? await this.lemmatizer(IMPORT_LANG, bookWords(book)) : null;
+      const answer = this.lemmatizer ? await this.lemmatizer(IMPORT_LANG, bookWords(book)) : null;
       const stored: StoredBook = {
         id,
         lang: IMPORT_LANG,
         seq,
         addedAt: Date.now(),
-        lemmatized: lemmas !== null,
-        book: applyLemmas(book, lemmas ?? {}),
+        lemmatized: answer !== null,
+        book: answer ? this.applyAnswer(book, IMPORT_LANG, answer) : applyLemmas(book, {}),
       };
       await this.repository.saveBook(stored);
       const userBooks = [...this.current.userBooks, stored];
@@ -378,20 +379,31 @@ export class AppStore {
     }
   }
 
+  private applyAnswer(book: Book, lang: Lang, answer: LemmaAnswer): Book {
+    const dict = this.packs[lang].dict;
+    const inStaticDictionary = (word: string): boolean =>
+      Object.hasOwn(dict, word) || Object.hasOwn(dict, answer.lemmas[word] ?? "");
+    return applyLemmas(
+      book,
+      answer.lemmas,
+      answer.unknown.filter((word) => !inStaticDictionary(word)),
+    );
+  }
+
   private async relemmatize(bookId: string, lemmatizer: Lemmatizer): Promise<void> {
     const before = this.current.userBooks.find((candidate) => candidate.id === bookId);
     if (!before) {
       return;
     }
-    const lemmas = await lemmatizer(before.lang, bookWords(before.book));
-    if (lemmas === null) {
+    const answer = await lemmatizer(before.lang, bookWords(before.book));
+    if (answer === null) {
       return;
     }
     const stored = this.current.userBooks.find((candidate) => candidate.id === bookId);
     if (!stored) {
       return;
     }
-    const book = applyLemmas(stored.book, lemmas);
+    const book = this.applyAnswer(stored.book, before.lang, answer);
     const updated: StoredBook = { ...stored, book, lemmatized: true };
     const userBooks = this.current.userBooks.map((candidate) =>
       candidate.id === bookId ? updated : candidate,

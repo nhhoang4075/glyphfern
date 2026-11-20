@@ -71,13 +71,14 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
   const sentence = word?.sentence ?? null;
   const token = sentence?.tokens[word?.tokenIndex ?? 0];
   const lemma = token?.lemma ?? "";
+  const unmatched = token?.unmatched === true;
   const members = sentence && word ? groupMembers(sentence, word.tokenIndex) : [];
   const surface = sentence && word ? groupSurface(sentence, word.tokenIndex) : "";
   const staticEntry = state.pack.dict[lemma];
   const { value: looked, settled: lookupSettled } = useLookupState(
     state.lang,
     token?.surf ?? "",
-    token !== undefined && !staticEntry,
+    token !== undefined && !staticEntry && !unmatched,
   );
   const entry = staticEntry ?? (looked ? toDictEntry(looked) : undefined);
   const sentenceEn = sentence ? sentenceText(sentence) : undefined;
@@ -135,38 +136,44 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
           </Chip>
         ))}
       </Section>
-      <p className="mean">{entry?.meaning ?? (lookupSettled ? MEANING_UNAVAILABLE : "")}</p>
+      <p className="mean">
+        {unmatched
+          ? MEANING_UNAVAILABLE
+          : (entry?.meaning ?? (lookupSettled ? MEANING_UNAVAILABLE : ""))}
+      </p>
       <div className="note" hidden={!entry?.note}>
         <Icon name="bulb" />
         <span>{entry?.note ?? ""}</span>
       </div>
-      <Section className="acts">
-        <Segmented
-          container="fieldset"
-          className="stg"
-          label="Trạng thái"
-          optionClassName="st"
-          activeClassName="on"
-          value={STATE_BUTTONS.find((button) => button.target === current.kind)?.target ?? null}
-          onChange={choose}
-          options={STATE_BUTTONS.map((button) => ({
-            value: button.target,
-            label: button.label,
-            className: button.className,
-            content: <Icon name={button.icon} />,
-          }))}
-        />
-        <span className="sp" />
-        <IconButton
-          variant="st"
-          className="cd"
-          active={hasCard}
-          icon="cardplus"
-          label={hasCard ? "Xóa thẻ" : "Thêm thẻ"}
-          aria-pressed={hasCard}
-          onClick={toggleCard}
-        />
-      </Section>
+      {unmatched ? null : (
+        <Section className="acts">
+          <Segmented
+            container="fieldset"
+            className="stg"
+            label="Trạng thái"
+            optionClassName="st"
+            activeClassName="on"
+            value={STATE_BUTTONS.find((button) => button.target === current.kind)?.target ?? null}
+            onChange={choose}
+            options={STATE_BUTTONS.map((button) => ({
+              value: button.target,
+              label: button.label,
+              className: button.className,
+              content: <Icon name={button.icon} />,
+            }))}
+          />
+          <span className="sp" />
+          <IconButton
+            variant="st"
+            className="cd"
+            active={hasCard}
+            icon="cardplus"
+            label={hasCard ? "Xóa thẻ" : "Thêm thẻ"}
+            aria-pressed={hasCard}
+            onClick={toggleCard}
+          />
+        </Section>
+      )}
       <Section className="ctx">
         <p>
           {sentence?.tokens.map((item, index) => (

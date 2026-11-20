@@ -6,7 +6,7 @@ Purpose: a small Bun HTTP service that answers lexicon lookups and bulk lemma re
 
 - `GET /health`.
 - `GET /lookup?lang=es&word=...`: entries (lemma, part of speech, IPA, English glosses, `facts`). Proper nouns are listed last.
-- `POST /lemmas` `{ lang, words }`: map of inflected form to lemma. Words that have their own dictionary entry are not remapped. Body at most 512 KB, 5000 words.
+- `POST /lemmas` `{ lang, words }`: `{ lemmas, unknown }`. `lemmas` maps inflected form to lemma; words that have their own dictionary entry are not remapped, and words whose lemma is themselves are absent. `unknown` lists the lowercase words with no row in the forms table (a row of any kind counts as known). Body at most 512 KB, 5000 words.
 - `POST /translate` `{ from, to, texts }`: pairs `es:vi`, `es:en`, `en:vi`; at most 20 texts of 500 characters. Answers 503 when no translator is configured, 429 when the daily character budget is used up, 502 when the provider fails.
 - `GET /tts?lang=es&text=...&speed=0.78`: MP3 audio (`audio/mpeg`, mono, 48 kbit/s) of the text read by the Kokoro voice of that language. `lang` must be `es` (400 `unsupported_language`); `text` is trimmed and 1 to 500 characters (400 `invalid_text`); `speed` is a number from 0.5 to 1.5, default 1 (400 `invalid_speed`). Answers 503 `tts_not_configured` when `TTS_URL` is unset, 429 `rate_limited` for the client limits, 429 `budget_exceeded` when the daily character budget is used up, 502 `tts_failed` when the sidecar fails. Success carries `cache-control: public, max-age=604800` and the CORS header.
 

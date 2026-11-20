@@ -56,3 +56,23 @@ describe("lemmas for a book", () => {
     ]);
   });
 });
+
+describe("unmatched flag", () => {
+  const tokensOf = (result: Book) => result.chapters[0]?.paragraphs[0]?.[0]?.tokens ?? [];
+
+  test("tokens whose lowercase surface is in the unknown list are flagged", () => {
+    const result = applyLemmas(book, {}, ["miraba"]);
+    expect(tokensOf(result).map((token) => token.unmatched)).toEqual([true, undefined]);
+  });
+
+  test("without an unknown list nothing is flagged", () => {
+    expect(tokensOf(applyLemmas(book, {})).some((token) => "unmatched" in token)).toBe(false);
+  });
+
+  test("applying again replaces a previous flag", () => {
+    const flagged = applyLemmas(book, {}, ["miraba"]);
+    expect(tokensOf(applyLemmas(flagged, {}, [])).some((token) => "unmatched" in token)).toBe(
+      false,
+    );
+  });
+});
