@@ -171,3 +171,9 @@ Each entry: id, date, who decided, what, why, what it replaces.
 - Original choice: D-028 detected learner-book structure from book-specific headings and word lists.
 - Now: `spec/import.md`. Chapters come from the EPUB `nav`/`ncx`; the heading-based rules remain only as a fallback; book-specific word lists are removed; an import preview lets the owner check which chapters to keep. This supersedes the appendix-name list of D-028.
 - Reason: D-028 does not generalise to other books; the EPUB already declares its structure, and the owner is the final judge of what is reading text.
+
+## D-031 Sign-in is required to use the app
+- Date: 2026-11-20. Decided by: owner ("I want sign-in before the app can be used").
+- Original choice (D-025): local-first, signed out the app behaves as before and sign-in only adds sync.
+- Now: `spec/sync.md` §6.1. Without a session the app shows a sign-in gate only; with a stored session it opens at once, offline included.
+- Reason: the owner wants every device tied to the account so data is never only local. The gate is a client rule: it does not protect the open lexicon and TTS endpoints.

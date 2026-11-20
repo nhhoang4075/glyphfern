@@ -53,12 +53,21 @@ A book's sentences are numbered from `slot * 1_000_000` where `slot` is the book
 - The token is kept in `localStorage` under `glyphfern.session`. A 401 clears it and shows the signed-out state; local data is never deleted by signing out.
 - Signing in as a different account than the one the local data was last synced for never uploads that local data: the outbox is cleared, the cursor resets and no snapshot is taken.
 - A session whose email is no longer in `ALLOWED_EMAILS` is deleted and answers 401. `POST /auth/google` reads its body only when `Content-Length` is present and at most 16 KB.
-- A signed-out device can import and read exactly as today.
+- Sign-in is required to use the app (D-031): see §6.1. Local data is still kept on the device and uploaded on sign-in.
 
 ## 6. Interface
 
 - The library screen shows an account row above the shelf: signed out, the Google sign-in button (hidden when `/auth/config` returns `null`); signed in, the avatar, the email, a status text ("Đã đồng bộ", "Đang đồng bộ…", "Chưa đồng bộ được") and a "Đăng xuất" button.
 - Sign-out and failures never open a native dialog.
+
+## 6.1 Sign-in gate (D-031)
+
+- On start the app reads the stored session (`glyphfern.session`). With a stored session it opens at once, offline included; the session is checked in the background with `GET /auth/me`, and only a 401 sends the user back to the gate. A network error never closes the app.
+- Without a stored session the app shows the gate instead of any screen: the fern mark, one line of text, the Google sign-in button, and the error text for `not_allowed` or a failed sign-in. No library, reader, review or word list is reachable behind it.
+- The gate asks `GET /auth/config` first. When it answers `{ googleClientId: null }` (a server without auth, development) the gate is skipped and the app is open as before. When the request fails and there is no stored session, the gate shows a short "needs a connection to sign in the first time" text with a retry button.
+- Signing out returns to the gate. Local data is not deleted by sign-out (rule in §5 stays).
+- `GET /lexicon`, `GET /lemmas` and `GET /tts` stay open; the gate is a client rule, the data itself is local.
+- The gate follows the night theme and reuses the Google button of the account row, which moves to the gate and to the account menu once signed in.
 
 ## 7. Tests
 
