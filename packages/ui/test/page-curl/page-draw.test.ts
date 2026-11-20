@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { SOFT_HYPHEN, chooseGlyphRect, glyphText, wordText } from "../../src/page-curl/page-draw";
+import {
+  SOFT_HYPHEN,
+  chooseGlyphRect,
+  glyphText,
+  withoutPreviousHyphen,
+  wordText,
+} from "../../src/page-curl/page-draw";
 
 describe("glyphText", () => {
   test("draws a visible soft hyphen as a hyphen", () => {
@@ -32,7 +38,27 @@ describe("chooseGlyphRect", () => {
     expect(chooseGlyphRect([{ width: 20 }, { width: 7 }], 20)).toBe(0);
   });
 
+  test("picks the letter-spaced glyph rect over the hyphen slot of the previous line", () => {
+    expect(chooseGlyphRect([{ width: 9.5 }, { width: 18.3 }], 15.19 + 3.09)).toBe(1);
+  });
+
   test("returns -1 without rects", () => {
     expect(chooseGlyphRect([], 10)).toBe(-1);
+  });
+});
+
+describe("withoutPreviousHyphen", () => {
+  test("drops a leading rect that sits where the previous glyph reported its hyphen", () => {
+    const rects = [
+      { left: 859, top: 215 },
+      { left: 443, top: 241 },
+    ];
+    expect(withoutPreviousHyphen(rects, { left: 859.2, top: 215 })).toEqual([rects[1]]);
+  });
+
+  test("keeps every rect when nothing matches or only one rect exists", () => {
+    const rects = [{ left: 10, top: 5 }];
+    expect(withoutPreviousHyphen(rects, { left: 10, top: 5 })).toEqual(rects);
+    expect(withoutPreviousHyphen(rects, undefined)).toEqual(rects);
   });
 });

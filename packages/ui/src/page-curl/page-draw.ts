@@ -103,6 +103,22 @@ export function chooseGlyphRect(rects: readonly { width: number }[], glyphWidth:
   return best;
 }
 
+type RectPosition = { left: number; top: number };
+
+const SAME_RECT_TOLERANCE_PX = 0.5;
+
+export function withoutPreviousHyphen<T extends RectPosition>(
+  rects: readonly T[],
+  previousHyphen: RectPosition | undefined,
+): readonly T[] {
+  const first = rects[0];
+  if (!previousHyphen || !first || rects.length < 2) return rects;
+  const same =
+    Math.abs(first.left - previousHyphen.left) <= SAME_RECT_TOLERANCE_PX &&
+    Math.abs(first.top - previousHyphen.top) <= SAME_RECT_TOLERANCE_PX;
+  return same ? rects.slice(1) : rects;
+}
+
 export function pageSpan(
   pages: readonly number[],
   pageStep: number,
@@ -178,12 +194,16 @@ export function collectSegments(
           continue;
         }
         measure.font = font;
+        const spacing = Number.parseFloat(style.letterSpacing) || 0;
+        let previousHyphen: DOMRect | undefined;
         for (let k = 0; k < match[0].length; k++) {
           range.setStart(node, match.index + k);
           range.setEnd(node, match.index + k + 1);
           const char = match[0][k] ?? "";
           const rects = [...range.getClientRects()];
-          const chosen = chooseGlyphRect(rects, measure.measureText(char).width);
+          const shown = upper ? char.toUpperCase() : char;
+          const expectedWidth = measure.measureText(shown).width + spacing;
+          const chosen = chooseGlyphRect(rects, expectedWidth);
           const glyph = chosen === -1 ? undefined : rects[chosen];
           const text = glyph ? glyphText(char, glyph.width, upper) : null;
           if (glyph && text !== null) {
@@ -199,6 +219,7 @@ export function collectSegments(
           }
           const hyphen = chosen === -1 ? undefined : rects[chosen + 1];
           if (hyphen && hyphen.width > 0 && chosen + 1 < rects.length) {
+            previousHyphen = hyphen;
             out.texts.push({
               text: "-",
               x: hyphen.left - frame.left,

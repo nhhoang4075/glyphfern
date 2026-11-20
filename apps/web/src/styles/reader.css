@@ -138,6 +138,7 @@ html[data-font="sans"] .flow {
   line-height: 1.2;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  hyphens: none;
   color: var(--ink);
   display: flex;
   flex-direction: column;
