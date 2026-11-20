@@ -223,9 +223,6 @@ export function WordPanel({ open, word, reveal, onToggleReveal, onPulse }: WordP
             <p className="tr">
               {sentence?.vi ?? machineSentence.text ?? machineNote(machineSentence.status)}
             </p>
-            {!sentence?.vi && machineSentence.text ? (
-              <small className="mt">Bản dịch máy, có thể sai xưng hô và nghĩa</small>
-            ) : null}
           </div>
         </div>
         <div className={reveal.grammar ? "xw on" : "xw"}>

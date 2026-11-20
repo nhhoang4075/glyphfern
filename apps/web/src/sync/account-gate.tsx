@@ -25,7 +25,6 @@ export function AccountGate({ children }: { children: ReactNode }) {
       <h1 className="gate-title">Glyphfern</h1>
       {view === "gate" && state.googleClientId ? (
         <>
-          <p className="gate-text">Đăng nhập bằng Google để bắt đầu đọc.</p>
           <GoogleButton
             clientId={state.googleClientId}
             onCredential={(c) => void controller.signIn(c)}

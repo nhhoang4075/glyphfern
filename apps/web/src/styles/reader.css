@@ -541,13 +541,6 @@ html[data-night] .w.sel {
   color: var(--ink);
 }
 
-.extra small.mt {
-  display: block;
-  margin-top: 2px;
-  color: var(--ink-3);
-  font-size: 11px;
-}
-
 .mean:empty {
   display: none;
 }
