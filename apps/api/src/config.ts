@@ -5,6 +5,7 @@ export interface Config {
   cloudflareAccountId: string | undefined;
   cloudflareApiToken: string | undefined;
   translateDailyCharLimit: number;
+  grammarDailyCharLimit: number;
   clientDailyCharLimit: number;
   clientRequestsPerMinute: number;
   trustProxy: boolean;
@@ -21,6 +22,7 @@ const DEFAULT_PORT = 8787;
 const DEFAULT_DATABASE_URL = "postgres://localhost:5432/glyphfern";
 const DEFAULT_ORIGIN = "http://localhost:5183";
 const DEFAULT_DAILY_CHAR_LIMIT = 100_000;
+const DEFAULT_GRAMMAR_DAILY_CHARS = 50_000;
 const DEFAULT_CLIENT_DAILY_CHARS = 20_000;
 const DEFAULT_CLIENT_RPM = 30;
 const DEFAULT_TTS_VOICE_ES = "em_alex";
@@ -36,6 +38,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID || undefined,
     cloudflareApiToken: env.CLOUDFLARE_API_TOKEN || undefined,
     translateDailyCharLimit: Number(env.TRANSLATE_DAILY_CHAR_LIMIT ?? DEFAULT_DAILY_CHAR_LIMIT),
+    grammarDailyCharLimit: Number(env.GRAMMAR_DAILY_CHAR_LIMIT ?? DEFAULT_GRAMMAR_DAILY_CHARS),
     clientDailyCharLimit: Number(env.CLIENT_DAILY_CHAR_LIMIT ?? DEFAULT_CLIENT_DAILY_CHARS),
     clientRequestsPerMinute: Number(env.CLIENT_REQUESTS_PER_MINUTE ?? DEFAULT_CLIENT_RPM),
     trustProxy: env.TRUST_PROXY === "1",

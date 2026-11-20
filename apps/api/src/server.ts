@@ -37,7 +37,7 @@ const grammar = config.aiGatewayApiKey
   ? createGrammarService(
       createGatewayGrammarClient({ apiKey: config.aiGatewayApiKey, model: config.grammarModel }),
       createGrammarSqlCache(sql),
-      translateBudget,
+      createDailyBudget(config.grammarDailyCharLimit),
     )
   : undefined;
 

@@ -1,4 +1,4 @@
-import { type AuthDeps, authRoute } from "./auth/auth-routes";
+import { type AuthDeps, authRoute, authenticate, notConfigured } from "./auth/auth-routes";
 import { GrammarClientError } from "./grammar/grammar-client";
 import type { GrammarService } from "./grammar/grammar-service";
 import { json } from "./http";
@@ -199,6 +199,13 @@ async function grammarRoute(
 ): Promise<Response> {
   if (!deps.grammar) {
     return json({ error: "grammar_not_configured" }, 503, deps);
+  }
+  if (!deps.auth) {
+    return notConfigured(deps);
+  }
+  const session = await authenticate(request, deps);
+  if (session instanceof Response) {
+    return session;
   }
   const declared = Number(request.headers.get("content-length") ?? Number.NaN);
   if (!Number.isFinite(declared) || declared > MAX_BODY_BYTES) {

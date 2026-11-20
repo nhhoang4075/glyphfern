@@ -16,7 +16,7 @@ export interface GrammarService {
 }
 
 export function grammarCacheKey(model: string, request: GrammarRequest): Promise<string> {
-  return hashText(`${model}|${request.lang}|${request.lemma}|${request.sentence}`);
+  return hashText(`${model}|${request.lang}|${request.lemma}|${request.word}|${request.sentence}`);
 }
 
 export function createGrammarService(

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { hashToken } from "../../src/auth/session";
 import { createGatewayGrammarClient } from "../../src/grammar/gateway-client";
 import { type GrammarClient, GrammarClientError } from "../../src/grammar/grammar-client";
 import {
@@ -10,6 +11,23 @@ import { parseNotes } from "../../src/grammar/parse-notes";
 import { handle } from "../../src/handler";
 import { createClientLimiter } from "../../src/translate/client-limiter";
 import { createDailyBudget, hashText } from "../../src/translate/translate-service";
+import {
+  OWNER_EMAIL,
+  createAuthDeps,
+  createMemoryAuthStore,
+  createTestKeys,
+} from "../auth/auth-support";
+
+const TOKEN = "T".repeat(43);
+const authStore = createMemoryAuthStore();
+const authDeps = createAuthDeps(await createTestKeys(), authStore);
+const owner = await authStore.upsertUser({
+  sub: "sub-owner",
+  email: OWNER_EMAIL,
+  name: "Owner",
+  picture: "",
+});
+await authStore.createSession(owner.id, await hashToken(TOKEN), Date.now() + 3_600_000);
 
 const REQUEST = { lang: "es", sentence: "Ella miraba el mar.", word: "miraba", lemma: "mirar" };
 
@@ -47,12 +65,21 @@ function failingClient(): GrammarClient {
   };
 }
 
-function post(body: unknown, deps: Parameters<typeof handle>[1], client = "1.1.1.1") {
+function post(
+  body: unknown,
+  deps: Parameters<typeof handle>[1],
+  client = "1.1.1.1",
+  token: string | null = TOKEN,
+) {
   const text = JSON.stringify(body);
   return handle(
     new Request("http://api.test/grammar", {
       method: "POST",
-      headers: { "content-type": "application/json", "content-length": String(text.length) },
+      headers: {
+        "content-type": "application/json",
+        "content-length": String(text.length),
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
       body: text,
     }),
     deps,
@@ -64,6 +91,7 @@ function depsWith(grammar: ReturnType<typeof createGrammarService> | undefined) 
   return {
     store: {} as never,
     allowedOrigin: "http://web.test",
+    auth: authDeps,
     ...(grammar ? { grammar } : {}),
   };
 }
@@ -98,7 +126,9 @@ describe("grammar service", () => {
     const result = await service.analyze(REQUEST);
     expect(result.cached).toBe(false);
     expect(client.calls).toEqual([REQUEST]);
-    expect(cache.hashes()).toEqual([await hashText("fake/model|es|mirar|Ella miraba el mar.")]);
+    expect(cache.hashes()).toEqual([
+      await hashText("fake/model|es|mirar|miraba|Ella miraba el mar."),
+    ]);
     expect(cache.hashes()[0]).toBe(await grammarCacheKey("fake/model", REQUEST));
   });
 
@@ -124,6 +154,22 @@ describe("POST /grammar", () => {
     expect(await response.json()).toEqual({
       notes: ["Pretérito imperfecto.", "Ngôi thứ ba số ít."],
     });
+  });
+
+  test("answers 401 without a session and never calls the service", async () => {
+    const client = fakeClient();
+    const deps = depsWith(createGrammarService(client, memoryCache(), createDailyBudget(1000)));
+    expect((await post(REQUEST, deps, "1.1.1.1", null)).status).toBe(401);
+    expect((await post(REQUEST, deps, "1.1.1.1", "x".repeat(43))).status).toBe(401);
+    expect(client.calls).toHaveLength(0);
+  });
+
+  test("two words of one sentence never share cached notes", async () => {
+    const cache = memoryCache();
+    const service = createGrammarService(fakeClient(), cache, createDailyBudget(1000));
+    await service.analyze(REQUEST);
+    await service.analyze({ ...REQUEST, word: "mar", lemma: "mar" });
+    expect(cache.hashes()).toHaveLength(2);
   });
 
   test("answers 503 when no grammar service is configured", async () => {
@@ -193,7 +239,7 @@ describe("gateway grammar client", () => {
     const body = JSON.parse(String(seen.init?.body));
     expect(body.model).toBe("m/x");
     expect(body.temperature).toBe(0.2);
-    expect(body.max_tokens).toBe(400);
+    expect(body.max_tokens).toBe(1500);
     expect(body.messages).toHaveLength(2);
     const sent = JSON.parse(body.messages[1].content);
     expect(sent).toEqual(REQUEST);

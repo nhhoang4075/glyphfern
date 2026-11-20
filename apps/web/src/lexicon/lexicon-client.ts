@@ -1,4 +1,5 @@
 import type { DictEntry } from "@glyphfern/core";
+import { readSession } from "../sync/session";
 import { type EntryFacts, buildNote } from "./entry-note";
 import { posLabel } from "./pos-label";
 
@@ -52,6 +53,13 @@ export function toDictEntry(result: LookupResult): DictEntry | undefined {
     meaning: shown.join("; "),
     ...(note ? { note } : {}),
   };
+}
+
+function grammarHeaders(): Record<string, string> {
+  const token = readSession()?.token;
+  return token
+    ? { "content-type": "application/json", authorization: `Bearer ${token}` }
+    : { "content-type": "application/json" };
 }
 
 export function createLexiconClient(
@@ -166,7 +174,7 @@ export function createLexiconClient(
     try {
       const response = await fetcher(`${baseUrl}/grammar`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: grammarHeaders(),
         body: JSON.stringify({
           lang: request.lang,
           sentence: request.sentence,
@@ -188,7 +196,7 @@ export function createLexiconClient(
   }
 
   function grammar(request: GrammarRequest): Promise<string[] | null> {
-    const key = `${request.lang}:${request.sentenceId}:${request.lemma}:${request.sentence}`;
+    const key = `${request.lang}:${request.sentenceId}:${request.word}:${request.lemma}:${request.sentence}`;
     const cached = analyses.get(key);
     if (cached) {
       return cached;

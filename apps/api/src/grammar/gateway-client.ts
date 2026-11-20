@@ -6,7 +6,7 @@ export const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1/chat/completions";
 export const DEFAULT_GRAMMAR_MODEL = "deepseek/deepseek-v4.1-flash-1017";
 
 const TEMPERATURE = 0.2;
-const MAX_TOKENS = 400;
+const MAX_TOKENS = 1500;
 const TIMEOUT_MS = 20_000;
 
 export interface GatewayOptions {
